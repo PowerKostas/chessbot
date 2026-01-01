@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+
+
+<GridPane fx:id="board" prefHeight="700.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chessbot.controllers.BoardController">
+    <columnConstraints>
+        <ColumnConstraints percentWidth="12.5" />
+        <ColumnConstraints percentWidth="12.5" />
+        <ColumnConstraints percentWidth="12.5" />
+        <ColumnConstraints percentWidth="12.5" />
+        <ColumnConstraints percentWidth="12.5" />
+        <ColumnConstraints percentWidth="12.5" />
+        <ColumnConstraints percentWidth="12.5" />
+        <ColumnConstraints percentWidth="12.5" />
+    </columnConstraints>
+    <rowConstraints>
+        <RowConstraints percentHeight="12.5" />
+        <RowConstraints percentHeight="12.5" />
+        <RowConstraints percentHeight="12.5" />
+        <RowConstraints percentHeight="12.5" />
+        <RowConstraints percentHeight="12.5" />
+        <RowConstraints percentHeight="12.5" />
+        <RowConstraints percentHeight="12.5" />
+        <RowConstraints percentHeight="12.5" />
+    </rowConstraints>
+</GridPane>
