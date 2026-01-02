@@ -1,5 +1,6 @@
-package com.chessbot.controllers;
+package com.chessbot.Controllers;
 
+import com.chessbot.Utils.FENReader;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -19,15 +20,20 @@ public class BoardController {
             for (int column = 0; column < 8; column += 1) {
                 StackPane square = new StackPane();
 
+                // Adds square colour
+                if ((row + column) % 2 == 0) {
+                    square.setStyle("-fx-background-color: #ebecd0");
+                } else {
+                    square.setStyle("-fx-background-color: #739552");
+                }
+
                 // Adds number coordinates
                 if (column == 0) {
                     Label number = new Label();
 
                     if (row % 2 == 0) {
                         number.setTextFill(Color.web("#739552"));
-                    }
-
-                    else {
+                    } else {
                         number.setTextFill(Color.web("#ebecd0"));
                     }
 
@@ -49,7 +55,7 @@ public class BoardController {
                         number.setTextFill(Color.web("#739552"));
                     }
 
-                    char fileLetter = (char)('a' + column);
+                    char fileLetter = (char) ('a' + column);
                     number.setText(String.valueOf(fileLetter));
                     number.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
                     StackPane.setAlignment(number, Pos.BOTTOM_RIGHT);
@@ -58,17 +64,11 @@ public class BoardController {
                     square.getChildren().add(number);
                 }
 
-                // Adds square colour
-                if ((row + column) % 2 == 0) {
-                    square.setStyle("-fx-background-color: #ebecd0");
-                }
-
-                else {
-                    square.setStyle("-fx-background-color: #739552");
-                }
-
                 board.add(square, column, row);
             }
         }
+
+        // Builds starting position using FEN
+        FENReader.build("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", board);
     }
 }
