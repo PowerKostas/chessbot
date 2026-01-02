@@ -1,8 +1,10 @@
 package com.chessbot.Controllers;
 
-import com.chessbot.Utils.FENReader;
+import com.chessbot.ChessUtils.FENReader;
+import com.chessbot.ChessUtils.MakeMove;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
@@ -19,6 +21,31 @@ public class BoardController {
         for (int row = 0; row < 8; row += 1) {
             for (int column = 0; column < 8; column += 1) {
                 StackPane square = new StackPane();
+
+                // Every square will be hoverable/draggable/clickable, but that functionality will be disabled until that
+                // square has a piece on it
+                square.setCursor(Cursor.HAND);
+
+                square.setOnDragDetected(event -> {
+                    square.startFullDrag();
+                    MakeMove.dragDetected(event, board);
+                });
+
+                square.setOnMouseDragged(event -> {
+                    MakeMove.drag(event);
+                });
+
+                square.setOnMouseDragEntered(event -> {
+                    MakeMove.dragEnter(event);
+                });
+
+                square.setOnMouseDragExited(event -> {
+                    MakeMove.dragExit(event);
+                });
+
+                square.setOnMouseDragReleased(event -> {
+                    MakeMove.dragRelease(event);
+                });
 
                 // Adds square colour
                 if ((row + column) % 2 == 0) {

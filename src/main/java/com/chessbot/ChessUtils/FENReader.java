@@ -1,4 +1,4 @@
-package com.chessbot.Utils;
+package com.chessbot.ChessUtils;
 
 import com.chessbot.ChessApplication;
 import javafx.scene.image.Image;
@@ -16,27 +16,24 @@ public class FENReader {
         // Numbers indicate the number of empty squares, slashes indicate new rows
         for (char letter : sequence.toCharArray()) {
             if (Character.isLetter(letter)) {
+                ImageView piece;
+
                 if (Character.isLowerCase(letter)) {
                     Image image = new Image(ChessApplication.class.getResourceAsStream("Images/b" + letter +".png"));
-                    ImageView piece = new ImageView(image);
+                    piece = new ImageView(image);
                     piece.setFitWidth(75);
                     piece.setFitHeight(75);
-
-                    StackPane square = new StackPane();
-                    square.getChildren().add(piece);
-                    board.add(square, col_num, row_num);
                 }
 
                 else {
                     Image image = new Image(ChessApplication.class.getResourceAsStream("Images/w" + Character.toLowerCase(letter) + ".png"));
-                    ImageView piece = new ImageView(image);
+                    piece = new ImageView(image);
                     piece.setFitWidth(75);
                     piece.setFitHeight(75);
-
-                    StackPane square = new StackPane();
-                    square.getChildren().add(piece);
-                    board.add(square, col_num, row_num);
                 }
+
+                StackPane square = (StackPane) board.getChildren().get(row_num * 8 + col_num);
+                square.getChildren().add(piece);
 
                 col_num += 1;
             }
