@@ -1,10 +1,9 @@
 package com.chessbot.Controllers;
 
-import com.chessbot.ChessUtils.FENReader;
-import com.chessbot.ChessUtils.MakeMove;
+import com.chessbot.BoardUtils.FenReader;
+import com.chessbot.BoardUtils.DragMove;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
@@ -15,6 +14,9 @@ public class BoardController {
     @FXML
     private GridPane board;
 
+    private final DragMove dragMove = new DragMove();
+    private final FenReader fenReader = new FenReader();
+
 
     // Prepares every square of the board
     public void initialize() {
@@ -22,29 +24,29 @@ public class BoardController {
             for (int column = 0; column < 8; column += 1) {
                 StackPane square = new StackPane();
 
-                // Every square will be hoverable/draggable/clickable, but that functionality will be disabled until that
-                // square has a piece on it
-                square.setCursor(Cursor.HAND);
-
+                // Make every square draggable/clickable, more info on MakeMove
                 square.setOnDragDetected(event -> {
-                    square.startFullDrag();
-                    MakeMove.dragDetected(event, board);
+                    dragMove.dragDetected(event);
                 });
 
-                square.setOnMouseDragged(event -> {
-                    MakeMove.drag(event);
+                square.setOnDragOver(event -> {
+                    dragMove.drag(event);
                 });
 
-                square.setOnMouseDragEntered(event -> {
-                    MakeMove.dragEnter(event);
+                square.setOnDragEntered(event -> {
+                    dragMove.dragEnter(event);
                 });
 
-                square.setOnMouseDragExited(event -> {
-                    MakeMove.dragExit(event);
+                square.setOnDragDropped(event -> {
+                    dragMove.dragDropped(event);
                 });
 
-                square.setOnMouseDragReleased(event -> {
-                    MakeMove.dragRelease(event);
+                square.setOnDragExited(event -> {
+                    dragMove.dragExit(event);
+                });
+
+                square.setOnDragDone(event -> {
+                    dragMove.dragDone(event);
                 });
 
                 // Adds square colour
@@ -96,6 +98,6 @@ public class BoardController {
         }
 
         // Builds starting position using FEN
-        FENReader.build("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", board);
+        fenReader.build("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", board);
     }
 }

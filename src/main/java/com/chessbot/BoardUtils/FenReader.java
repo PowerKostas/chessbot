@@ -1,13 +1,14 @@
-package com.chessbot.ChessUtils;
+package com.chessbot.BoardUtils;
 
 import com.chessbot.ChessApplication;
+import javafx.scene.Cursor;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 
-public class FENReader {
-    public static void build(String sequence, GridPane board) {
+public class FenReader {
+    public void build(String sequence, GridPane board) {
         int col_num = 0;
         int row_num = 0;
 
@@ -32,8 +33,10 @@ public class FENReader {
                     piece.setFitHeight(75);
                 }
 
+                // Adds piece and makes it hoverable
                 StackPane square = (StackPane) board.getChildren().get(row_num * 8 + col_num);
                 square.getChildren().add(piece);
+                square.setCursor(Cursor.HAND);
 
                 col_num += 1;
             }
