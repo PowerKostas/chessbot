@@ -1,5 +1,6 @@
 package com.chessbot.BoardUtils;
 
+import com.chessbot.ChessApplication;
 import javafx.scene.Cursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.image.Image;
@@ -7,6 +8,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.media.AudioClip;
 
 public class DragMove {
     private ImageView draggedPiece;
@@ -30,6 +32,12 @@ public class DragMove {
         }
 
         startingSquare = (StackPane) event.getSource();
+
+        if (startingSquare.getChildren().isEmpty()) {
+            event.consume();
+            return;
+        }
+
         draggedPiece = (ImageView) startingSquare.getChildren().getLast();
 
         Dragboard db = startingSquare.startDragAndDrop(TransferMode.MOVE);
@@ -75,11 +83,11 @@ public class DragMove {
         previousHoveredSquareStyle = hoveredSquare.getStyle();
 
         if (previousHoveredSquareStyle.equals("-fx-background-color: #ebecd0")) {
-            hoveredSquare.setStyle(previousHoveredSquareStyle + "; -fx-border-color: #f8f8ef; -fx-border-width: 4");
+            hoveredSquare.setStyle(previousHoveredSquareStyle + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;");
         }
 
         else {
-            hoveredSquare.setStyle(previousHoveredSquareStyle + "; -fx-border-color: #cedac3; -fx-border-width: 4");
+            hoveredSquare.setStyle(previousHoveredSquareStyle + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
         }
 
         event.consume();
@@ -92,12 +100,20 @@ public class DragMove {
         endingSquare.setCursor(Cursor.HAND);
         tempEndingSquareStyle = endingSquare.getStyle().split(";")[0];
 
+        //BoardController.all_pieces_bitboard += 1L << (GridPane.getRowIndex(endingSquare) * 8L + GridPane.getColumnIndex(endingSquare));
+        //BoardController.all_pieces_bitboard -= 1L << (GridPane.getRowIndex(startingSquare) * 8L + GridPane.getColumnIndex(startingSquare));
+
+        //TwoBoardsController.instance.test();
+
         draggedPiece.setVisible(true);
 
         if (previousStartingSquare != null && previousEndingSquare != null) {
             previousStartingSquare.setStyle(previousStartingSquareStyle);
             previousEndingSquare.setStyle(previousEndingSquareStyle);
         }
+
+        AudioClip clickSound = new AudioClip(ChessApplication.class.getResource("Sounds/move-self.mp3").toString());
+        clickSound.play();
 
         event.setDropCompleted(true);
         event.consume();

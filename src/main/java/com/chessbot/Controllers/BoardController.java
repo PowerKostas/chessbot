@@ -1,7 +1,7 @@
 package com.chessbot.Controllers;
 
-import com.chessbot.BoardUtils.FenReader;
 import com.chessbot.BoardUtils.DragMove;
+import com.chessbot.Objects.BoardPieces;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -15,7 +15,6 @@ public class BoardController {
     private GridPane board;
 
     private final DragMove dragMove = new DragMove();
-    private final FenReader fenReader = new FenReader();
 
 
     // Prepares every square of the board
@@ -24,7 +23,7 @@ public class BoardController {
             for (int column = 0; column < 8; column += 1) {
                 StackPane square = new StackPane();
 
-                // Make every square draggable/clickable, more info on MakeMove
+                // Makes every square draggable/clickable, more info on the specific classes
                 square.setOnDragDetected(event -> {
                     dragMove.dragDetected(event);
                 });
@@ -52,7 +51,9 @@ public class BoardController {
                 // Adds square colour
                 if ((row + column) % 2 == 0) {
                     square.setStyle("-fx-background-color: #ebecd0");
-                } else {
+                }
+
+                else {
                     square.setStyle("-fx-background-color: #739552");
                 }
 
@@ -69,7 +70,7 @@ public class BoardController {
                     number.setText(Integer.toString(8 - row));
                     number.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
                     StackPane.setAlignment(number, Pos.TOP_LEFT);
-                    StackPane.setMargin(number, new Insets(0, 0, 0, 5));
+                    StackPane.setMargin(number, new Insets(0, 0, 0, 4));
 
                     square.getChildren().add(number);
                 }
@@ -80,7 +81,9 @@ public class BoardController {
 
                     if (column % 2 == 0) {
                         number.setTextFill(Color.web("#ebecd0"));
-                    } else {
+                    }
+
+                    else {
                         number.setTextFill(Color.web("#739552"));
                     }
 
@@ -88,7 +91,7 @@ public class BoardController {
                     number.setText(String.valueOf(fileLetter));
                     number.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
                     StackPane.setAlignment(number, Pos.BOTTOM_RIGHT);
-                    StackPane.setMargin(number, new Insets(0, 5, 0, 0));
+                    StackPane.setMargin(number, new Insets(0, 4, 0, 0));
 
                     square.getChildren().add(number);
                 }
@@ -96,8 +99,15 @@ public class BoardController {
                 board.add(square, column, row);
             }
         }
+    }
 
-        // Builds starting position using FEN
-        fenReader.build("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", board);
+
+    public void loadGame(BoardPieces boardPieces, String fenSequence) {
+        boardPieces.setBoard(fenSequence, board);
+    }
+
+
+    public void loadVisualization(BoardPieces boardPieces) {
+        boardPieces.bitboardVisualization(board);
     }
 }

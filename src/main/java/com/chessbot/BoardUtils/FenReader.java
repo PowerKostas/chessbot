@@ -7,8 +7,10 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 
+// Reads a FEN sequence and places the pieces in the JavaFX board, also returns the updated bitboards
 public class FenReader {
-    public void build(String sequence, GridPane board) {
+    public long build(String sequence, GridPane board) {
+        long allPiecesBitboard = 0;
         int col_num = 0;
         int row_num = 0;
 
@@ -38,6 +40,10 @@ public class FenReader {
                 square.getChildren().add(piece);
                 square.setCursor(Cursor.HAND);
 
+                // Adds an 1 to the 64 bit long variable, the 1 is in the position of the piece
+                // eg, piece in the 3rd row and 4th column = bit 27
+                allPiecesBitboard += 1L << (row_num * 8 + col_num);
+
                 col_num += 1;
             }
 
@@ -50,5 +56,7 @@ public class FenReader {
                 row_num += 1;
             }
         }
+
+        return allPiecesBitboard;
     }
 }

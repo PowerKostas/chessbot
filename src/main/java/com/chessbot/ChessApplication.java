@@ -9,7 +9,7 @@ import java.io.IOException;
 public class ChessApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(ChessApplication.class.getResource("Views/board-view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(ChessApplication.class.getResource("Views/two-boards-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
         stage.setTitle("chessbot");
