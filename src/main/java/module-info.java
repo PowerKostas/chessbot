@@ -4,7 +4,7 @@ module com.chessbot {
     requires javafx.media;
     requires javafx.graphics;
 
-    opens com.chessbot.Controllers to javafx.fxml;
     opens com.chessbot to javafx.fxml;
+    opens com.chessbot.Objects to javafx.fxml;
     exports com.chessbot;
 }

@@ -1,15 +1,13 @@
 package com.chessbot.BoardUtils;
 
-import com.chessbot.ChessApplication;
+import com.chessbot.Objects.Piece;
+import com.chessbot.Objects.Square;
 import javafx.scene.Cursor;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.StackPane;
 
 // Reads a FEN sequence and places the pieces in the JavaFX board, also returns the updated bitboards
 public class FenReader {
-    public long build(String sequence, GridPane board) {
+    public static long build(String sequence, GridPane board) {
         long allPiecesBitboard = 0;
         int col_num = 0;
         int row_num = 0;
@@ -19,25 +17,11 @@ public class FenReader {
         // Numbers indicate the number of empty squares, slashes indicate new rows
         for (char letter : sequence.toCharArray()) {
             if (Character.isLetter(letter)) {
-                ImageView piece;
+                Piece piece = Piece.pieceFromFen(letter);
 
-                if (Character.isLowerCase(letter)) {
-                    Image image = new Image(ChessApplication.class.getResourceAsStream("Images/b" + letter +".png"));
-                    piece = new ImageView(image);
-                    piece.setFitWidth(75);
-                    piece.setFitHeight(75);
-                }
-
-                else {
-                    Image image = new Image(ChessApplication.class.getResourceAsStream("Images/w" + Character.toLowerCase(letter) + ".png"));
-                    piece = new ImageView(image);
-                    piece.setFitWidth(75);
-                    piece.setFitHeight(75);
-                }
-
-                // Adds piece and makes it hoverable
-                StackPane square = (StackPane) board.getChildren().get(row_num * 8 + col_num);
-                square.getChildren().add(piece);
+                // Adds the piece to the custom square class, also makes it hoverable
+                Square square = (Square) board.getChildren().get(row_num * 8 + col_num);
+                square.setCurrentPiece(piece);
                 square.setCursor(Cursor.HAND);
 
                 // Adds an 1 to the 64 bit long variable, the 1 is in the position of the piece

@@ -7,12 +7,18 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
+// This class extends the JavaFX StackPane class, it has 3 possible children, number coords, letter cords and
+// ImageView piece, used for the JavaFX board. I added some attributes for easier calculations.
 public class Square extends StackPane {
     private int row;
     private int col;
+    private Piece currentPiece;
 
 
     public Square(int row, int col, DragMove dragMove) {
+        this.row = row;
+        this.col = col;
+
         // Adds square colour
         if ((row + col) % 2 == 0) {
             this.setStyle("-fx-background-color: #ebecd0");
@@ -84,5 +90,24 @@ public class Square extends StackPane {
         this.setOnDragDone(event -> {
             dragMove.dragDone(event);
         });
+    }
+
+
+    public int getRow() {
+        return row;
+    }
+
+    public int getCol() {
+        return col;
+    }
+
+    public Piece getCurrentPiece() {
+        return currentPiece;
+    }
+
+    public void setCurrentPiece(Piece currentPiece) {
+        this.currentPiece = currentPiece;
+
+        this.getChildren().add(currentPiece.getPieceImage());
     }
 }

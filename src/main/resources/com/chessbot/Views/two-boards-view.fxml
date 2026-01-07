@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<?import javafx.scene.layout.HBox?>
-
-<HBox spacing="20" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="com.chessbot.Controllers.TwoBoardsController">
-    <fx:include fx:id="boardOne" source="board-view.fxml" />
-    <fx:include fx:id="boardTwo" source="board-view.fxml" />
-</HBox>
