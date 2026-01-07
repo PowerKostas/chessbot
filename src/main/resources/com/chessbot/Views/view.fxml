@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.layout.HBox?>
-<?import com.chessbot.Objects.Board?>
 
-<HBox spacing="20" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="com.chessbot.ViewManager">
-    <Board fx:id="boardOneController" />
-    <Board fx:id="boardTwoController" />
+<HBox fx:id="mainContainer" spacing="20" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25"  fx:controller="com.chessbot.ViewManager">
 </HBox>
