@@ -1,75 +1,80 @@
 package com.chessbot.BoardUtils;
 
 import com.chessbot.ChessApplication;
+import com.chessbot.Objects.Board;
+import com.chessbot.Objects.Piece;
+import com.chessbot.Objects.Square;
+import com.chessbot.ViewManager;
 import javafx.scene.Cursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.media.AudioClip;
 
+// Order of a completed drag operation: dragDetected - dragEnter - dragExit - dragEnter - dragDropped - dragExit - dragDone
 public class DragMove {
-    private ImageView draggedPiece;
-    private StackPane startingSquare;
-    private StackPane hoveredSquare;
-    private StackPane endingSquare;
-    private String previousHoveredSquareStyle;
-    private String tempStartingSquareStyle;
-    private String tempEndingSquareStyle;
-    private StackPane previousStartingSquare;
-    private String previousStartingSquareStyle;
-    private StackPane previousEndingSquare;
-    private String previousEndingSquareStyle;
-    private StackPane failedStartingSquare;
-    private String failedStartingSquareStyle;
+    private final Board board;
+    private Piece draggedPiece;
+    private Square startingSquare;
+    private Square endingSquare;
+    private Square previousStartingSquare;
+    private Square previousEndingSquare;
+    private Square failedStartingSquare;
 
 
+    // Initializes a Board reference so the listeners can access the Board methods
+    public DragMove(Board board) {
+        this.board = board;
+    }
+
+
+    // Triggers when a drag operation starts
     public void dragDetected(MouseEvent event) {
-        if (failedStartingSquare != null) {
-            failedStartingSquare.setStyle(failedStartingSquareStyle);
-        }
+        // Square that the drag happened
+        startingSquare = (Square) event.getSource();
 
-        startingSquare = (StackPane) event.getSource();
-
-        if (startingSquare.getChildren().isEmpty()) {
-            event.consume();
+        // If the square has no pieces, return
+        if (startingSquare.getCurrentPiece() == null) {
             return;
         }
 
-        draggedPiece = (ImageView) startingSquare.getChildren().getLast();
+        // Resets selected colour on drag operations that failed
+        if (failedStartingSquare != null) {
+            failedStartingSquare.colour("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+        }
 
+        // Have to do it
         Dragboard db = startingSquare.startDragAndDrop(TransferMode.MOVE);
         ClipboardContent content = new ClipboardContent();
         content.putString("piece_move");
         db.setContent(content);
 
+        // Sets the dragged piece background colour to transparent
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
+        draggedPiece = startingSquare.getCurrentPiece();
         Image pieceImage = draggedPiece.snapshot(params, null);
+
+        // Sets the mouse to the middle of the dragged piece
         db.setDragView(pieceImage);
         db.setDragViewOffsetX(pieceImage.getWidth() / 2);
         db.setDragViewOffsetY(pieceImage.getHeight() / 2);
         startingSquare.setViewOrder(-1);
 
+        // Makes the dragged piece invisible for the whole drag operation
         draggedPiece.setVisible(false);
 
-        tempStartingSquareStyle = startingSquare.getStyle();
-
-        if (tempStartingSquareStyle.equals("-fx-background-color: #ebecd0") || tempStartingSquareStyle.equals("-fx-background-color: #f5f682")) {
-            startingSquare.setStyle("-fx-background-color: #f5f682");
-        }
-
-        else {
-            startingSquare.setStyle("-fx-background-color: #b9ca43");
-        }
+        // If it's a light square give it a light selected colour, else a dark one
+        startingSquare.colour("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
 
         event.consume();
     }
 
 
+    // Triggers when hovering a square while dragging
     public void drag(DragEvent event) {
+        // Makes every square that the mouse hovers available for the rest of the dragging operation
         if (event.getGestureSource() != event.getSource() && event.getDragboard().hasString()) {
             event.acceptTransferModes(TransferMode.MOVE);
         }
@@ -78,86 +83,95 @@ public class DragMove {
     }
 
 
+    // Triggers when hovering a new square while dragging
     public void dragEnter(DragEvent event) {
-        hoveredSquare = (StackPane) event.getSource();
-        previousHoveredSquareStyle = hoveredSquare.getStyle();
+        // Adds a border effect to the square
+        Square hoveredSquare = (Square) event.getSource();
 
-        if (previousHoveredSquareStyle.equals("-fx-background-color: #ebecd0")) {
-            hoveredSquare.setStyle(previousHoveredSquareStyle + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;");
-        }
-
-        else {
-            hoveredSquare.setStyle(previousHoveredSquareStyle + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
-        }
+        hoveredSquare.colour(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
 
         event.consume();
     }
 
 
+    // Triggers when letting off the drag operation
     public void dragDropped(DragEvent event) {
-        endingSquare = (StackPane) event.getSource();
-        endingSquare.getChildren().add(draggedPiece);
-        endingSquare.setCursor(Cursor.HAND);
-        tempEndingSquareStyle = endingSquare.getStyle().split(";")[0];
+        // Gets the square that the piece was dropped off
+        endingSquare = (Square) event.getSource();
 
-        //BoardController.all_pieces_bitboard += 1L << (GridPane.getRowIndex(endingSquare) * 8L + GridPane.getColumnIndex(endingSquare));
-        //BoardController.all_pieces_bitboard -= 1L << (GridPane.getRowIndex(startingSquare) * 8L + GridPane.getColumnIndex(startingSquare));
-
-        //TwoBoardsController.instance.test();
-
+        // Adds the piece to ending square and makes it visible again
+        endingSquare.setCurrentPiece(draggedPiece);
         draggedPiece.setVisible(true);
 
-        if (previousStartingSquare != null && previousEndingSquare != null) {
-            previousStartingSquare.setStyle(previousStartingSquareStyle);
-            previousEndingSquare.setStyle(previousEndingSquareStyle);
-        }
+        // Makes the ending square hoverable
+        endingSquare.setCursor(Cursor.HAND);
 
+        // Adds move sound
         AudioClip clickSound = new AudioClip(ChessApplication.class.getResource("Sounds/move-self.mp3").toString());
         clickSound.play();
 
+        // Resets previous selected colours
+        if (previousStartingSquare != null && previousEndingSquare != null) {
+            previousStartingSquare.colour("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            previousEndingSquare.colour("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+        }
+
+        // Doesn't go to dragDone without it
         event.setDropCompleted(true);
+
         event.consume();
+
+        long allPiecesBitboard = board.getAllPiecesBitboard();
+        allPiecesBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
+        allPiecesBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
+        board.setAllPiecesBitboard(allPiecesBitboard);
+
+        ViewManager.instance.callBitboardVisualization();
     }
 
 
+    // Triggers when exiting a square while dragging or after dropping a piece
     public void dragExit(DragEvent event) {
-        if (hoveredSquare != endingSquare) {
-            hoveredSquare.setStyle(previousHoveredSquareStyle);
+        Square hoveredSquare = (Square) event.getSource();
+
+        // If exiting the starting square while dragging, goes back to the selected colour (removes the border)
+        if (hoveredSquare == startingSquare) {
+            startingSquare.colour("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+
         }
 
-        else {
-            if (previousHoveredSquareStyle.equals("-fx-background-color: #ebecd0")) {
-                hoveredSquare.setStyle("-fx-background-color: #f5f682");
-            }
+        // If exiting a square while dragging, goes back to the default colour (removes the border)
+        else if (hoveredSquare != endingSquare) {
+            hoveredSquare.colour("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+        }
 
-            else {
-                hoveredSquare.setStyle("-fx-background-color: #b9ca43");
-            }
+        // If dropping a piece, and the ending square is a light square give it a light selected colour, else a dark one
+        else {
+            hoveredSquare.colour("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
         }
 
         event.consume();
     }
 
 
+    // Final stage of a drag operation
     public void dragDone(DragEvent event) {
+        Square startingSquare = (Square) event.getSource();
+
+        // If drag completed, remove the hover effect and save variables for later
         if (event.getTransferMode() == TransferMode.MOVE) {
             startingSquare.setCursor(Cursor.DEFAULT);
 
             previousStartingSquare = startingSquare;
-            previousStartingSquareStyle = tempStartingSquareStyle;
             previousEndingSquare = endingSquare;
-            previousEndingSquareStyle = tempEndingSquareStyle;
-
-            failedStartingSquare = null;
-            failedStartingSquareStyle = null;
-            endingSquare = null;
         }
 
+        // If drag failed, drop in the starting square or drop out of bounds, make the piece visible again and save
+        // variables for later
         else {
             draggedPiece.setVisible(true);
 
             failedStartingSquare = startingSquare;
-            failedStartingSquareStyle = tempStartingSquareStyle;
         }
 
         event.consume();

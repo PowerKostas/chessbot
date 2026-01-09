@@ -1,21 +1,20 @@
 package com.chessbot.Objects;
 
-import com.chessbot.BoardUtils.DragMove;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
-// This class extends the JavaFX StackPane class, it has 3 possible children, number coords, letter cords and
-// ImageView piece, used for the JavaFX board. I added some attributes for easier calculations.
+// This class extends the JavaFX StackPane class, it has 3 possible children, number coord, letter coord and
+// Piece piece, used for the JavaFX board. I added some attributes for easier calculations.
 public class Square extends StackPane {
-    private int row;
-    private int col;
+    private final int row;
+    private final int col;
     private Piece currentPiece;
 
 
-    public Square(int row, int col, DragMove dragMove) {
+    public Square(int row, int col) {
         this.row = row;
         this.col = col;
 
@@ -65,31 +64,6 @@ public class Square extends StackPane {
 
             this.getChildren().add(number);
         }
-
-        // Makes every square draggable/clickable, more info on the specific classes
-        this.setOnDragDetected(event -> {
-            dragMove.dragDetected(event);
-        });
-
-        this.setOnDragOver(event -> {
-            dragMove.drag(event);
-        });
-
-        this.setOnDragEntered(event -> {
-            dragMove.dragEnter(event);
-        });
-
-        this.setOnDragDropped(event -> {
-            dragMove.dragDropped(event);
-        });
-
-        this.setOnDragExited(event -> {
-            dragMove.dragExit(event);
-        });
-
-        this.setOnDragDone(event -> {
-            dragMove.dragDone(event);
-        });
     }
 
 
@@ -107,7 +81,17 @@ public class Square extends StackPane {
 
     public void setCurrentPiece(Piece currentPiece) {
         this.currentPiece = currentPiece;
+        this.getChildren().add(currentPiece);
+    }
 
-        this.getChildren().add(currentPiece.getPieceImage());
+
+    public void colour(String lightSquareStyle, String darkSquareStyle) {
+        if ((this.row + this.col) % 2 == 0) { // if light square
+            this.setStyle(lightSquareStyle);
+        }
+
+        else { // if dark square
+            this.setStyle(darkSquareStyle);
+        }
     }
 }

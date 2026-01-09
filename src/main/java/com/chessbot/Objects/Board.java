@@ -11,8 +11,6 @@ public class Board extends GridPane {
     // 64 bit variable that each bit represent a piece on the board, used for board representation
     private long allPiecesBitboard;
 
-    private final DragMove dragMove = new DragMove();
-
 
     public Board() {
         // Sets up FXML
@@ -30,10 +28,22 @@ public class Board extends GridPane {
             this.getRowConstraints().add(rowConstraint);
         }
 
+        // One instance of the class for every board
+        DragMove dragMove = new DragMove(this);
+
         // Prepares every custom square class for the JavaFX board
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
-                Square square = new Square(row, col, dragMove);
+                Square square = new Square(row, col);
+
+                // Makes every square draggable/clickable, more info on the specific classes
+                square.setOnDragDetected(dragMove::dragDetected);
+                square.setOnDragOver(dragMove::drag);
+                square.setOnDragEntered(dragMove::dragEnter);
+                square.setOnDragExited(dragMove::dragExit);
+                square.setOnDragDropped(dragMove::dragDropped);
+                square.setOnDragDone(dragMove::dragDone);
+
                 this.add(square, col, row);
             }
         }
@@ -42,6 +52,10 @@ public class Board extends GridPane {
 
     public long getAllPiecesBitboard() {
         return allPiecesBitboard;
+    }
+
+    public void setAllPiecesBitboard(long allPiecesBitboard) {
+        this.allPiecesBitboard = allPiecesBitboard;
     }
 
     public void setBoard(String fenSequence) {
