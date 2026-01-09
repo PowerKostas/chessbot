@@ -12,6 +12,8 @@ public class Square extends StackPane {
     private final int row;
     private final int col;
     private Piece currentPiece;
+    private boolean isSelected = false;
+    private boolean isRightClicked = false;
 
 
     public Square(int row, int col) {
@@ -19,13 +21,7 @@ public class Square extends StackPane {
         this.col = col;
 
         // Adds square colour
-        if ((row + col) % 2 == 0) {
-            this.setStyle("-fx-background-color: #ebecd0");
-        }
-
-        else {
-            this.setStyle("-fx-background-color: #739552");
-        }
+        this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
 
         // Adds number coordinates
         if (col == 0) {
@@ -53,7 +49,9 @@ public class Square extends StackPane {
 
             if (col % 2 == 0) {
                 number.setTextFill(Color.web("#ebecd0"));
-            } else {
+            }
+
+            else {
                 number.setTextFill(Color.web("#739552"));
             }
 
@@ -84,8 +82,24 @@ public class Square extends StackPane {
         this.getChildren().add(currentPiece);
     }
 
+    public Boolean getIsSelected() {
+        return isSelected;
+    }
 
-    public void colour(String lightSquareStyle, String darkSquareStyle) {
+    public void setIsSelected(boolean isSelected) {
+        this.isSelected = isSelected;
+    }
+
+    public Boolean getIsRightClicked() {
+        return isRightClicked;
+    }
+
+    public void setIsRightClicked(boolean isRightClicked) {
+        this.isRightClicked = isRightClicked;
+    }
+
+
+    public void setStyle(String lightSquareStyle, String darkSquareStyle) {
         if ((this.row + this.col) % 2 == 0) { // if light square
             this.setStyle(lightSquareStyle);
         }

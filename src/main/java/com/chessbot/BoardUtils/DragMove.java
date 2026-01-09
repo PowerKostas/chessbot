@@ -41,7 +41,8 @@ public class DragMove {
 
         // Resets selected colour on drag operations that failed
         if (failedStartingSquare != null) {
-            failedStartingSquare.colour("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            failedStartingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            failedStartingSquare.setIsSelected(true);
         }
 
         // Have to do it
@@ -66,7 +67,8 @@ public class DragMove {
         draggedPiece.setVisible(false);
 
         // If it's a light square give it a light selected colour, else a dark one
-        startingSquare.colour("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+        startingSquare.setStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+        startingSquare.setIsSelected(true);
 
         event.consume();
     }
@@ -88,7 +90,7 @@ public class DragMove {
         // Adds a border effect to the square
         Square hoveredSquare = (Square) event.getSource();
 
-        hoveredSquare.colour(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
+        hoveredSquare.setStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
 
         event.consume();
     }
@@ -112,8 +114,10 @@ public class DragMove {
 
         // Resets previous selected colours
         if (previousStartingSquare != null && previousEndingSquare != null) {
-            previousStartingSquare.colour("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
-            previousEndingSquare.colour("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            previousStartingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            previousStartingSquare.setIsSelected(false);
+            previousEndingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            previousEndingSquare.setIsSelected(false);
         }
 
         // Doesn't go to dragDone without it
@@ -121,10 +125,14 @@ public class DragMove {
 
         event.consume();
 
-        long allPiecesBitboard = board.getAllPiecesBitboard();
-        allPiecesBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
-        allPiecesBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
-        board.setAllPiecesBitboard(allPiecesBitboard);
+        int bitboardIndex = 6 * draggedPiece.getColour() + draggedPiece.getPieceType(); // See Board bitboards to understand
+        long bitboard = board.getBitboard(bitboardIndex);
+
+        // Adds an 1 to the 64 bit long variable, the 1 is in the position of the piece
+        // eg, piece in the 3rd row and 4th column = bit 27
+        bitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
+        bitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
+        board.setBitboard(bitboardIndex, bitboard);
 
         ViewManager.instance.callBitboardVisualization();
     }
@@ -136,18 +144,20 @@ public class DragMove {
 
         // If exiting the starting square while dragging, goes back to the selected colour (removes the border)
         if (hoveredSquare == startingSquare) {
-            startingSquare.colour("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+            startingSquare.setStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+            startingSquare.setIsSelected(true);
 
         }
 
         // If exiting a square while dragging, goes back to the default colour (removes the border)
         else if (hoveredSquare != endingSquare) {
-            hoveredSquare.colour("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            hoveredSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
         }
 
         // If dropping a piece, and the ending square is a light square give it a light selected colour, else a dark one
         else {
-            hoveredSquare.colour("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+            hoveredSquare.setStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+            hoveredSquare.setIsSelected(true);
         }
 
         event.consume();

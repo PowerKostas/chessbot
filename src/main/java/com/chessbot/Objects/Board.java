@@ -1,5 +1,6 @@
 package com.chessbot.Objects;
 
+import com.chessbot.BoardUtils.RightClick;
 import com.chessbot.BoardUtils.DragMove;
 import com.chessbot.BoardUtils.FenReader;
 import javafx.scene.layout.ColumnConstraints;
@@ -8,8 +9,9 @@ import javafx.scene.layout.RowConstraints;
 
 // Board class that is used to represent the board in JavaFX and the board state
 public class Board extends GridPane {
-    // 64 bit variable that each bit represent a piece on the board, used for board representation
-    private long allPiecesBitboard;
+    // 12 64 bit variables, one for each piece colour and piece type, indexing: Piece colour * 6 + Piece pieceType, that
+    // each bit represents a piece on the board, used for board representation
+    private final long[] bitboards = new long[12];
 
 
     public Board() {
@@ -28,8 +30,9 @@ public class Board extends GridPane {
             this.getRowConstraints().add(rowConstraint);
         }
 
-        // One instance of the class for every board
+        // One instance of the classes for every board
         DragMove dragMove = new DragMove(this);
+        RightClick rightClick = new RightClick();
 
         // Prepares every custom square class for the JavaFX board
         for (int row = 0; row < 8; row += 1) {
@@ -44,31 +47,34 @@ public class Board extends GridPane {
                 square.setOnDragDropped(dragMove::dragDropped);
                 square.setOnDragDone(dragMove::dragDone);
 
+                square.setOnMouseClicked(rightClick::click);
+
                 this.add(square, col, row);
             }
         }
     }
 
 
-    public long getAllPiecesBitboard() {
-        return allPiecesBitboard;
+    public long getBitboard(int index) {
+        return bitboards[index];
     }
 
-    public void setAllPiecesBitboard(long allPiecesBitboard) {
-        this.allPiecesBitboard = allPiecesBitboard;
+    public void setBitboard(int index, long bitboard) {
+        this.bitboards[index] = bitboard;
     }
+
 
     public void setBoard(String fenSequence) {
-        allPiecesBitboard = FenReader.build(fenSequence, this);
+        FenReader.build(fenSequence, this);
     }
 
 
-    public void bitboardVisualization(long allPiecesBitboard) {
+    public void bitboardVisualization(long bitboard) {
         for (int i = 0; i < 64; i += 1) {
             Square square = (Square) this.getChildren().get(i);
 
             long mask = 1L << i;
-            if ((allPiecesBitboard & mask) != 0) {
+            if ((bitboard & mask) != 0) {
                 square.setStyle("-fx-background-color: red");
             } else {
                 if ((square.getRow() + square.getCol()) % 2 == 0) {

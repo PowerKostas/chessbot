@@ -1,16 +1,17 @@
 package com.chessbot.BoardUtils;
 
+import com.chessbot.Objects.Board;
 import com.chessbot.Objects.Piece;
 import com.chessbot.Objects.Square;
 import javafx.scene.Cursor;
-import javafx.scene.layout.GridPane;
 
 // Reads a FEN sequence and places the pieces in the JavaFX board, also returns the updated bitboards
 public class FenReader {
-    public static long build(String sequence, GridPane board) {
-        long allPiecesBitboard = 0;
+    public static void build(String sequence, Board board) {
         int col_num = 0;
         int row_num = 0;
+        int bitboardIndex;
+        long bitboard;
 
         // Example: First part of the starting FEN looks like this rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
         // A lowercase letter represents a black piece, an uppercase letter represents a white piece
@@ -24,9 +25,13 @@ public class FenReader {
                 square.setCurrentPiece(piece);
                 square.setCursor(Cursor.HAND);
 
+                bitboardIndex = 6 * piece.getColour() + piece.getPieceType(); // See Board bitboards to understand
+                bitboard = board.getBitboard(bitboardIndex);
+
                 // Adds an 1 to the 64 bit long variable, the 1 is in the position of the piece
                 // eg, piece in the 3rd row and 4th column = bit 27
-                allPiecesBitboard += 1L << (row_num * 8 + col_num);
+                bitboard += 1L << (row_num * 8 + col_num);
+                board.setBitboard(bitboardIndex, bitboard);
 
                 col_num += 1;
             }
@@ -40,7 +45,5 @@ public class FenReader {
                 row_num += 1;
             }
         }
-
-        return allPiecesBitboard;
     }
 }
