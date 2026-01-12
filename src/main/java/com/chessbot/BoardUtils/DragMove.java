@@ -4,7 +4,6 @@ import com.chessbot.ChessApplication;
 import com.chessbot.Objects.Board;
 import com.chessbot.Objects.Piece;
 import com.chessbot.Objects.Square;
-import com.chessbot.ViewManager;
 import javafx.scene.Cursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.image.Image;
@@ -98,51 +97,55 @@ public class DragMove {
 
     // Triggers when letting off the drag operation
     public void dragDropped(DragEvent event) {
-        // Gets the square that the piece was dropped off
-        endingSquare = (Square) event.getSource();
+        if (board.getTurn() == draggedPiece.getColour()) { // If dragged piece colour matches the turn
+            board.setTurn(board.getTurn() ^ 1);
 
-        // Adds the piece to ending square and makes it visible again
-        endingSquare.setCurrentPiece(draggedPiece);
-        draggedPiece.setVisible(true);
+            // Gets the square that the piece was dropped off
+            endingSquare = (Square) event.getSource();
 
-        // Makes the ending square hoverable
-        endingSquare.setCursor(Cursor.HAND);
+            // Adds the piece to ending square and makes it visible again
+            endingSquare.setCurrentPiece(draggedPiece);
+            draggedPiece.setVisible(true);
 
-        // Adds move sound
-        AudioClip clickSound = new AudioClip(ChessApplication.class.getResource("Sounds/move-self.mp3").toString());
-        clickSound.play();
+            // Makes the ending square hoverable
+            endingSquare.setCursor(Cursor.HAND);
 
-        // Resets previous selected colours
-        if (previousStartingSquare != null && previousEndingSquare != null) {
-            previousStartingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
-            previousStartingSquare.setIsSelected(false);
-            previousEndingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
-            previousEndingSquare.setIsSelected(false);
+            // Adds move sound
+            AudioClip clickSound = new AudioClip(ChessApplication.class.getResource("Sounds/move-self.mp3").toString());
+            clickSound.play();
+
+            // Resets previous selected colours
+            if (previousStartingSquare != null && previousEndingSquare != null) {
+                previousStartingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+                previousStartingSquare.setIsSelected(false);
+                previousEndingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+                previousEndingSquare.setIsSelected(false);
+            }
+
+            // Doesn't go to dragDone without it
+            event.setDropCompleted(true);
+
+            event.consume();
+
+            // For the bitboards, colour/piece type, colour, all, adds an 1 to the 64 bit long variable, the 1 is in the
+            // position of the piece, eg, piece in the 3rd row and 4th column = bit 27
+            long bitboard = board.getBitboard(draggedPiece.getColour(), draggedPiece.getPieceType());
+            bitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
+            bitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
+            board.setBitboard(draggedPiece.getColour(), draggedPiece.getPieceType(), bitboard);
+
+            long colourBitboard = board.getOtherBitboard(draggedPiece.getColour());
+            colourBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
+            colourBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
+            board.setOtherBitboard(draggedPiece.getColour(), colourBitboard);
+
+            long allBitboard = board.getOtherBitboard(2);
+            allBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
+            allBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
+            board.setOtherBitboard(2, allBitboard);
+
+            board.generatePseudoLegalMoves();
         }
-
-        // Doesn't go to dragDone without it
-        event.setDropCompleted(true);
-
-        event.consume();
-
-        // For the bitboards, colour/piece type, colour, all, adds an 1 to the 64 bit long variable, the 1 is in the
-        // position of the piece, eg, piece in the 3rd row and 4th column = bit 27
-        long bitboard = board.getBitboard(draggedPiece.getColour(), draggedPiece.getPieceType());
-        bitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
-        bitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
-        board.setBitboard(draggedPiece.getColour(), draggedPiece.getPieceType(), bitboard);
-
-        long colourBitboard = board.getOtherBitboard(draggedPiece.getColour());
-        colourBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
-        colourBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
-        board.setOtherBitboard(draggedPiece.getColour(), colourBitboard);
-
-        long allBitboard = board.getOtherBitboard(2);
-        allBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
-        allBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
-        board.setOtherBitboard(2, allBitboard);
-
-        ViewManager.instance.callBitboardVisualization();
     }
 
 

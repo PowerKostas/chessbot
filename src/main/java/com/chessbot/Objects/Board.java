@@ -3,12 +3,17 @@ package com.chessbot.Objects;
 import com.chessbot.BoardUtils.RightClick;
 import com.chessbot.BoardUtils.DragMove;
 import com.chessbot.BoardUtils.FenReader;
+import com.chessbot.Objects.Pieces.Knight;
+import com.chessbot.ViewManager;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 
 // Board class that is used to represent the board in JavaFX and the board state
 public class Board extends GridPane {
+    // 0 = White, 1 = Black
+    private int turn = 0;
+
     // 12 64 bit variables, one for each piece colour and piece type, first dimension is the Piece colour and second
     // dimension is the Piece type, each bit represents a piece on the board, used for board representation
     private final long[][] bitboards = new long[2][6];
@@ -16,8 +21,10 @@ public class Board extends GridPane {
     // 0 = White bitboard, 1 = Black bitboard, 2 = All bitboard
     private final long[] otherBitboards = new long [3];
 
+    private long allPseudoLegalMovesBitboard = 0;
 
-    public Board() {
+
+    public Board(String fenSequence) {
         // Sets up FXML
         this.setPrefSize(700, 700);
 
@@ -55,6 +62,9 @@ public class Board extends GridPane {
                 this.add(square, col, row);
             }
         }
+
+        // Sets pieces on the board
+        FenReader.build(fenSequence, this);
     }
 
 
@@ -74,26 +84,20 @@ public class Board extends GridPane {
         this.otherBitboards[index] = bitboard;
     }
 
+    public int getTurn() {
+        return turn;
+    }
 
-    public void setBoard(String fenSequence) {
-        FenReader.build(fenSequence, this);
+    public void setTurn(int turn) {
+        this.turn = turn;
     }
 
 
-    public void bitboardVisualization(long bitboard) {
-        for (int i = 0; i < 64; i += 1) {
-            Square square = (Square) this.getChildren().get(i);
-
-            long mask = 1L << i;
-            if ((bitboard & mask) != 0) {
-                square.setStyle("-fx-background-color: red");
-            } else {
-                if ((square.getRow() + square.getCol()) % 2 == 0) {
-                    square.setStyle("-fx-background-color: #ebecd0");
-                } else {
-                    square.setStyle("-fx-background-color: #739552");
-                }
-            }
-        }
+    // Pseudo legal moves are legal moves that don't check if their king is in check after they are played, the program
+    // first generates pseudo legal moves to instantly get legal moves after
+    public void generatePseudoLegalMoves() {
+        allPseudoLegalMovesBitboard = 0;
+        allPseudoLegalMovesBitboard |= Knight.pseudoLegalMoves(getBitboard(0, 2), getOtherBitboard(0));
+        ViewManager.instance.bitboardVisualization(allPseudoLegalMovesBitboard);
     }
 }

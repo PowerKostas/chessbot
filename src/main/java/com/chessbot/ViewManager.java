@@ -1,9 +1,11 @@
 package com.chessbot;
 
 import com.chessbot.Objects.Board;
+import com.chessbot.Objects.Square;
 import javafx.fxml.FXML;
 import javafx.scene.layout.HBox;
 
+// This class runs after the view.fxml is loaded from ChessApplication
 public class ViewManager {
     @FXML
     private HBox mainContainer;
@@ -18,17 +20,30 @@ public class ViewManager {
     public void initialize() {
         instance = this;
 
-        boardOne = new Board();
-        boardTwo = new Board();
+        boardTwo = new Board("8/8/8/8/8/8/8/8");
+        boardOne = new Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
         mainContainer.getChildren().addAll(boardOne, boardTwo);
-
-        boardOne.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-        boardTwo.setBoard("8/8/8/8/8/8/8/8");
-        callBitboardVisualization();
     }
 
 
-    public void callBitboardVisualization() {
-        boardTwo.bitboardVisualization(boardOne.getOtherBitboard(2));
+    public void bitboardVisualization(long bitboard) {
+        if (boardTwo == null) {
+            return;
+        }
+
+        for (int i = 0; i < 64; i += 1) {
+            Square square = (Square) boardTwo.getChildren().get(i);
+
+            long mask = 1L << i;
+            if ((bitboard & mask) != 0) {
+                square.setStyle("-fx-background-color: red");
+            } else {
+                if ((square.getRow() + square.getCol()) % 2 == 0) {
+                    square.setStyle("-fx-background-color: #ebecd0");
+                } else {
+                    square.setStyle("-fx-background-color: #739552");
+                }
+            }
+        }
     }
 }

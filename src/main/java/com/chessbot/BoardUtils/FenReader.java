@@ -29,15 +29,15 @@ public class FenReader {
                 // For the bitboards, colour/piece type, colour, all, adds an 1 to the 64 bit long variable, the 1 is in the
                 // position of the piece, eg, piece in the 3rd row and 4th column = bit 27
                 bitboard = board.getBitboard(piece.getColour(), piece.getPieceType());
-                bitboard += 1L << (row_num * 8 + col_num);
+                bitboard |= 1L << (row_num * 8 + col_num);
                 board.setBitboard(piece.getColour(), piece.getPieceType(), bitboard);
 
                 colourBitboard = board.getOtherBitboard(piece.getColour());
-                colourBitboard += 1L << (row_num * 8 + col_num);
+                colourBitboard |= 1L << (row_num * 8 + col_num);
                 board.setOtherBitboard(piece.getColour(), colourBitboard);
 
                 allBitboard = board.getOtherBitboard(2);
-                allBitboard += 1L << (row_num * 8 + col_num);
+                allBitboard |= 1L << (row_num * 8 + col_num);
                 board.setOtherBitboard(2, allBitboard);
 
                 col_num += 1;
@@ -52,5 +52,7 @@ public class FenReader {
                 row_num += 1;
             }
         }
+
+        board.generatePseudoLegalMoves();
     }
 }

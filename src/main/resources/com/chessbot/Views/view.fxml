@@ -2,5 +2,5 @@
 
 <?import javafx.scene.layout.HBox?>
 
-<HBox fx:id="mainContainer" spacing="20" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25"  fx:controller="com.chessbot.ViewManager">
+<HBox fx:id="mainContainer" spacing="20" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="com.chessbot.ViewManager">
 </HBox>
