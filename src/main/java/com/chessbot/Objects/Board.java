@@ -9,9 +9,12 @@ import javafx.scene.layout.RowConstraints;
 
 // Board class that is used to represent the board in JavaFX and the board state
 public class Board extends GridPane {
-    // 12 64 bit variables, one for each piece colour and piece type, indexing: Piece colour * 6 + Piece pieceType, that
-    // each bit represents a piece on the board, used for board representation
-    private final long[] bitboards = new long[12];
+    // 12 64 bit variables, one for each piece colour and piece type, first dimension is the Piece colour and second
+    // dimension is the Piece type, each bit represents a piece on the board, used for board representation
+    private final long[][] bitboards = new long[2][6];
+
+    // 0 = White bitboard, 1 = Black bitboard, 2 = All bitboard
+    private final long[] otherBitboards = new long [3];
 
 
     public Board() {
@@ -55,12 +58,20 @@ public class Board extends GridPane {
     }
 
 
-    public long getBitboard(int index) {
-        return bitboards[index];
+    public long getBitboard(int colour, int pieceType) {
+        return bitboards[colour][pieceType];
     }
 
-    public void setBitboard(int index, long bitboard) {
-        this.bitboards[index] = bitboard;
+    public void setBitboard(int colour, int pieceType, long bitboard) {
+        this.bitboards[colour][pieceType] = bitboard;
+    }
+
+    public long getOtherBitboard(int index) {
+        return otherBitboards[index];
+    }
+
+    public void setOtherBitboard(int index, long bitboard) {
+        this.otherBitboards[index] = bitboard;
     }
 
 

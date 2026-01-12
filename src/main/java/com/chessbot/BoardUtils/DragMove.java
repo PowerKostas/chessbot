@@ -125,14 +125,22 @@ public class DragMove {
 
         event.consume();
 
-        int bitboardIndex = 6 * draggedPiece.getColour() + draggedPiece.getPieceType(); // See Board bitboards to understand
-        long bitboard = board.getBitboard(bitboardIndex);
-
-        // Adds an 1 to the 64 bit long variable, the 1 is in the position of the piece
-        // eg, piece in the 3rd row and 4th column = bit 27
+        // For the bitboards, colour/piece type, colour, all, adds an 1 to the 64 bit long variable, the 1 is in the
+        // position of the piece, eg, piece in the 3rd row and 4th column = bit 27
+        long bitboard = board.getBitboard(draggedPiece.getColour(), draggedPiece.getPieceType());
         bitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
         bitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
-        board.setBitboard(bitboardIndex, bitboard);
+        board.setBitboard(draggedPiece.getColour(), draggedPiece.getPieceType(), bitboard);
+
+        long colourBitboard = board.getOtherBitboard(draggedPiece.getColour());
+        colourBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
+        colourBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
+        board.setOtherBitboard(draggedPiece.getColour(), colourBitboard);
+
+        long allBitboard = board.getOtherBitboard(2);
+        allBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
+        allBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
+        board.setOtherBitboard(2, allBitboard);
 
         ViewManager.instance.callBitboardVisualization();
     }
