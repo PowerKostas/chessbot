@@ -20,13 +20,16 @@ public class ViewManager {
     public void initialize() {
         instance = this;
 
-        boardTwo = new Board("8/8/8/8/8/8/8/8");
-        boardOne = new Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+        boardTwo = new Board(1, "8/8/8/8/8/8/8/8");
+        boardOne = new Board(1, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+
         mainContainer.getChildren().addAll(boardOne, boardTwo);
     }
 
 
     public void bitboardVisualization(long bitboard) {
+        bitboard = Long.reverseBytes(bitboard);
+
         if (boardTwo == null) {
             return;
         }

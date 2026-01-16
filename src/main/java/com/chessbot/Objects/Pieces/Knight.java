@@ -3,8 +3,8 @@ package com.chessbot.Objects.Pieces;
 import com.chessbot.Objects.Piece;
 
 public class Knight extends Piece {
-    public Knight(int colour) {
-        super(colour, 2);
+    public Knight(int colour, boolean reverse) {
+        super(colour, 2, reverse);
     }
 
 
@@ -23,7 +23,7 @@ public class Knight extends Piece {
         long attacks = (west1 << 15) | (west1 >> 17) |
                        (west2 << 6)  | (west2 >> 10) |
                        (east1 << 17) | (east1 >> 15) |
-                       (east2 << 10) | (east2 >>> 6);
+                       (east2 << 10) | (east2 >> 6);
 
         return attacks & ~ownPiecesBitboard;
     }

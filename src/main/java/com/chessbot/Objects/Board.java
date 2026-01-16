@@ -4,6 +4,7 @@ import com.chessbot.BoardUtils.RightClick;
 import com.chessbot.BoardUtils.DragMove;
 import com.chessbot.BoardUtils.FenReader;
 import com.chessbot.Objects.Pieces.Knight;
+import com.chessbot.Objects.Pieces.Pawn;
 import com.chessbot.ViewManager;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -11,6 +12,10 @@ import javafx.scene.layout.RowConstraints;
 
 // Board class that is used to represent the board in JavaFX and the board state
 public class Board extends GridPane {
+    // 0 = White, 1 = Black. In the representation board the first square is a1, in the visual board the first square
+    // is h8, if the player is black the first squares remain the same, but the visual board is flipped
+    private final int playerColour;
+
     // 0 = White, 1 = Black
     private int turn = 0;
 
@@ -24,7 +29,9 @@ public class Board extends GridPane {
     private long allPseudoLegalMovesBitboard = 0;
 
 
-    public Board(String fenSequence) {
+    public Board(int playerColour, String fen) {
+        this.playerColour = playerColour;
+
         // Sets up FXML
         this.setPrefSize(700, 700);
 
@@ -47,7 +54,7 @@ public class Board extends GridPane {
         // Prepares every custom square class for the JavaFX board
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
-                Square square = new Square(row, col);
+                Square square = new Square(row, col, this);
 
                 // Makes every square draggable/clickable, more info on the specific classes
                 square.setOnDragDetected(dragMove::dragDetected);
@@ -64,9 +71,26 @@ public class Board extends GridPane {
         }
 
         // Sets pieces on the board
-        FenReader.build(fenSequence, this);
+        FenReader.build(fen, this);
+
+        // If the player is black, reverse the board
+        if (playerColour == 1) {
+            this.setRotate(180);
+        }
     }
 
+
+    public int getPlayerColour() {
+        return playerColour;
+    }
+
+    public int getTurn() {
+        return turn;
+    }
+
+    public void setTurn(int turn) {
+        this.turn = turn;
+    }
 
     public long getBitboard(int colour, int pieceType) {
         return bitboards[colour][pieceType];
@@ -84,20 +108,17 @@ public class Board extends GridPane {
         this.otherBitboards[index] = bitboard;
     }
 
-    public int getTurn() {
-        return turn;
-    }
-
-    public void setTurn(int turn) {
-        this.turn = turn;
-    }
-
 
     // Pseudo legal moves are legal moves that don't check if their king is in check after they are played, the program
-    // first generates pseudo legal moves to instantly get legal moves after
-    public void generatePseudoLegalMoves() {
+    // first generates pseudo legal moves to instantly get legal moves after. pseudoLegalMoves methods are static because
+    // they concern all the knights, for example, not a single knight object
+    public void generateOpponentPseudoLegalMoves(int opponentColour) {
+        // Resets each turn
         allPseudoLegalMovesBitboard = 0;
-        allPseudoLegalMovesBitboard |= Knight.pseudoLegalMoves(getBitboard(0, 2), getOtherBitboard(0));
+
+        allPseudoLegalMovesBitboard |= Pawn.pseudoLegalMoves[opponentColour].generate(getBitboard(opponentColour, 1), getOtherBitboard(2), getOtherBitboard(opponentColour ^ 1));
+        //allPseudoLegalMovesBitboard |= Knight.pseudoLegalMoves(getBitboard(opponentColour, 2), getOtherBitboard(opponentColour));
+
         ViewManager.instance.bitboardVisualization(allPseudoLegalMovesBitboard);
     }
 }

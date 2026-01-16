@@ -4,6 +4,7 @@ import com.chessbot.ChessApplication;
 import com.chessbot.Objects.Board;
 import com.chessbot.Objects.Piece;
 import com.chessbot.Objects.Square;
+import com.chessbot.PieceUtils.UpdateBitboards;
 import javafx.scene.Cursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.image.Image;
@@ -53,8 +54,14 @@ public class DragMove {
         // Sets the dragged piece background colour to transparent
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
+
+        // The dragged piece might be reversed, if the player is black, so we set its rotation to 0 and after the snapshot
+        // has been taken, put the original rotation back
         draggedPiece = startingSquare.getCurrentPiece();
+        double originalRotation = draggedPiece.getRotate();
+        draggedPiece.setRotate(0);
         Image pieceImage = draggedPiece.snapshot(params, null);
+        draggedPiece.setRotate(originalRotation);
 
         // Sets the mouse to the middle of the dragged piece
         db.setDragView(pieceImage);
@@ -127,24 +134,11 @@ public class DragMove {
 
             event.consume();
 
-            // For the bitboards, colour/piece type, colour, all, adds an 1 to the 64 bit long variable, the 1 is in the
-            // position of the piece, eg, piece in the 3rd row and 4th column = bit 27
-            long bitboard = board.getBitboard(draggedPiece.getColour(), draggedPiece.getPieceType());
-            bitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
-            bitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
-            board.setBitboard(draggedPiece.getColour(), draggedPiece.getPieceType(), bitboard);
+            // Have to reverse back the bitboard square indexes because the JavaFX bitboard is reversed (starts from the top left, instead of the bottom left)
+            UpdateBitboards.start(board, draggedPiece.getColour(), draggedPiece.getPieceType(), (7 - startingSquare.getRow()) * 8 + startingSquare.getCol(), (7 - endingSquare.getRow()) * 8 + endingSquare.getCol());
 
-            long colourBitboard = board.getOtherBitboard(draggedPiece.getColour());
-            colourBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
-            colourBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
-            board.setOtherBitboard(draggedPiece.getColour(), colourBitboard);
-
-            long allBitboard = board.getOtherBitboard(2);
-            allBitboard += 1L << (endingSquare.getRow() * 8L + endingSquare.getCol());
-            allBitboard -= 1L << (startingSquare.getRow() * 8L + startingSquare.getCol());
-            board.setOtherBitboard(2, allBitboard);
-
-            board.generatePseudoLegalMoves();
+            // After the piece is dropped, the current piece colour is the opponent
+            board.generateOpponentPseudoLegalMoves(draggedPiece.getColour());
         }
     }
 

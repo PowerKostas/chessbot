@@ -10,7 +10,7 @@ public abstract class Piece extends ImageView {
     protected int pieceType; // King = 0, Pawn = 1, Knight = 2, Bishop = 3, Rook = 4, Queen = 5
 
 
-    public Piece (int colour, int pieceType) {
+    public Piece (int colour, int pieceType, boolean reverse) {
         this.colour = colour;
         this.pieceType = pieceType;
 
@@ -23,6 +23,11 @@ public abstract class Piece extends ImageView {
         this.setImage(image);
         this.setFitWidth(75);
         this.setFitHeight(75);
+
+        // If the player is black, reverse the piece image
+        if (reverse) {
+            this.setRotate(180);
+        }
     }
 
 
@@ -36,17 +41,17 @@ public abstract class Piece extends ImageView {
 
 
     // Creates a custom class piece from the FEN letter
-    public static Piece pieceFromFen(char fenChar) {
+    public static Piece pieceFromFen(char fenChar, boolean reverse) {
         int colour = Character.isUpperCase(fenChar) ? 0 : 1; // 0 for white, 1 for black
         char pieceType = Character.toLowerCase(fenChar);
 
         return switch (pieceType) {
-            case 'k' -> new King(colour);
-            case 'p' -> new Pawn(colour);
-            case 'n' -> new Knight(colour);
-            case 'b' -> new Bishop(colour);
-            case 'r' -> new Rook(colour);
-            case 'q' -> new Queen(colour);
+            case 'k' -> new King(colour, reverse);
+            case 'p' -> new Pawn(colour, reverse);
+            case 'n' -> new Knight(colour, reverse);
+            case 'b' -> new Bishop(colour, reverse);
+            case 'r' -> new Rook(colour, reverse);
+            case 'q' -> new Queen(colour, reverse);
             default -> throw new IllegalArgumentException("Unknown piece: " + fenChar);
         };
     }

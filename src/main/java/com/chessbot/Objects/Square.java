@@ -16,18 +16,19 @@ public class Square extends StackPane {
     private boolean isRightClicked = false;
 
 
-    public Square(int row, int col) {
+    public Square(int row, int col, Board board) {
         this.row = row;
         this.col = col;
 
         // Adds square colour
         this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
 
-        // Adds number coordinates
-        if (col == 0) {
+        // If the player is white, put the letters at the left column, if the player is black (board will be reversed)
+        // put the letters in the right column
+        if ((board.getPlayerColour() == 0 && col == 0) || (board.getPlayerColour() == 1 && col == 7)) {
             Label number = new Label();
 
-            if (row % 2 == 0) {
+            if ((row + col) % 2 == 0) {
                 number.setTextFill(Color.web("#739552"));
             }
 
@@ -40,27 +41,51 @@ public class Square extends StackPane {
             StackPane.setAlignment(number, Pos.TOP_LEFT);
             StackPane.setMargin(number, new Insets(0, 0, 0, 4));
 
-            this.getChildren().add(number);
-        }
-
-        // Adds letter coordinates
-        if (row == 7) {
-            Label number = new Label();
-
-            if (col % 2 == 0) {
-                number.setTextFill(Color.web("#ebecd0"));
+            // If the player is black, reverse the numbers
+            if (board.getPlayerColour() == 1) {
+                number.setRotate(180);
+                StackPane.setAlignment(number, Pos.BOTTOM_RIGHT);
+                StackPane.setMargin(number, new Insets(0, 4, 0, 0));
             }
 
             else {
-                number.setTextFill(Color.web("#739552"));
+                StackPane.setAlignment(number, Pos.TOP_LEFT);
+                StackPane.setMargin(number, new Insets(0, 0, 0, 4));
             }
 
-            number.setText(String.valueOf((char) ('a' + col)));
-            number.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
-            StackPane.setAlignment(number, Pos.BOTTOM_RIGHT);
-            StackPane.setMargin(number, new Insets(0, 4, 0, 0));
-
             this.getChildren().add(number);
+        }
+
+        // If the player is white, put the letters at the bottom row, if the player is black (board will be reversed)
+        // put the letters in the top row
+        if ((board.getPlayerColour() == 0 && row == 7) || (board.getPlayerColour() == 1 && row == 0)) {
+            Label letter = new Label();
+
+            if ((row + col) % 2 == 0) {
+                letter.setTextFill(Color.web("#739552"));
+            }
+
+            else {
+                letter.setTextFill(Color.web("#ebecd0"));
+            }
+
+
+            letter.setText(String.valueOf((char) ('a' + col)));
+            letter.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
+
+            // If the player is black, reverse the letters
+            if (board.getPlayerColour() == 1) {
+                letter.setRotate(180);
+                StackPane.setAlignment(letter, Pos.TOP_LEFT);
+                StackPane.setMargin(letter, new Insets(0, 0, 0, 4));
+            }
+
+            else {
+                StackPane.setAlignment(letter, Pos.BOTTOM_RIGHT);
+                StackPane.setMargin(letter, new Insets(0, 4, 0, 0));
+            }
+
+            this.getChildren().add(letter);
         }
     }
 
