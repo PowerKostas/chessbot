@@ -3,7 +3,6 @@ package com.chessbot.BoardUtils;
 import com.chessbot.Objects.Board;
 import com.chessbot.Objects.Piece;
 import com.chessbot.Objects.Square;
-import com.chessbot.PieceUtils.UpdateBitboards;
 import javafx.scene.Cursor;
 
 // Reads a FEN sequence and places the pieces in the JavaFX board, also updates the bitboards

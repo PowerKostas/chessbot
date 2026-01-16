@@ -4,7 +4,6 @@ import com.chessbot.ChessApplication;
 import com.chessbot.Objects.Board;
 import com.chessbot.Objects.Piece;
 import com.chessbot.Objects.Square;
-import com.chessbot.PieceUtils.UpdateBitboards;
 import javafx.scene.Cursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.image.Image;
