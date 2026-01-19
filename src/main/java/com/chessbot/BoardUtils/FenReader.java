@@ -32,7 +32,7 @@ public class FenReader {
                 square.setCursor(Cursor.HAND);
 
                 // Have to reverse back the bitboard square indexes because the JavaFX bitboard is reversed (starts from the top left, instead of the bottom left)
-                UpdateBitboards.start(board, piece.getColour(), piece.getPieceType(), -1, (7 - row_num) * 8 + col_num);
+                SetBitboards.start(board, piece.getColour(), piece.getPieceType(), (7 - row_num) * 8 + col_num);
 
                 col_num += 1;
             }

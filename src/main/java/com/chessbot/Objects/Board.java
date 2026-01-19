@@ -28,6 +28,9 @@ public class Board extends GridPane {
 
     private long allPseudoLegalMovesBitboard = 0;
 
+    // 1 for the square than an en passant capture can happen, 0 for everything else
+    private long enPassantSquareBitboard = 0;
+
 
     public Board(int playerColour, String fen) {
         this.playerColour = playerColour;
@@ -108,6 +111,10 @@ public class Board extends GridPane {
         this.otherBitboards[index] = bitboard;
     }
 
+    public void setEnPassantSquareBitboard(long enPassantSquareBitboard) {
+        this.enPassantSquareBitboard = enPassantSquareBitboard;
+    }
+
 
     // Pseudo legal moves are legal moves that don't check if their king is in check after they are played, the program
     // first generates pseudo legal moves to instantly get legal moves after. pseudoLegalMoves methods are static because
@@ -116,7 +123,7 @@ public class Board extends GridPane {
         // Resets each turn
         allPseudoLegalMovesBitboard = 0;
 
-        allPseudoLegalMovesBitboard |= Pawn.pseudoLegalMoves[opponentColour].generate(getBitboard(opponentColour, 1), getOtherBitboard(2), getOtherBitboard(opponentColour ^ 1));
+        allPseudoLegalMovesBitboard |= Pawn.pseudoLegalMoves[opponentColour].generate(bitboards[opponentColour][1], otherBitboards[2], otherBitboards[opponentColour ^ 1], enPassantSquareBitboard);
         //allPseudoLegalMovesBitboard |= Knight.pseudoLegalMoves(getBitboard(opponentColour, 2), getOtherBitboard(opponentColour));
 
         ViewManager.instance.bitboardVisualization(allPseudoLegalMovesBitboard);
