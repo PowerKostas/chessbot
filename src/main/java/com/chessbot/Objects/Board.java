@@ -5,6 +5,7 @@ import com.chessbot.BoardUtils.DragMove;
 import com.chessbot.BoardUtils.FenReader;
 import com.chessbot.Objects.Pieces.Knight;
 import com.chessbot.Objects.Pieces.Pawn;
+import com.chessbot.Objects.Pieces.Rook;
 import com.chessbot.ViewManager;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -80,6 +81,8 @@ public class Board extends GridPane {
         if (playerColour == 1) {
             this.setRotate(180);
         }
+
+        // Precomputes magic bitboards
     }
 
 
@@ -123,8 +126,8 @@ public class Board extends GridPane {
         // Resets each turn
         allPseudoLegalMovesBitboard = 0;
 
-        allPseudoLegalMovesBitboard |= Pawn.pseudoLegalMoves[opponentColour].generate(bitboards[opponentColour][1], otherBitboards[2], otherBitboards[opponentColour ^ 1], enPassantSquareBitboard);
-        //allPseudoLegalMovesBitboard |= Knight.pseudoLegalMoves(getBitboard(opponentColour, 2), getOtherBitboard(opponentColour));
+        //allPseudoLegalMovesBitboard |= Pawn.pseudoLegalMoves[opponentColour].generate(bitboards[opponentColour][1], otherBitboards[2], otherBitboards[opponentColour ^ 1]);
+        //allPseudoLegalMovesBitboard |= Knight.pseudoLegalMoves(getBitboard(opponentColour, 2), otherBitboards[opponentColour]);
 
         ViewManager.instance.bitboardVisualization(allPseudoLegalMovesBitboard);
     }
