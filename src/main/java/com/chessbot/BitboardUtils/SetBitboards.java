@@ -1,4 +1,4 @@
-package com.chessbot.BoardUtils;
+package com.chessbot.BitboardUtils;
 
 import com.chessbot.Objects.Board;
 

@@ -1,5 +1,6 @@
 package com.chessbot.BoardUtils;
 
+import com.chessbot.BitboardUtils.SetBitboards;
 import com.chessbot.Objects.Board;
 import com.chessbot.Objects.Piece;
 import com.chessbot.Objects.Square;

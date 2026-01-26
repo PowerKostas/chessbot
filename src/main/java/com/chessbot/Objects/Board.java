@@ -1,5 +1,6 @@
 package com.chessbot.Objects;
 
+import com.chessbot.BitboardUtils.MagicBitboards;
 import com.chessbot.BoardUtils.RightClick;
 import com.chessbot.BoardUtils.DragMove;
 import com.chessbot.BoardUtils.FenReader;
@@ -10,6 +11,7 @@ import com.chessbot.ViewManager;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
+import java.util.Map;
 
 // Board class that is used to represent the board in JavaFX and the board state
 public class Board extends GridPane {
@@ -28,6 +30,8 @@ public class Board extends GridPane {
     private final long[] otherBitboards = new long [3];
 
     private long allPseudoLegalMovesBitboard = 0;
+
+    private final Map<MagicBitboards.Key, Long> rookMovesLookupTable;
 
     // 1 for the square than an en passant capture can happen, 0 for everything else
     private long enPassantSquareBitboard = 0;
@@ -74,6 +78,10 @@ public class Board extends GridPane {
             }
         }
 
+        // Precomputes magic bitboards
+        MagicBitboards magicBitboards = new MagicBitboards();
+        rookMovesLookupTable = magicBitboards.createRookLookupTable();
+
         // Sets pieces on the board
         FenReader.build(fen, this);
 
@@ -81,8 +89,6 @@ public class Board extends GridPane {
         if (playerColour == 1) {
             this.setRotate(180);
         }
-
-        // Precomputes magic bitboards
     }
 
 
@@ -120,14 +126,31 @@ public class Board extends GridPane {
 
 
     // Pseudo legal moves are legal moves that don't check if their king is in check after they are played, the program
-    // first generates pseudo legal moves to instantly get legal moves after. pseudoLegalMoves methods are static because
+    // first generates pseudo legal moves to instantly get legal moves after. All the piece methods are static because
     // they concern all the knights, for example, not a single knight object
     public void generateOpponentPseudoLegalMoves(int opponentColour) {
         // Resets each turn
         allPseudoLegalMovesBitboard = 0;
 
+        // Pawn pseudo legal moves
         //allPseudoLegalMovesBitboard |= Pawn.pseudoLegalMoves[opponentColour].generate(bitboards[opponentColour][1], otherBitboards[2], otherBitboards[opponentColour ^ 1]);
+
+        // Knight pseudo legal moves
         //allPseudoLegalMovesBitboard |= Knight.pseudoLegalMoves(getBitboard(opponentColour, 2), otherBitboards[opponentColour]);
+
+        // Rook pseudo legal moves, from the rooks bitboard, get each rook's square, find what pieces are blocking its
+        // path, enter those keys in the rook lookup table and get the rook's pseudo legal moves, also remove all friendly
+        // piece captures before adding the moves to the all pseudo legal moves bitboard
+        long rooksBitboard = getBitboard(opponentColour, 4);
+        while (rooksBitboard != 0L) {
+            int rookSquare = Long.numberOfTrailingZeros(rooksBitboard);
+            long blockingPatternBitboard = otherBitboards[2] & Rook.attacks(rookSquare);
+            long rookPseudoLegalMovesBitboard = rookMovesLookupTable.get(new MagicBitboards.Key(rookSquare, blockingPatternBitboard));
+            rookPseudoLegalMovesBitboard &= ~otherBitboards[opponentColour];
+            allPseudoLegalMovesBitboard |= rookPseudoLegalMovesBitboard;
+
+            rooksBitboard ^= (1L << rookSquare);
+        }
 
         ViewManager.instance.bitboardVisualization(allPseudoLegalMovesBitboard);
     }
