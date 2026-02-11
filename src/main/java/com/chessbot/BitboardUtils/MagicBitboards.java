@@ -1,10 +1,7 @@
 package com.chessbot.BitboardUtils;
 
 import com.chessbot.Objects.Pieces.Rook;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MagicBitboards {
     public record Key(int startingSquare, long blockerPattern) {}
@@ -35,6 +32,62 @@ public class MagicBitboards {
         }
 
         return blockingPatternsBitboards;
+    }
+
+
+    public long findMagicNumber(long attacksBitboard, long[] blockingPatternsBitboards, long[] moves) {
+        for (int k = 0; k < 100000000; k++) {
+            Random rand = new Random();
+            long magic = rand.nextInt();
+
+            int bits = Long.bitCount(attacksBitboard);
+            int size = 1 << bits;
+
+            long[] used = new long[size];
+            for(int i = 0; i < size; i += 1) {
+                used[i] = -1;
+            }
+
+            boolean fail = false;
+
+            for (int i = 0; i < blockingPatternsBitboards.length; i++) {
+                long blockingPatternsBitboard = blockingPatternsBitboards[i];
+
+                int index = (int) (blockingPatternsBitboard * magic) >> (64 - bits);
+
+                if (used[index] == -1) {
+                    used[index] = moves[i];
+                }
+
+                else if (used[index] != moves[i]) {
+                    fail = true;
+                    break;
+                }
+            }
+
+            if (!fail) {
+                return magic;
+            }
+        }
+
+        System.out.println("Failed to find magic");
+        return 0;
+    }
+
+
+    public void generateAllMagicNumbers() {
+        for (int square = 0; square < 64; square++) {
+            long attacksBitboard = Rook.attacks(square);
+            long[] blockingPatternsBitboards = createBlockingPatternsBitboards(attacksBitboard);
+
+            long[] pseudoLegalMoves = new long[blockingPatternsBitboards.length];
+            for (int i = 0; i < blockingPatternsBitboards.length; i++) {
+                pseudoLegalMoves[i] = Rook.pseudoLegalMoves(square, blockingPatternsBitboards[i]);
+            }
+
+            long magic = findMagicNumber(attacksBitboard, blockingPatternsBitboards, pseudoLegalMoves);
+            System.out.printf("Square %d: 0x%XL\n", square, magic);
+        }
     }
 
 
