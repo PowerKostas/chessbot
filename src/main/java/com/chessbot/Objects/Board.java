@@ -31,7 +31,7 @@ public class Board extends GridPane {
 
     private long allPseudoLegalMovesBitboard = 0;
 
-    private final Map<MagicBitboards.Key, Long> rookMovesLookupTable;
+    //private final Map<MagicBitboards.Key, Long> rookMovesLookupTable;
 
     // 1 for the square than an en passant capture can happen, 0 for everything else
     private long enPassantSquareBitboard = 0;
@@ -80,7 +80,7 @@ public class Board extends GridPane {
 
         // Precomputes magic bitboards
         MagicBitboards magicBitboards = new MagicBitboards();
-        rookMovesLookupTable = magicBitboards.createRookLookupTable();
+        magicBitboards.findBestMagicNumber();
 
         // Sets pieces on the board
         FenReader.build(fen, this);
@@ -141,17 +141,17 @@ public class Board extends GridPane {
         // Rook pseudo legal moves, from the rooks bitboard, get each rook's square, find what pieces are blocking its
         // path, enter those keys in the rook lookup table and get the rook's pseudo legal moves, also remove all friendly
         // piece captures before adding the moves to the all pseudo legal moves bitboard
-        long rooksBitboard = getBitboard(opponentColour, 4);
-        while (rooksBitboard != 0L) {
-            int rookSquare = Long.numberOfTrailingZeros(rooksBitboard);
-            long blockingPatternBitboard = otherBitboards[2] & Rook.attacks(rookSquare);
-            long rookPseudoLegalMovesBitboard = rookMovesLookupTable.get(new MagicBitboards.Key(rookSquare, blockingPatternBitboard));
-            rookPseudoLegalMovesBitboard &= ~otherBitboards[opponentColour];
-            allPseudoLegalMovesBitboard |= rookPseudoLegalMovesBitboard;
+        //long rooksBitboard = getBitboard(opponentColour, 4);
+        //while (rooksBitboard != 0L) {
+            //int rookSquare = Long.numberOfTrailingZeros(rooksBitboard);
+            //long blockingPatternBitboard = otherBitboards[2] & Rook.attacks(rookSquare);
+            //long rookPseudoLegalMovesBitboard = rookMovesLookupTable.get(new MagicBitboards.Key(rookSquare, blockingPatternBitboard));
+            //rookPseudoLegalMovesBitboard &= ~otherBitboards[opponentColour];
+            //allPseudoLegalMovesBitboard |= rookPseudoLegalMovesBitboard;
 
-            rooksBitboard ^= (1L << rookSquare);
-        }
+            //rooksBitboard ^= (1L << rookSquare);
+        //}
 
-        ViewManager.instance.bitboardVisualization(allPseudoLegalMovesBitboard);
+        //ViewManager.instance.bitboardVisualization(allPseudoLegalMovesBitboard);
     }
 }
