@@ -1,17 +1,12 @@
 package com.chessbot.Objects;
 
-import com.chessbot.BitboardUtils.MagicBitboards;
-import com.chessbot.BoardUtils.RightClick;
-import com.chessbot.BoardUtils.DragMove;
-import com.chessbot.BoardUtils.FenReader;
-import com.chessbot.Objects.Pieces.Knight;
-import com.chessbot.Objects.Pieces.Pawn;
-import com.chessbot.Objects.Pieces.Rook;
-import com.chessbot.ViewManager;
+import com.chessbot.BitboardUtils.RookMagicBitboards;
+import com.chessbot.VisualBoardUtils.RightClick;
+import com.chessbot.VisualBoardUtils.DragMove;
+import com.chessbot.VisualBoardUtils.FenReader;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
-import java.util.Map;
 
 // Board class that is used to represent the board in JavaFX and the board state
 public class Board extends GridPane {
@@ -29,9 +24,13 @@ public class Board extends GridPane {
     // 0 = White bitboard, 1 = Black bitboard, 2 = All bitboard
     private final long[] otherBitboards = new long [3];
 
-    private long allPseudoLegalMovesBitboard = 0;
+    private long allPseudoLegalMovesBitboard;
 
-    //private final Map<MagicBitboards.Key, Long> rookMovesLookupTable;
+    private final long[][] rookMovesLookupTable;
+
+    // Precomputed
+    private final long[] rookMagicNumbers = {2498368794263616L, 1143634901073920L, 612016063512584L, 1134700329435264L, 1128103359324160L, 1135866412023824L, 35829707833344L, 35666658394625L, 4611826758067421184L, 36380778184048640L, 577023985727209472L, 282576904298496L, 181551394354892800L, 72339106796994560L, 1125927019348992L, 1837750127238873600L, 4899918595783458816L, 17867601870884L, -5908720510736138240L, 144117395693248512L, 2200367661064L, 5044033781813608448L, 554059300864L, 5244442317976305664L, 288230979598811136L, 720681494570336256L, 35188671447040L, 18019492353409030L, 1315051237230641154L, 4402342068224L, 36029072987422720L, 42949739520L, 216243153030610944L, -9223370928652517376L, 1152923773792452608L, -4035223065993404415L, 162135779961737216L, -6917526828450050048L, 69323511810L, 5188146775059334144L, -9151303443329974272L, -9223352243481083904L, 18287975596032L, 594475430556336136L, 594475863814307840L, 42950852608L, 36028831647399936L, 2594073542148620288L, -9223371487094766976L, 2305844248617943296L, 2305862811162526208L, 576461044966359552L, 2305844108998476032L, 2882303778713766144L, 68753556480L, 18577366733324800L, 2305852566598230016L, 36564270059520L, 106111730714624L, 17626617217408L, 1297111462023856640L, 5764608077240337408L, 72063678952047104L, -8637901608977365888L};
+    private final int[] rookBestBits = {5, 5, 5, 5, 5, 5, 5, 5, 10, 9, 9, 9, 9, 9, 9, 10, 9, 8, 8, 8, 8, 8, 8, 9, 9, 8, 8, 8, 8, 8, 8, 9, 9, 8, 8, 8, 8, 8, 8, 9, 9, 8, 8, 8, 8, 8, 8, 9, 10, 9, 9, 9, 9, 9, 9, 10, 5, 5, 5, 5, 5, 5, 5, 5};
 
     // 1 for the square than an en passant capture can happen, 0 for everything else
     private long enPassantSquareBitboard = 0;
@@ -78,9 +77,13 @@ public class Board extends GridPane {
             }
         }
 
-        // Precomputes magic bitboards
-        MagicBitboards magicBitboards = new MagicBitboards();
-        magicBitboards.findBestMagicNumber();
+        // Precomputes magic numbers and best bits, commented out if it's already done
+        //RookMagicBitboards rookMagicBitboards = new RookMagicBitboards();
+        //rookMagicBitboards.findBestMagicNumbers();
+
+        // Precomputes rookMovesLookupTable
+        RookMagicBitboards magicBitboards = new RookMagicBitboards();
+        rookMovesLookupTable = magicBitboards.createRookMovesLookupTable(rookMagicNumbers, rookBestBits);
 
         // Sets pieces on the board
         FenReader.build(fen, this);
@@ -120,38 +123,27 @@ public class Board extends GridPane {
         this.otherBitboards[index] = bitboard;
     }
 
-    public void setEnPassantSquareBitboard(long enPassantSquareBitboard) {
-        this.enPassantSquareBitboard = enPassantSquareBitboard;
+    public long getAllPseudoLegalMovesBitboard() {
+        return allPseudoLegalMovesBitboard;
     }
 
+    public void setAllPseudoLegalMovesBitboard(long allPseudoLegalMovesBitboard) {
+        this.allPseudoLegalMovesBitboard = allPseudoLegalMovesBitboard;
+    }
 
-    // Pseudo legal moves are legal moves that don't check if their king is in check after they are played, the program
-    // first generates pseudo legal moves to instantly get legal moves after. All the piece methods are static because
-    // they concern all the knights, for example, not a single knight object
-    public void generateOpponentPseudoLegalMoves(int opponentColour) {
-        // Resets each turn
-        allPseudoLegalMovesBitboard = 0;
+    public long getRookMoves(int square, int magicIndex) {
+        return rookMovesLookupTable[square][magicIndex];
+    }
 
-        // Pawn pseudo legal moves
-        //allPseudoLegalMovesBitboard |= Pawn.pseudoLegalMoves[opponentColour].generate(bitboards[opponentColour][1], otherBitboards[2], otherBitboards[opponentColour ^ 1]);
+    public long getRookMagicNumbers(int index) {
+        return rookMagicNumbers[index];
+    }
 
-        // Knight pseudo legal moves
-        //allPseudoLegalMovesBitboard |= Knight.pseudoLegalMoves(getBitboard(opponentColour, 2), otherBitboards[opponentColour]);
+    public long getRookBestBits(int index) {
+        return rookBestBits[index];
+    }
 
-        // Rook pseudo legal moves, from the rooks bitboard, get each rook's square, find what pieces are blocking its
-        // path, enter those keys in the rook lookup table and get the rook's pseudo legal moves, also remove all friendly
-        // piece captures before adding the moves to the all pseudo legal moves bitboard
-        //long rooksBitboard = getBitboard(opponentColour, 4);
-        //while (rooksBitboard != 0L) {
-            //int rookSquare = Long.numberOfTrailingZeros(rooksBitboard);
-            //long blockingPatternBitboard = otherBitboards[2] & Rook.attacks(rookSquare);
-            //long rookPseudoLegalMovesBitboard = rookMovesLookupTable.get(new MagicBitboards.Key(rookSquare, blockingPatternBitboard));
-            //rookPseudoLegalMovesBitboard &= ~otherBitboards[opponentColour];
-            //allPseudoLegalMovesBitboard |= rookPseudoLegalMovesBitboard;
-
-            //rooksBitboard ^= (1L << rookSquare);
-        //}
-
-        //ViewManager.instance.bitboardVisualization(allPseudoLegalMovesBitboard);
+    public void setEnPassantSquareBitboard(long enPassantSquareBitboard) {
+        this.enPassantSquareBitboard = enPassantSquareBitboard;
     }
 }

@@ -1,4 +1,4 @@
-package com.chessbot.BoardUtils;
+package com.chessbot.VisualBoardUtils;
 
 import com.chessbot.Objects.Square;
 import javafx.scene.input.MouseButton;

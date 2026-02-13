@@ -1,17 +1,9 @@
 package com.chessbot.BitboardUtils;
 
 import com.chessbot.Objects.Pieces.Rook;
-
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.*;
 
-public class MagicBitboards {
-    public record Key(int startingSquare, long blockerPattern) {}
-
-
+public class RookMagicBitboards {
     public long[] createBlockingPatternsBitboards(long attacksBitboard) {
         List<Integer> attackIndices = new ArrayList<>();
 
@@ -40,17 +32,18 @@ public class MagicBitboards {
     }
 
 
-    public long findMagicNumber(long[] blockingPatternsBitboards, long[] pseudoLegalMoves) {
+    // Watch Coding Adventure: Making a Better Chess Bot, The Magical Part of Magic Bitboards to understand everything
+    // below from here
+
+    public long findMagicNumber(long[] blockingPatternsBitboards, long[] pseudoLegalMoves, int requestedBits) {
         for (int i = 0; i < 10000000; i += 1) {
             // Generate a random magic number with not a lot of 1s
             Random rand = new Random();
             long magic = rand.nextLong() & rand.nextLong() & rand.nextLong();
 
             // Creates the used array, for each blocking pattern there is a starting value of -1, the goal is to fill most
-            // of the array with distinct pseudo legal moves
-            int bits = Long.bitCount(blockingPatternsBitboards.length);
-            int size = 1 << bits;
-            long[] used = new long[size];
+            // of the array with distinct pseudo legal moves, in the least amount of space
+            long[] used = new long[1 << requestedBits];
             Arrays.fill(used, -1);
 
             // For every blocking pattern, generate an index, using the potential magic number with the below formula, if
@@ -59,13 +52,13 @@ public class MagicBitboards {
             // potential magic number doesn't fill the used array with distinct pseudo legal moves, so it's discarded
             boolean fail = false;
             for (int j = 0; j < blockingPatternsBitboards.length; j += 1) {
-                int index = (int) ((blockingPatternsBitboards[j] * magic) >>> (64 - bits));
+                int magicIndex = (int) ((blockingPatternsBitboards[j] * magic) >>> (64 - requestedBits));
 
-                if (used[index] == -1) {
-                    used[index] = pseudoLegalMoves[j];
+                if (used[magicIndex] == -1) {
+                    used[magicIndex] = pseudoLegalMoves[j];
                 }
 
-                else if (used[index] != pseudoLegalMoves[j]) {
+                else if (used[magicIndex] != pseudoLegalMoves[j]) {
                     fail = true;
                     break;
                 }
@@ -80,10 +73,9 @@ public class MagicBitboards {
     }
 
 
-    public void findBestMagicNumber() {
+    public void findBestMagicNumbers() {
         // For the rook, for each square, get the valid attacks, from those get the blocking patterns, for every blocking
-        // pattern, get the legal moves, from those get the magic number that corresponds to all blocking patterns in that
-        // square
+        // pattern, get the legal moves
         for (int square = 0; square < 64; square += 1) {
             long attacksBitboard = Rook.attacks(square);
             long[] blockingPatternsBitboards = createBlockingPatternsBitboards(attacksBitboard);
@@ -93,12 +85,52 @@ public class MagicBitboards {
                 pseudoLegalMoves[i] = Rook.pseudoLegalMoves(square, blockingPatternsBitboards[i]);
             }
 
-            long magicNumber = findMagicNumber(blockingPatternsBitboards, pseudoLegalMoves);
-            int bits = Long.bitCount(blockingPatternsBitboards.length);
+            // Now we are trying to find the best magic number, maxBits = the number of squares the rook on the current
+            // square attacks, the bits number will determine the size of the rookMovesLookupTable, for this square, so
+            // bits along with the magic number need to be optimised
+            long magicNumber = 0;
+            int bestBits = 0;
+            int maxBits = Long.bitCount(attacksBitboard);
+            for (int bits = 1; bits <= maxBits; bits += 1) {
+                magicNumber = findMagicNumber(blockingPatternsBitboards, pseudoLegalMoves, bits);
 
+                if (magicNumber != 0) {
+                    bestBits = bits;
+                    break;
+                }
+            }
+
+            // Print the magic number and best bits, so I can write them down, they are needed for later
+            System.out.println("Square: " + square);
+            System.out.println(magicNumber);
+            System.out.println(bestBits);
+        }
+    }
+
+
+    public long[][] createRookMovesLookupTable(long[] magicNumbers, int[] bestBits) {
+        // Create a 2D array to look up rook legal moves from the key: startingSquare, magicIndex
+        long[][] rookMovesLookupTable = new long[64][];
+
+        // For the rook, for each square, get the valid attacks, from those get the blocking patterns, for every blocking
+        // pattern, get the legal moves
+        for (int square = 0; square < 64; square += 1) {
+            long attacksBitboard = Rook.attacks(square);
+            long[] blockingPatternsBitboards = createBlockingPatternsBitboards(attacksBitboard);
+
+            long[] pseudoLegalMoves = new long[blockingPatternsBitboards.length];
             for (int i = 0; i < blockingPatternsBitboards.length; i += 1) {
-                int index = (int) ((blockingPatternsBitboards[i] * magicNumber) >>> (64 - bits));
+                pseudoLegalMoves[i] = Rook.pseudoLegalMoves(square, blockingPatternsBitboards[i]);
+            }
+
+            // Fill most of the optimal lookup table with distinct pseudo legal moves
+            rookMovesLookupTable[square] = new long[1 << bestBits[square]];
+            for (int i = 0; i < blockingPatternsBitboards.length; i += 1) {
+                int magicIndex = (int) ((blockingPatternsBitboards[i] * magicNumbers[square]) >>> 64 - bestBits[square]);
+                rookMovesLookupTable[square][magicIndex] = pseudoLegalMoves[i];
             }
         }
+
+        return rookMovesLookupTable;
     }
 }

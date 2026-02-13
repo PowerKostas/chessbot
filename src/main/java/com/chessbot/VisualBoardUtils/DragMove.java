@@ -1,6 +1,7 @@
-package com.chessbot.BoardUtils;
+package com.chessbot.VisualBoardUtils;
 
 import com.chessbot.BitboardUtils.UpdateBitboards;
+import com.chessbot.BoardUtils.PseudoLegalMoves;
 import com.chessbot.ChessApplication;
 import com.chessbot.Objects.Board;
 import com.chessbot.Objects.Piece;
@@ -23,7 +24,7 @@ public class DragMove {
     private Square failedStartingSquare;
 
 
-    // Initializes a Board reference so the listeners can access the Board methods
+    // Initializes a Board reference so the listeners can access its methods
     public DragMove(Board board) {
         this.board = board;
     }
@@ -138,7 +139,7 @@ public class DragMove {
             UpdateBitboards.start(board, draggedPiece.getColour(), draggedPiece.getPieceType(), (7 - startingSquare.getRow()) * 8 + startingSquare.getCol(), (7 - endingSquare.getRow()) * 8 + endingSquare.getCol());
 
             // After the piece is dropped, the current piece colour is the opponent
-            board.generateOpponentPseudoLegalMoves(draggedPiece.getColour());
+            PseudoLegalMoves.generateOpponentPseudoLegalMoves(board, draggedPiece.getColour());
         }
     }
 

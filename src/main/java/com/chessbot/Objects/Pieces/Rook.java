@@ -37,17 +37,20 @@ public class Rook extends Piece {
                     break;
                 }
 
-                if (dir == 1 && (tempSquare % 8 == 7)) { // If trying to go right and on the H file
+                else if (dir == 1 && (tempSquare % 8 == 7)) { // If trying to go right and on the H file
                     break;
                 }
 
-                tempSquare += dir;
+                else if (dir == -8 && tempSquare <= 7) { // If trying to go down and on the 1st rank
+                    break;
+                }
 
-                if (tempSquare < 8 || tempSquare >= 56) { // If trying to go down and on the 1st rank or if trying to go up and on the 8th rank
+                else if (dir == 8 && tempSquare >= 56) { // If trying to go up and on the 8th rank
                     break;
                 }
 
                 // If it didn't go in on any safety check, move 1 square in that direction
+                tempSquare += dir;
                 attacksBitboard |= 1L << tempSquare;
 
                 // If that move has a blocking piece on it (friendly or enemy, will deal with friendly pieces later), we

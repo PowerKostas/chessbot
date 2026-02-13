@@ -1,6 +1,7 @@
-package com.chessbot.BoardUtils;
+package com.chessbot.VisualBoardUtils;
 
 import com.chessbot.BitboardUtils.SetBitboards;
+import com.chessbot.BoardUtils.PseudoLegalMoves;
 import com.chessbot.Objects.Board;
 import com.chessbot.Objects.Piece;
 import com.chessbot.Objects.Square;
@@ -48,6 +49,6 @@ public class FenReader {
             }
         }
 
-        board.generateOpponentPseudoLegalMoves(board.getTurn() ^ 1);
+        PseudoLegalMoves.generateOpponentPseudoLegalMoves(board, board.getTurn() ^ 1);
     }
 }
