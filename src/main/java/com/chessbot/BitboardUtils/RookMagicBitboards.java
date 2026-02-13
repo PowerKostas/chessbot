@@ -87,11 +87,11 @@ public class RookMagicBitboards {
 
             // Now we are trying to find the best magic number, maxBits = the number of squares the rook on the current
             // square attacks, the bits number will determine the size of the rookMovesLookupTable, for this square, so
-            // bits along with the magic number need to be optimised
+            // bits along with the magic number need to be optimised, minimum bits are 10, maximum are 12
             long magicNumber = 0;
             int bestBits = 0;
             int maxBits = Long.bitCount(attacksBitboard);
-            for (int bits = 1; bits <= maxBits; bits += 1) {
+            for (int bits = 10; bits <= maxBits; bits += 1) {
                 magicNumber = findMagicNumber(blockingPatternsBitboards, pseudoLegalMoves, bits);
 
                 if (magicNumber != 0) {
