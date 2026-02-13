@@ -26,7 +26,10 @@ public class Board extends GridPane {
 
     private long allPseudoLegalMovesBitboard;
 
-    private final long[][] rookMovesLookupTable;
+    private final long[] rookMovesLookupTable;
+
+    // Stores the starting index of each square in the 1D rookMovesLookupTable array (for fancy magic bitboards)
+    int[] rookOffsets = new int[64];
 
     // Precomputed
     private final long[] rookMagicNumbers = {36033748042518560L, 18031991769538564L, 4791838937096392704L, 72062060820701272L, 612509357724663936L, 2449975793838211584L, 72058225398907392L, 144119601156866306L, 4918071670163456004L, 1152992148497375232L, 2419699774745739392L, -9222105365098790784L, 9148487102892032L, 577868144368027904L, 4627589358914896384L, 18577430294036550L, -9151171505734663424L, 78252243102483584L, 2315009638191350017L, 577879123142131744L, 297520150239248400L, -7959548841332563328L, 1152925902941718546L, 27340456142602516L, 2316046479269199874L, 282029029605376L, 576495940974739733L, 1424969217605764L, 4611765185412333696L, 562958544406532L, 180146338737948673L, 1152922750147527236L, 1153414087971962920L, 35253095759936L, -8025271461998489600L, 9900453269504L, -6760888185913341952L, 1229764208732668928L, 18578516761118730L, 4762838134759097410L, 306280512010485760L, 4611721255681277952L, 5188428521122889745L, 4616207210391863392L, 1152981024265076752L, 37155315938754824L, 1196268685717798917L, -9150997232587767804L, -9222210402815832960L, 653303585227968768L, 4710765485647790336L, 2378041924873355392L, 3396700672623872L, 27025997454934144L, 326587943228539904L, 328904764425355776L, 2306480867733667921L, -6917237312388561823L, -9209710604581855231L, 5102835880428809L, 45598963944917002L, 3026981934175896850L, 8938104816132L, 281483569807489L};
@@ -81,9 +84,16 @@ public class Board extends GridPane {
         //RookMagicBitboards rookMagicBitboards = new RookMagicBitboards();
         //rookMagicBitboards.findBestMagicNumbers();
 
+        // Calculates rookOffsets based on rookBestBits
+        int currentOffset = 0;
+        for (int i = 0; i < 64; i += 1) {
+            rookOffsets[i] = currentOffset;
+            currentOffset += (1 << rookBestBits[i]);
+        }
+
         // Precomputes rookMovesLookupTable
         RookMagicBitboards magicBitboards = new RookMagicBitboards();
-        rookMovesLookupTable = magicBitboards.createRookMovesLookupTable(rookMagicNumbers, rookBestBits);
+        rookMovesLookupTable = magicBitboards.createRookMovesLookupTable(rookMagicNumbers, rookBestBits, rookOffsets);
 
         // Sets pieces on the board
         FenReader.build(fen, this);
@@ -131,8 +141,12 @@ public class Board extends GridPane {
         this.allPseudoLegalMovesBitboard = allPseudoLegalMovesBitboard;
     }
 
-    public long getRookMoves(int square, int magicIndex) {
-        return rookMovesLookupTable[square][magicIndex];
+    public long getRookMoves(int offset, int magicIndex) {
+        return rookMovesLookupTable[offset + magicIndex];
+    }
+
+    public int getRookOffsets(int index) {
+        return rookOffsets[index];
     }
 
     public long getRookMagicNumbers(int index) {

@@ -108,9 +108,14 @@ public class RookMagicBitboards {
     }
 
 
-    public long[][] createRookMovesLookupTable(long[] magicNumbers, int[] bestBits) {
-        // Create a 2D array to look up rook legal moves from the key: startingSquare, magicIndex
-        long[][] rookMovesLookupTable = new long[64][];
+    public long[] createRookMovesLookupTable(long[] magicNumbers, int[] bestBits, int[] offsets) {
+        // Create a 1D array to look up rook legal moves from the key: offset + magicIndex
+        int totalSize = 0;
+        for (int bits : bestBits) {
+            totalSize += (1 << bits);
+        }
+
+        long[] rookMovesLookupTable = new long[totalSize];
 
         // For the rook, for each square, get the valid attacks, from those get the blocking patterns, for every blocking
         // pattern, get the legal moves
@@ -124,10 +129,9 @@ public class RookMagicBitboards {
             }
 
             // Fill most of the optimal lookup table with distinct pseudo legal moves
-            rookMovesLookupTable[square] = new long[1 << bestBits[square]];
             for (int i = 0; i < blockingPatternsBitboards.length; i += 1) {
                 int magicIndex = (int) ((blockingPatternsBitboards[i] * magicNumbers[square]) >>> 64 - bestBits[square]);
-                rookMovesLookupTable[square][magicIndex] = pseudoLegalMoves[i];
+                rookMovesLookupTable[offsets[square] + magicIndex] = pseudoLegalMoves[i];
             }
         }
 

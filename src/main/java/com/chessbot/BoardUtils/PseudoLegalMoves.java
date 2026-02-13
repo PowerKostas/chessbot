@@ -28,7 +28,7 @@ public class PseudoLegalMoves {
             long blockingPatternBitboard = board.getOtherBitboard(2) & Rook.attacks(rookSquare);
             int magicIndex = (int) ((blockingPatternBitboard * board.getRookMagicNumbers(rookSquare)) >>> 64 - board.getRookBestBits(rookSquare));
 
-            long rookPseudoLegalMovesBitboard = board.getRookMoves(rookSquare, magicIndex);
+            long rookPseudoLegalMovesBitboard = board.getRookMoves(board.getRookOffsets(rookSquare), magicIndex);
             rookPseudoLegalMovesBitboard &= ~board.getOtherBitboard(opponentColour);
             allPseudoLegalMovesBitboard |= rookPseudoLegalMovesBitboard;
 
