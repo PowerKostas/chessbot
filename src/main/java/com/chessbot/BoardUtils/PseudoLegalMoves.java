@@ -1,7 +1,7 @@
 package com.chessbot.BoardUtils;
 
 import com.chessbot.Objects.Board;
-import com.chessbot.Objects.Pieces.Rook;
+import com.chessbot.Objects.Pieces.Bishop;
 import com.chessbot.ViewManager;
 
 public class PseudoLegalMoves {
@@ -22,17 +22,31 @@ public class PseudoLegalMoves {
         // path, from that and the precomputed magic numbers and best bits, get the magicIndex, enter those keys in the
         // rook lookup table and get the rook's pseudo legal moves, also remove all friendly piece captures before adding
         // the moves to the all pseudo legal moves bitboard
-        long rooksBitboard = board.getBitboard(opponentColour, 4);
-        while (rooksBitboard != 0L) {
-            int rookSquare = Long.numberOfTrailingZeros(rooksBitboard);
-            long blockingPatternBitboard = board.getOtherBitboard(2) & Rook.attacks(rookSquare);
-            int magicIndex = (int) ((blockingPatternBitboard * board.getRookMagicNumbers(rookSquare)) >>> 64 - board.getRookBestBits(rookSquare));
+        //long rooksBitboard = board.getBitboard(opponentColour, 4);
+        //while (rooksBitboard != 0L) {
+            //int rookSquare = Long.numberOfTrailingZeros(rooksBitboard);
+            //long blockingPatternBitboard = board.getOtherBitboard(2) & Rook.attacks(rookSquare);
+            //int magicIndex = (int) ((blockingPatternBitboard * board.getRookMagicNumbers(rookSquare)) >>> 64 - board.getRookBestBits(rookSquare));
 
-            long rookPseudoLegalMovesBitboard = board.getRookMoves(board.getRookOffsets(rookSquare), magicIndex);
+            //long rookPseudoLegalMovesBitboard = board.getRookMoves(board.getRookOffsets(rookSquare), magicIndex);
+            //rookPseudoLegalMovesBitboard &= ~board.getOtherBitboard(opponentColour);
+            //allPseudoLegalMovesBitboard |= rookPseudoLegalMovesBitboard;
+
+            //rooksBitboard ^= (1L << rookSquare);
+        //}
+
+        // Bishop pseudo legal moves, same process as the rooks
+        long bishopsBitboard = board.getBitboard(opponentColour, 3);
+        while (bishopsBitboard != 0L) {
+            int bishopSquare = Long.numberOfTrailingZeros(bishopsBitboard);
+            long blockingPatternBitboard = board.getOtherBitboard(2) & Bishop.attacks(bishopSquare);
+            int magicIndex = (int) ((blockingPatternBitboard * board.getBishopMagicNumbers(bishopSquare)) >>> 64 - board.getBishopBestBits(bishopSquare));
+
+            long rookPseudoLegalMovesBitboard = board.getBishopMoves(board.getBishopOffsets(bishopSquare), magicIndex);
             rookPseudoLegalMovesBitboard &= ~board.getOtherBitboard(opponentColour);
             allPseudoLegalMovesBitboard |= rookPseudoLegalMovesBitboard;
 
-            rooksBitboard ^= (1L << rookSquare);
+            bishopsBitboard ^= (1L << bishopSquare);
         }
 
         board.setAllPseudoLegalMovesBitboard(allPseudoLegalMovesBitboard);
