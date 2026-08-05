@@ -1,4 +1,4 @@
-package com.chessbot.BitboardUtils;
+package com.chessbot.engine.magic;
 
 import java.util.*;
 
@@ -21,9 +21,9 @@ public abstract class MagicBitboards {
         // Number of patterns = 2 ^ number of valid attacks
         int numPatterns = 1 << attackIndices.size();
 
-        // For every pattern, for every valid attack, shift the pattern by attack and get the first bit (0 or 1), move that
-        // bit by attack and put it in the list of all blocking patterns, watch Coding Adventure: Making a Better Chess
-        // Bot, Magic Bitboards (minus the magic) for better understanding
+        // For every pattern, for every valid attack, shift the pattern by attack and get the first bit (0 or 1), move
+        // that bit by attack and put it in the list of all blocking patterns, watch Coding Adventure: Making a Better
+        // Chess Bot, Magic Bitboards (minus the magic) for better understanding
         long[] blockingPatternsBitboards = new long[numPatterns];
         for (int patternIndex = 0; patternIndex < numPatterns; patternIndex += 1) {
             for (int attackIndex = 0; attackIndex < attackIndices.size(); attackIndex += 1) {
@@ -38,19 +38,19 @@ public abstract class MagicBitboards {
 
     // Watch Coding Adventure: Making a Better Chess Bot, The Magical Part of Magic Bitboards to understand everything
     // below from here
-
     public long findMagicNumber(long[] blockingPatternsBitboards, long[] pseudoLegalMoves, int requestedBits) {
+        Random rand = new Random();
+
         for (int i = 0; i < 10000000; i += 1) {
-            // Generate a random magic number with not a lot of 1s
-            Random rand = new Random();
+            // Generates a random magic number with not a lot of 1s
             long magic = rand.nextLong() & rand.nextLong() & rand.nextLong();
 
-            // Creates the used array, for each blocking pattern there is a starting value of -1, the goal is to fill most
-            // of the array with distinct pseudo legal moves, in the least amount of space
+            // Creates the used array, for each blocking pattern there is a starting value of -1, the goal is to fill
+            // most of the array with distinct pseudo legal moves, in the least amount of space
             long[] used = new long[1 << requestedBits];
             Arrays.fill(used, -1);
 
-            // For every blocking pattern, generate an index, using the potential magic number with the below formula, if
+            // For every blocking pattern generate an index using the potential magic number with the below formula, if
             // the generated index doesn't point to an already used slot in the used array, it continues. If it's already
             // used and the pseudo legal moves in that slot are different from the current ones, it means that this
             // potential magic number doesn't fill the used array with distinct pseudo legal moves, so it's discarded
@@ -77,22 +77,26 @@ public abstract class MagicBitboards {
     }
 
 
+    private long[] generatePseudoLegalMovesArray(int square, long[] blockingPatternsBitboards) {
+        long[] pseudoLegalMoves = new long[blockingPatternsBitboards.length];
+        for (int i = 0; i < blockingPatternsBitboards.length; i += 1) {
+            pseudoLegalMoves[i] = getPseudoLegalMoves(square, blockingPatternsBitboards[i]);
+        }
+
+        return pseudoLegalMoves;
+    }
+
+
     public void findBestMagicNumbers() {
-        // For each square, get the valid attacks, from those get the blocking patterns, for every blocking
-        // pattern, get the legal moves
         for (int square = 0; square < 64; square += 1) {
             long attacksBitboard = getAttacks(square);
             long[] blockingPatternsBitboards = createBlockingPatternsBitboards(attacksBitboard);
-
-            long[] pseudoLegalMoves = new long[blockingPatternsBitboards.length];
-            for (int i = 0; i < blockingPatternsBitboards.length; i += 1) {
-                pseudoLegalMoves[i] = getPseudoLegalMoves(square, blockingPatternsBitboards[i]);
-            }
+            long[] pseudoLegalMoves = generatePseudoLegalMovesArray(square, blockingPatternsBitboards);
 
             // Now we are trying to find the best magic number, maxBits = the number of squares the sliding piece on the
-            // current square attacks, the bits number will determine the size of the movesLookupTable, for this square, so
-            // bits along with the magic number need to be optimised, minimum bits for rooks is 10 and maximum is 12, minimum
-            // bits for bishops is 5 and maximum is 9, so it uses 5 for both, for convenience
+            // current square attacks, the bits number will determine the size of the movesLookupTable for this square. Bits
+            // along with the magic number need to be optimized, minimum bits for rooks is 10 and maximum is 12, minimum
+            // bits for bishops is 5 and maximum is 9, so it uses 5 for both
             long magicNumber = 0;
             int bestBits = 0;
             int maxBits = Long.bitCount(attacksBitboard);
@@ -105,16 +109,14 @@ public abstract class MagicBitboards {
                 }
             }
 
-            // Print the magic number and best bits, so I can write them down, they are needed for later
-            System.out.println("Square: " + square);
-            System.out.println(magicNumber);
-            System.out.println(bestBits);
+            // Prints the magic number and the best bits, so I can write them down, they are needed for later
+            System.out.printf("Square: %d | Magic: %d | Bits: %d%n", square, magicNumber, bestBits);
         }
     }
 
 
+    // Creates an 1D array to look up the legal moves of the sliding piece, the key is: offset + magicIndex
     public long[] createMovesLookupTable(long[] magicNumbers, int[] bestBits, int[] offsets) {
-        // Create a 1D array to look up the legal moves of the sliding piece, from the key: offset + magicIndex
         int totalSize = 0;
         for (int bits : bestBits) {
             totalSize += (1 << bits);
@@ -122,18 +124,12 @@ public abstract class MagicBitboards {
 
         long[] movesLookupTable = new long[totalSize];
 
-        // For each square, get the valid attacks, from those get the blocking patterns, for every blocking
-        // pattern, get the legal moves
         for (int square = 0; square < 64; square += 1) {
             long attacksBitboard = getAttacks(square);
             long[] blockingPatternsBitboards = createBlockingPatternsBitboards(attacksBitboard);
+            long[] pseudoLegalMoves = generatePseudoLegalMovesArray(square, blockingPatternsBitboards);
 
-            long[] pseudoLegalMoves = new long[blockingPatternsBitboards.length];
-            for (int i = 0; i < blockingPatternsBitboards.length; i += 1) {
-                pseudoLegalMoves[i] = getPseudoLegalMoves(square, blockingPatternsBitboards[i]);
-            }
-
-            // Fill most of the optimal lookup table with distinct pseudo legal moves
+            // Fills most of the optimal lookup table with distinct pseudo legal moves
             for (int i = 0; i < blockingPatternsBitboards.length; i += 1) {
                 int magicIndex = (int) ((blockingPatternsBitboards[i] * magicNumbers[square]) >>> 64 - bestBits[square]);
                 movesLookupTable[offsets[square] + magicIndex] = pseudoLegalMoves[i];

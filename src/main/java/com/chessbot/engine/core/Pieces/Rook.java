@@ -1,20 +1,18 @@
-package com.chessbot.Objects.Pieces;
+package com.chessbot.engine.core.Pieces;
 
-import com.chessbot.Objects.Piece;
-
-public class Rook extends Piece {
-    public Rook(int colour, boolean reverse) { super(colour, 4, reverse); }
-
+public final class Rook {
     // rankMasks: 0xFF = Rank 1, 0xFF00 = Rank 2 ..., fileMasks: 0x0101010101010101 = File A ...
     private static final long[] rankMasks = {0xFFL, 0xFF00L, 0xFF0000L, 0xFF000000L, 0xFF00000000L, 0xFF0000000000L, 0xFF000000000000L, 0xFF00000000000000L};
     private static final long[] fileMasks = {0x0101010101010101L, 0x0202020202020202L, 0x0404040404040404L, 0x0808080808080808L, 0x1010101010101010L, 0x2020202020202020L, 0x4040404040404040L, 0x8080808080808080L};
 
+    private Rook() {}
+
 
     public static long attacks(int square) {
         // Treats the board as empty, gets the rank and file of the square that the rook is in and returns all the squares
-        // in that rank/file except of the edge square, because we use these attacks for blocking patterns and a piece on
-        // the edge of the board doesn't block anything (we treat all pieces as enemy pieces, for now), also doesn't return
-        // the square that the rook is in
+        // in that rank/file except of the edge square. We use these attacks for blocking patterns and a piece on the edge
+        // of the board doesn't block anything (we treat all pieces as enemy pieces, for now). Also doesn't return the square
+        // that the rook is in
         int rank = square / 8;
         int file = square % 8;
 
@@ -53,8 +51,8 @@ public class Rook extends Piece {
                 tempSquare += dir;
                 attacksBitboard |= 1L << tempSquare;
 
-                // If that move has a blocking piece on it (friendly or enemy, will deal with friendly pieces later), we
-                // accept the move and then stop
+                // If that move has a blocking piece on it (friendly or enemy, will deal with friendly pieces later), it accepts
+                // the move and then stops
                 if (((1L << tempSquare) & blockingPatternBitboard) != 0) {
                     break;
                 }

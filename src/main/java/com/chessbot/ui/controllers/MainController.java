@@ -1,27 +1,27 @@
-package com.chessbot;
+package com.chessbot.ui.controllers;
 
-import com.chessbot.Objects.Board;
-import com.chessbot.Objects.Square;
+import com.chessbot.ui.components.Square;
+import com.chessbot.ui.components.VisualBoard;
 import javafx.fxml.FXML;
 import javafx.scene.layout.HBox;
 
-// This class runs after the view.fxml is loaded from ChessApplication
-public class ViewManager {
+// This class runs after view.fxml is loaded from ChessApplication
+public class MainController {
     @FXML
     private HBox mainContainer;
 
-    private Board boardOne;
-    private Board boardTwo;
+    private VisualBoard boardOne;
+    private VisualBoard boardTwo;
 
     // Global reference
-    public static ViewManager instance;
+    public static MainController instance;
 
 
     public void initialize() {
         instance = this;
 
-        boardTwo = new Board(0, "8/8/8/8/8/8/8/8");
-        boardOne = new Board(0, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+        boardTwo = new VisualBoard(0, "8/8/8/8/8/8/8/8");
+        boardOne = new VisualBoard(0, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 
         mainContainer.getChildren().addAll(boardOne, boardTwo);
     }
@@ -40,10 +40,14 @@ public class ViewManager {
             long mask = 1L << i;
             if ((bitboard & mask) != 0) {
                 square.setStyle("-fx-background-color: red");
-            } else {
+            }
+
+            else {
                 if ((square.getRow() + square.getCol()) % 2 == 0) {
                     square.setStyle("-fx-background-color: #ebecd0");
-                } else {
+                }
+
+                else {
                     square.setStyle("-fx-background-color: #739552");
                 }
             }

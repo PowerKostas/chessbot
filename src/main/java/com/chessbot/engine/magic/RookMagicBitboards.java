@@ -1,6 +1,6 @@
-package com.chessbot.BitboardUtils;
+package com.chessbot.engine.magic;
 
-import com.chessbot.Objects.Pieces.Rook;
+import com.chessbot.engine.core.Pieces.Rook;
 
 public class RookMagicBitboards extends MagicBitboards {
     @Override

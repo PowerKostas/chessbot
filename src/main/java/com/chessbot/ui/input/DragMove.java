@@ -1,32 +1,34 @@
-package com.chessbot.VisualBoardUtils;
+package com.chessbot.ui.input;
 
-import com.chessbot.BitboardUtils.UpdateBitboards;
-import com.chessbot.BoardUtils.PseudoLegalMoves;
 import com.chessbot.ChessApplication;
-import com.chessbot.Objects.Board;
-import com.chessbot.Objects.Piece;
-import com.chessbot.Objects.Square;
+import com.chessbot.engine.core.Board;
+import com.chessbot.ui.components.Square;
+import com.chessbot.ui.components.VisualBoard;
+import com.chessbot.ui.components.VisualPiece;
 import javafx.scene.Cursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.image.Image;
 import javafx.scene.input.*;
-import javafx.scene.paint.Color;
 import javafx.scene.media.AudioClip;
+import javafx.scene.paint.Color;
 
 // Order of a completed drag operation: dragDetected - dragEnter - dragExit - dragEnter - dragDropped - dragExit - dragDone
 public class DragMove {
+    private final VisualBoard visualBoard;
     private final Board board;
-    private Piece draggedPiece;
+    private VisualPiece draggedPiece;
     private Square startingSquare;
     private Square endingSquare;
     private Square previousStartingSquare;
     private Square previousEndingSquare;
     private Square failedStartingSquare;
+    private static final AudioClip moveSound = new AudioClip(ChessApplication.class.getResource("Sounds/move-self.mp3").toString());
 
 
     // Initializes a Board reference so the listeners can access its methods
-    public DragMove(Board board) {
-        this.board = board;
+    public DragMove(VisualBoard visualBoard) {
+        this.visualBoard = visualBoard;
+        this.board = visualBoard.getBoard();
     }
 
 
@@ -40,7 +42,7 @@ public class DragMove {
             return;
         }
 
-        // Resets selected colour on drag operations that failed
+        // Resets selected color on drag operations that failed
         if (failedStartingSquare != null) {
             failedStartingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
             failedStartingSquare.setIsSelected(true);
@@ -52,7 +54,7 @@ public class DragMove {
         content.putString("piece_move");
         db.setContent(content);
 
-        // Sets the dragged piece background colour to transparent
+        // Sets the dragged piece background color to transparent
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
 
@@ -73,7 +75,7 @@ public class DragMove {
         // Makes the dragged piece invisible for the whole drag operation
         draggedPiece.setVisible(false);
 
-        // If it's a light square give it a light selected colour, else a dark one
+        // If it's a light square give it a light selected color, else a dark one
         startingSquare.setStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
         startingSquare.setIsSelected(true);
 
@@ -96,7 +98,6 @@ public class DragMove {
     public void dragEnter(DragEvent event) {
         // Adds a border effect to the square
         Square hoveredSquare = (Square) event.getSource();
-
         hoveredSquare.setStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
 
         event.consume();
@@ -105,24 +106,21 @@ public class DragMove {
 
     // Triggers when letting off the drag operation
     public void dragDropped(DragEvent event) {
-        if (board.getTurn() == draggedPiece.getColour()) { // If dragged piece colour matches the turn
-            board.setTurn(board.getTurn() ^ 1);
-
+        if (draggedPiece.getColor() == board.getTurn()) { // If the dragged piece color matches the turn
             // Gets the square that the piece was dropped off
             endingSquare = (Square) event.getSource();
 
-            // Adds the piece to ending square and makes it visible again
-            endingSquare.setCurrentPiece(draggedPiece);
-            draggedPiece.setVisible(true);
+            // Sends move to the engine, have to reverse back the bitboard square indexes because the JavaFX bitboard is
+            // reversed (starts from the top left, instead of the bottom left)
+            board.makeMove(draggedPiece.getColor(), draggedPiece.getType(), (7 - startingSquare.getRow()) * 8 + startingSquare.getCol(), (7 - endingSquare.getRow()) * 8 + endingSquare.getCol());
 
-            // Makes the ending square hoverable
-            endingSquare.setCursor(Cursor.HAND);
+            // Forces the UI to redraw from the engine board
+            visualBoard.sync();
 
             // Adds move sound
-            AudioClip clickSound = new AudioClip(ChessApplication.class.getResource("Sounds/move-self.mp3").toString());
-            clickSound.play();
+            moveSound.play();
 
-            // Resets previous selected colours
+            // Resets previous selected colors
             if (previousStartingSquare != null && previousEndingSquare != null) {
                 previousStartingSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
                 previousStartingSquare.setIsSelected(false);
@@ -132,14 +130,7 @@ public class DragMove {
 
             // Doesn't go to dragDone without it
             event.setDropCompleted(true);
-
             event.consume();
-
-            // Have to reverse back the bitboard square indexes because the JavaFX bitboard is reversed (starts from the top left, instead of the bottom left)
-            UpdateBitboards.start(board, draggedPiece.getColour(), draggedPiece.getPieceType(), (7 - startingSquare.getRow()) * 8 + startingSquare.getCol(), (7 - endingSquare.getRow()) * 8 + endingSquare.getCol());
-
-            // After the piece is dropped, the current piece colour is the opponent
-            PseudoLegalMoves.generateOpponentPseudoLegalMoves(board, draggedPiece.getColour());
         }
     }
 
@@ -148,19 +139,19 @@ public class DragMove {
     public void dragExit(DragEvent event) {
         Square hoveredSquare = (Square) event.getSource();
 
-        // If exiting the starting square while dragging, goes back to the selected colour (removes the border)
+        // If exiting the starting square while dragging, it goes back to the selected color (removes the border)
         if (hoveredSquare == startingSquare) {
             startingSquare.setStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
             startingSquare.setIsSelected(true);
 
         }
 
-        // If exiting a square while dragging, goes back to the default colour (removes the border)
+        // If exiting a square while dragging, it goes back to the default color (removes the border)
         else if (hoveredSquare != endingSquare) {
             hoveredSquare.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
         }
 
-        // If dropping a piece, and the ending square is a light square give it a light selected colour, else a dark one
+        // If dropping a piece and the ending square is a light square, give it a light selected color, else a dark one
         else {
             hoveredSquare.setStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
             hoveredSquare.setIsSelected(true);
@@ -182,11 +173,10 @@ public class DragMove {
             previousEndingSquare = endingSquare;
         }
 
-        // If drag failed, drop in the starting square or drop out of bounds, make the piece visible again and save
-        // variables for later
+        // If drag failed (drop in the starting square or drop out of bounds) make the piece visible again and save variables
+        // for later
         else {
             draggedPiece.setVisible(true);
-
             failedStartingSquare = startingSquare;
         }
 

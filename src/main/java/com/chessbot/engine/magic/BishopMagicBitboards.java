@@ -1,6 +1,6 @@
-package com.chessbot.BitboardUtils;
+package com.chessbot.engine.magic;
 
-import com.chessbot.Objects.Pieces.Bishop;
+import com.chessbot.engine.core.Pieces.Bishop;
 
 public class BishopMagicBitboards extends MagicBitboards {
     @Override
