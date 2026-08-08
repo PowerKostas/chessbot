@@ -1,7 +1,8 @@
 package com.chessbot.ui.components;
 
-import com.chessbot.ui.controllers.MainController;
 import com.chessbot.engine.core.Board;
+import com.chessbot.engine.core.Move;
+import com.chessbot.ui.controllers.MainController;
 import com.chessbot.ui.input.DragMove;
 import com.chessbot.ui.input.RightClick;
 import javafx.scene.layout.ColumnConstraints;
@@ -107,9 +108,16 @@ public class VisualBoard extends GridPane {
             }
         }
 
-        // UI for debugging
-        long updatedMoves = board.getAllPseudoLegalMovesBitboard();
-        MainController.instance.bitboardVisualization(updatedMoves);
+        // Creates a legal moves bitboard for UI debugging
+        long legalMovesBitboard = 0L;
+
+        for (int i = 0; i < this.board.getLegalMoveCount(); i += 1) {
+            int legalMove = this.board.getLegalMove(i);
+            int endingSquare = Move.getEndingSquare(legalMove);
+            legalMovesBitboard |= 1L << endingSquare;
+        }
+
+        MainController.instance.bitboardVisualization(legalMovesBitboard);
     }
 
 

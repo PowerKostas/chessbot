@@ -4,12 +4,12 @@ import com.chessbot.engine.core.Pieces.Rook;
 
 public class RookMagicBitboards extends MagicBitboards {
     @Override
-    public long getAttacks(int square) {
-        return Rook.attacks(square);
+    public long getAllAttacks(int square) {
+        return Rook.allAttacks(square);
     }
 
     @Override
-    public long getPseudoLegalMoves(int square, long blockingPatternsBitboard) {
-        return Rook.pseudoLegalMoves(square, blockingPatternsBitboard);
+    public long getSlowAttacks(int square, long blockingPatternsBitboard) {
+        return Rook.slowAttacks(square, blockingPatternsBitboard);
     }
 }

@@ -3,9 +3,9 @@ package com.chessbot.engine.magic;
 import java.util.*;
 
 public abstract class MagicBitboards {
-    protected abstract long getAttacks(int square);
+    protected abstract long getAllAttacks(int square);
 
-    protected abstract long getPseudoLegalMoves(int square, long blockingPatternsBitboard);
+    protected abstract long getSlowAttacks(int square, long blockingPatternsBitboard);
 
 
     public long[] createBlockingPatternsBitboards(long attacksBitboard) {
@@ -80,7 +80,7 @@ public abstract class MagicBitboards {
     private long[] generatePseudoLegalMovesArray(int square, long[] blockingPatternsBitboards) {
         long[] pseudoLegalMoves = new long[blockingPatternsBitboards.length];
         for (int i = 0; i < blockingPatternsBitboards.length; i += 1) {
-            pseudoLegalMoves[i] = getPseudoLegalMoves(square, blockingPatternsBitboards[i]);
+            pseudoLegalMoves[i] = getSlowAttacks(square, blockingPatternsBitboards[i]);
         }
 
         return pseudoLegalMoves;
@@ -89,18 +89,17 @@ public abstract class MagicBitboards {
 
     public void findBestMagicNumbers() {
         for (int square = 0; square < 64; square += 1) {
-            long attacksBitboard = getAttacks(square);
+            long attacksBitboard = getAllAttacks(square);
             long[] blockingPatternsBitboards = createBlockingPatternsBitboards(attacksBitboard);
             long[] pseudoLegalMoves = generatePseudoLegalMovesArray(square, blockingPatternsBitboards);
 
-            // Now we are trying to find the best magic number, maxBits = the number of squares the sliding piece on the
-            // current square attacks, the bits number will determine the size of the movesLookupTable for this square. Bits
-            // along with the magic number need to be optimized, minimum bits for rooks is 10 and maximum is 12, minimum
-            // bits for bishops is 5 and maximum is 9, so it uses 5 for both
+            // Now we are trying to find the best magic number. Maximum bits = The number of squares the sliding piece on the
+            // current square attacks, bestBits will determine the size of the movesLookupTable for this square. Best bits
+            // along with the magic number need to be optimized, minimum bits for rooks is 10 and maximum is 12, minimum bits
+            // for bishops is 5 and maximum is 9, so 5 and 12 is used in the for loop range
             long magicNumber = 0;
             int bestBits = 0;
-            int maxBits = Long.bitCount(attacksBitboard);
-            for (int bits = 5; bits <= maxBits; bits += 1) {
+            for (int bits = 5; bits <= 12; bits += 1) {
                 magicNumber = findMagicNumber(blockingPatternsBitboards, pseudoLegalMoves, bits);
 
                 if (magicNumber != 0) {
@@ -125,7 +124,7 @@ public abstract class MagicBitboards {
         long[] movesLookupTable = new long[totalSize];
 
         for (int square = 0; square < 64; square += 1) {
-            long attacksBitboard = getAttacks(square);
+            long attacksBitboard = getAllAttacks(square);
             long[] blockingPatternsBitboards = createBlockingPatternsBitboards(attacksBitboard);
             long[] pseudoLegalMoves = generatePseudoLegalMovesArray(square, blockingPatternsBitboards);
 

@@ -4,12 +4,12 @@ import com.chessbot.engine.core.Pieces.Bishop;
 
 public class BishopMagicBitboards extends MagicBitboards {
     @Override
-    public long getAttacks(int square) {
-        return Bishop.attacks(square);
+    public long getAllAttacks(int square) {
+        return Bishop.allAttacks(square);
     }
 
     @Override
-    public long getPseudoLegalMoves(int square, long blockingPatternsBitboard) {
-        return Bishop.pseudoLegalMoves(square, blockingPatternsBitboard);
+    public long getSlowAttacks(int square, long blockingPatternsBitboard) {
+        return Bishop.slowAttacks(square, blockingPatternsBitboard);
     }
 }

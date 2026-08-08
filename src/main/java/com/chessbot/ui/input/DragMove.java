@@ -2,6 +2,7 @@ package com.chessbot.ui.input;
 
 import com.chessbot.ChessApplication;
 import com.chessbot.engine.core.Board;
+import com.chessbot.engine.core.Move;
 import com.chessbot.ui.components.Square;
 import com.chessbot.ui.components.VisualBoard;
 import com.chessbot.ui.components.VisualPiece;
@@ -110,11 +111,14 @@ public class DragMove {
             // Gets the square that the piece was dropped off
             endingSquare = (Square) event.getSource();
 
-            // Sends move to the engine, have to reverse back the bitboard square indexes because the JavaFX bitboard is
-            // reversed (starts from the top left, instead of the bottom left)
-            board.makeMove(draggedPiece.getColor(), draggedPiece.getType(), (7 - startingSquare.getRow()) * 8 + startingSquare.getCol(), (7 - endingSquare.getRow()) * 8 + endingSquare.getCol());
+            // Creates and sends move to the engine, have to reverse back the bitboard square indexes because the JavaFX bitboard
+            // is reversed (starts from the top left, instead of the bottom left)
+            int startingSquareIndex = (7 - startingSquare.getRow()) * 8 + startingSquare.getCol();
+            int endingSquareIndex = (7 - endingSquare.getRow()) * 8 + endingSquare.getCol();
+            int move = Move.createMove(startingSquareIndex, endingSquareIndex, 0);
+            board.makeMove(move);
 
-            // Forces the UI to redraw from the engine board
+            // Forces the UI to redraw based on the engine board
             visualBoard.sync();
 
             // Adds move sound

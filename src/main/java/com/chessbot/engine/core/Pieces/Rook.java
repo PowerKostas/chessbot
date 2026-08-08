@@ -1,5 +1,7 @@
 package com.chessbot.engine.core.Pieces;
 
+import com.chessbot.engine.magic.MagicConstants;
+
 public final class Rook {
     // rankMasks: 0xFF = Rank 1, 0xFF00 = Rank 2 ..., fileMasks: 0x0101010101010101 = File A ...
     private static final long[] rankMasks = {0xFFL, 0xFF00L, 0xFF0000L, 0xFF000000L, 0xFF00000000L, 0xFF0000000000L, 0xFF000000000000L, 0xFF00000000000000L};
@@ -8,7 +10,7 @@ public final class Rook {
     private Rook() {}
 
 
-    public static long attacks(int square) {
+    public static long allAttacks(int square) {
         // Treats the board as empty, gets the rank and file of the square that the rook is in and returns all the squares
         // in that rank/file except of the edge square. We use these attacks for blocking patterns and a piece on the edge
         // of the board doesn't block anything (we treat all pieces as enemy pieces, for now). Also doesn't return the square
@@ -23,7 +25,8 @@ public final class Rook {
     }
 
 
-    public static long pseudoLegalMoves(int square, long blockingPatternBitboard) {
+    // Slow version of calculating rook attacks, only used in MagicBitboards
+    public static long slowAttacks(int square, long blockingPatternBitboard) {
         long attacksBitboard = 0L;
         int[] directions = {8, -8, -1, 1}; // Up 1 square, down 1 square, left 1 square, right 1 square
 
@@ -60,5 +63,21 @@ public final class Rook {
         }
 
         return attacksBitboard;
+    }
+
+
+    // Rook attacks can be extracted from the precomputed rook moves lookup table. From the rooks bitboard get each rook's
+    // square, find what pieces are blocking its path, from that and the precomputed magic numbers and best bits get the
+    // magicIndex. Enter those keys in the rook lookup table and get the rook's pseudo legal moves
+    public static long attacks(int square, long allPiecesBitboard) {
+        long blockingPatternBitboard = allPiecesBitboard & allAttacks(square);
+        int magicIndex = (int) ((blockingPatternBitboard * MagicConstants.rookMagicNumbers[square]) >>> 64 - MagicConstants.rookBestBits[square]);
+        return MagicConstants.getRookMoves(square, magicIndex);
+    }
+
+
+    // Same logic as Knight.pseudoLegalMoves
+    public static long pseudoLegalMoves(int square, long allPiecesBitboard, long friendlyPiecesBitboard) {
+        return attacks(square, allPiecesBitboard) & ~friendlyPiecesBitboard;
     }
 }

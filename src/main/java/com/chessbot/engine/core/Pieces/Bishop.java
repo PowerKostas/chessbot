@@ -1,5 +1,8 @@
 package com.chessbot.engine.core.Pieces;
 
+import com.chessbot.engine.magic.MagicConstants;
+
+// This class uses similar logic to Rook
 public final class Bishop {
     // diagonalMasks: From left to right, antiDiagonalMasks: From right to left
     private static final long[] diagonalMasks = {0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L, 0x80402010080402L, 0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L, 0x1008040201000000L, 0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L};
@@ -8,8 +11,7 @@ public final class Bishop {
     private Bishop() {}
 
 
-    // Same logic as Rook.attacks
-    public static long attacks(int square) {
+    public static long allAttacks(int square) {
         int rank = square / 8;
         int file = square % 8;
 
@@ -20,8 +22,7 @@ public final class Bishop {
     }
 
 
-    // Same logic as Rook.pseudoLegalMoves
-    public static long pseudoLegalMoves(int square, long blockingPatternBitboard) {
+    public static long slowAttacks(int square, long blockingPatternBitboard) {
         long attacksBitboard = 0L;
         int[] directions = {7, 9, -7, -9}; // Up and left 1 square, up and right 1 square, down and right 1 square, down and left 1 square
 
@@ -55,5 +56,17 @@ public final class Bishop {
         }
 
         return attacksBitboard;
+    }
+
+
+    public static long attacks(int square, long allPiecesBitboard) {
+        long blockingPatternBitboard = allPiecesBitboard & allAttacks(square);
+        int magicIndex = (int) ((blockingPatternBitboard * MagicConstants.bishopMagicNumbers[square]) >>> 64 - MagicConstants.bishopBestBits[square]);
+        return MagicConstants.getBishopMoves(square, magicIndex);
+    }
+
+
+    public static long pseudoLegalMoves(int square, long allPiecesBitboard, long friendlyPiecesBitboard) {
+        return attacks(square, allPiecesBitboard) & ~friendlyPiecesBitboard;
     }
 }
