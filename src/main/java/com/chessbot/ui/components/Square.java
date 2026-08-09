@@ -69,7 +69,6 @@ public class Square extends StackPane {
                 letter.setTextFill(Color.web("#ebecd0"));
             }
 
-
             letter.setText(String.valueOf((char) ('a' + col)));
             letter.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
 

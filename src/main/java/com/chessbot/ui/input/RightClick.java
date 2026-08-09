@@ -5,7 +5,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
 public class RightClick {
-    public void click(MouseEvent event) {
+    public void mouseClicked(MouseEvent event) {
         if (event.getButton() == MouseButton.SECONDARY) { // If it's a right click
             Square clickedSquare = (Square) event.getSource();
 

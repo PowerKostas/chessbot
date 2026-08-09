@@ -10,11 +10,11 @@ public final class Knight {
     // squares are 1 ... The first 4 variables keep all the knights that can do the corresponding move. Then it creates a
     // bitboard with all the remaining legal knight moves. Doesn't check for possibilities of upwards and downwards out of
     // bounds because they will just be off the 64-bit bitboard
-    public static long attacks(long knightsBitboard) {
-        long west1 = knightsBitboard & ~0x0101010101010101L;
-        long west2 = knightsBitboard & ~0x0303030303030303L;
-        long east1 = knightsBitboard & ~0x8080808080808080L;
-        long east2 = knightsBitboard & ~0xC0C0C0C0C0C0C0C0L;
+    public static long attacks(long pieceBitboard) {
+        long west1 = pieceBitboard & ~0x0101010101010101L;
+        long west2 = pieceBitboard & ~0x0303030303030303L;
+        long east1 = pieceBitboard & ~0x8080808080808080L;
+        long east2 = pieceBitboard & ~0xC0C0C0C0C0C0C0C0L;
 
         return west1 << 15 | west1 >>> 17 |
                west2 << 6  | west2 >>> 10 |
@@ -25,7 +25,7 @@ public final class Knight {
 
     // Only difference of knight attacks and knight pseudo legal moves are that the pseudo legal moves can't fall on
     // friendly pieces
-    public static long pseudoLegalMoves(long knightsBitboard, long friendlyPiecesBitboard) {
-        return attacks(knightsBitboard) & ~friendlyPiecesBitboard;
+    public static long pseudoLegalMoves(long pieceBitboard, long friendlyPiecesBitboard) {
+        return attacks(pieceBitboard) & ~friendlyPiecesBitboard;
     }
 }

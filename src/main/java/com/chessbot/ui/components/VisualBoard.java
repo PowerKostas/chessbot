@@ -53,13 +53,13 @@ public class VisualBoard extends GridPane {
 
                 // Makes every square draggable/clickable, more info on the specific classes
                 square.setOnDragDetected(dragMove::dragDetected);
-                square.setOnDragOver(dragMove::drag);
-                square.setOnDragEntered(dragMove::dragEnter);
-                square.setOnDragExited(dragMove::dragExit);
+                square.setOnDragOver(dragMove::dragOver);
+                square.setOnDragEntered(dragMove::dragEntered);
+                square.setOnDragExited(dragMove::dragExited);
                 square.setOnDragDropped(dragMove::dragDropped);
                 square.setOnDragDone(dragMove::dragDone);
 
-                square.setOnMouseClicked(rightClick::click);
+                square.setOnMouseClicked(rightClick::mouseClicked);
 
                 this.add(square, col, row);
             }

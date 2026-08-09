@@ -20,7 +20,7 @@ public class MainController {
     public void initialize() {
         instance = this;
 
-        boardTwo = new VisualBoard(0, "8/8/8/8/8/8/8/8");
+        boardTwo = new VisualBoard(0, "4k/8/8/8/8/8/8/4K"); // Kings are needed for the visualization board to not crash
         boardOne = new VisualBoard(0, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 
         mainContainer.getChildren().addAll(boardOne, boardTwo);

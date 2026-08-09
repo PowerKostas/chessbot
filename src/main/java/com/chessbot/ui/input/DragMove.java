@@ -85,7 +85,7 @@ public class DragMove {
 
 
     // Triggers when hovering a square while dragging
-    public void drag(DragEvent event) {
+    public void dragOver(DragEvent event) {
         // Makes every square that the mouse hovers available for the rest of the dragging operation
         if (event.getGestureSource() != event.getSource() && event.getDragboard().hasString()) {
             event.acceptTransferModes(TransferMode.MOVE);
@@ -96,7 +96,7 @@ public class DragMove {
 
 
     // Triggers when hovering a new square while dragging
-    public void dragEnter(DragEvent event) {
+    public void dragEntered(DragEvent event) {
         // Adds a border effect to the square
         Square hoveredSquare = (Square) event.getSource();
         hoveredSquare.setStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
@@ -140,7 +140,7 @@ public class DragMove {
 
 
     // Triggers when exiting a square while dragging or after dropping a piece
-    public void dragExit(DragEvent event) {
+    public void dragExited(DragEvent event) {
         Square hoveredSquare = (Square) event.getSource();
 
         // If exiting the starting square while dragging, it goes back to the selected color (removes the border)
