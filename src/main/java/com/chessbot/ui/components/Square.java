@@ -1,5 +1,6 @@
 package com.chessbot.ui.components;
 
+import com.chessbot.engine.core.Piece;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -13,6 +14,7 @@ public class Square extends StackPane {
     private final int col;
     private VisualPiece currentPiece;
     private boolean isSelected = false;
+    private boolean isPreviousMove = false;
     private boolean isRightClicked = false;
 
 
@@ -21,11 +23,11 @@ public class Square extends StackPane {
         this.col = col;
 
         // Adds square color
-        this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+        this.setColor("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
 
         // If the player is white, put the numbers at the left column, if the player is black (board will be reversed)
         // put the numbers in the right column
-        if ((board.getPlayerColor() == 0 && col == 0) || (board.getPlayerColor() == 1 && col == 7)) {
+        if ((board.getPlayerColor() == Piece.WHITE && col == 0) || (board.getPlayerColor() == Piece.BLACK && col == 7)) {
             Label number = new Label();
 
             if ((row + col) % 2 == 0) {
@@ -42,7 +44,7 @@ public class Square extends StackPane {
             StackPane.setMargin(number, new Insets(0, 0, 0, 4));
 
             // If the player is black, reverse the numbers
-            if (board.getPlayerColor() == 1) {
+            if (board.getPlayerColor() == Piece.BLACK) {
                 number.setRotate(180);
                 StackPane.setAlignment(number, Pos.BOTTOM_RIGHT);
                 StackPane.setMargin(number, new Insets(0, 4, 0, 0));
@@ -58,7 +60,7 @@ public class Square extends StackPane {
 
         // If the player is white, put the letters at the bottom row, if the player is black (board will be reversed)
         // put the letters in the top row
-        if ((board.getPlayerColor() == 0 && row == 7) || (board.getPlayerColor() == 1 && row == 0)) {
+        if ((board.getPlayerColor() == Piece.WHITE && row == 7) || (board.getPlayerColor() == Piece.BLACK && row == 0)) {
             Label letter = new Label();
 
             if ((row + col) % 2 == 0) {
@@ -73,7 +75,7 @@ public class Square extends StackPane {
             letter.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
 
             // If the player is black, reverse the letters
-            if (board.getPlayerColor() == 1) {
+            if (board.getPlayerColor() == Piece.BLACK) {
                 letter.setRotate(180);
                 StackPane.setAlignment(letter, Pos.TOP_LEFT);
                 StackPane.setMargin(letter, new Insets(0, 0, 0, 4));
@@ -85,17 +87,6 @@ public class Square extends StackPane {
             }
 
             this.getChildren().add(letter);
-        }
-    }
-
-
-    public void setStyle(String lightSquareStyle, String darkSquareStyle) {
-        if ((this.row + this.col) % 2 == 0) { // If light square
-            this.setStyle(lightSquareStyle);
-        }
-
-        else { // If dark square
-            this.setStyle(darkSquareStyle);
         }
     }
 
@@ -131,6 +122,14 @@ public class Square extends StackPane {
 
     public void setIsSelected(boolean isSelected) {
         this.isSelected = isSelected;
+        this.updateColor();
+    }
+
+    public Boolean getIsPreviousMove() { return isPreviousMove; }
+
+    public void setIsPreviousMove(boolean isPreviousMove) {
+        this.isPreviousMove = isPreviousMove;
+        this.updateColor();
     }
 
     public Boolean getIsRightClicked() {
@@ -139,5 +138,39 @@ public class Square extends StackPane {
 
     public void setIsRightClicked(boolean isRightClicked) {
         this.isRightClicked = isRightClicked;
+        this.updateColor();
+    }
+
+
+    // Sets the color of a square
+    public void setColor(String lightSquareStyle, String darkSquareStyle) {
+        if ((this.row + this.col) % 2 == 0) { // If light square
+            this.setStyle(lightSquareStyle);
+        }
+
+        else { // If dark square
+            this.setStyle(darkSquareStyle);
+        }
+    }
+
+
+    // Updates the color of a square
+    public void updateColor() {
+        // If the square is right-clicked
+        if (isRightClicked) {
+            this.setColor("-fx-background-color: #eb7d6a", "-fx-background-color: #d36c50");
+        }
+
+        // If the square is selected or if a move affected this square
+        else if (isSelected || isPreviousMove) {
+            this.setColor("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+        }
+
+        // If a move was made, and it doesn't affect this square (used to reset the color of the old previous move squares). Or
+        // if a left/right click happened on the board (a left click resets the right-clicked and selected squares and a right
+        // click resets the selected squares)
+        else {
+            this.setColor("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+        }
     }
 }

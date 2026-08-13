@@ -1,6 +1,7 @@
 package com.chessbot.engine.movegen;
 
 import com.chessbot.engine.core.Board;
+import com.chessbot.engine.core.Piece;
 import com.chessbot.engine.core.Pieces.*;
 
 public final class AttackMap {
@@ -12,19 +13,19 @@ public final class AttackMap {
     public static void generate(Board board, int color) {
         // Filters out the friendly king in the calculations. This is done in order to avoid the king being able to move backwards
         // in the same direction as a checking slider when filtering the attack map to legal moves
-        long allPiecesBitboard = board.getOtherBitboard(2) & ~board.getBitboard(color ^ 1, 5);
+        long allPiecesBitboard = board.getOtherBitboard(2) & ~board.getBitboard(color ^ 1, Piece.KING);
 
         // Resets each turn
         long attackMapBitboard = 0L;
 
         // Pawn attack map
-        attackMapBitboard |= Pawn.attacks(board.getBitboard(color, 0), color == 0);
+        attackMapBitboard |= Pawn.attacks(color, board.getBitboard(color, Piece.PAWN));
 
         // Knight attack map
-        attackMapBitboard |= Knight.attacks(board.getBitboard(color, 1));
+        attackMapBitboard |= Knight.attacks(board.getBitboard(color, Piece.KNIGHT));
 
         // Rook attack map, it also calculates a rook attack map for the queen
-        long[] rooksQueensBitboards = {board.getBitboard(color, 3), board.getBitboard(color, 4)};
+        long[] rooksQueensBitboards = {board.getBitboard(color, Piece.ROOK), board.getBitboard(color, Piece.QUEEN)};
         for (int i = 0; i < 2; i += 1) {
             while (rooksQueensBitboards[i] != 0L) {
                 int rookSquare = Long.numberOfTrailingZeros(rooksQueensBitboards[i]);
@@ -34,7 +35,7 @@ public final class AttackMap {
         }
 
         // Bishop/Queen attack map, same process as the rooks
-        long[] bishopsQueensBitboards = {board.getBitboard(color, 2), board.getBitboard(color, 4)};
+        long[] bishopsQueensBitboards = {board.getBitboard(color, Piece.BISHOP), board.getBitboard(color, Piece.QUEEN)};
         for (int i = 0; i < 2; i += 1) {
             while (bishopsQueensBitboards[i] != 0L) {
                 int bishopSquare = Long.numberOfTrailingZeros(bishopsQueensBitboards[i]);
@@ -44,7 +45,7 @@ public final class AttackMap {
         }
 
         // King attack map
-        attackMapBitboard |= King.attacks(board.getBitboard(color, 5));
+        attackMapBitboard |= King.attacks(board.getBitboard(color, Piece.KING));
 
         board.setAttackMapBitboard(color, attackMapBitboard);
     }

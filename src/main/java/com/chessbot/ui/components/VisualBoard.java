@@ -2,9 +2,12 @@ package com.chessbot.ui.components;
 
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Move;
+import com.chessbot.engine.core.Piece;
 import com.chessbot.ui.controllers.MainController;
 import com.chessbot.ui.input.DragMove;
 import com.chessbot.ui.input.RightClick;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
@@ -22,8 +25,8 @@ public class VisualBoard extends GridPane {
         this.board = new Board();
         this.playerColor = playerColor;
 
-        // If the player is black, reverse the board
-        if (playerColor == 1) {
+        // Reverse the board, if the player is black
+        if (playerColor == Piece.BLACK) {
             this.setRotate(180);
         }
 
@@ -68,6 +71,42 @@ public class VisualBoard extends GridPane {
         // Sets pieces on the board
         this.board.loadPosition(fen);
         this.sync();
+
+        // Listens for clicks inside the board
+        this.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            for (int row = 0; row < 8; row++) {
+                for (int col = 0; col < 8; col++) {
+                    Square square = (Square) this.getChildren().get(row * 8 + col);
+
+                    // On a left click, reset the right-clicked or selected squares
+                    if (event.getButton() == MouseButton.PRIMARY) {
+                        if (square.getIsRightClicked()) {
+                            square.setIsRightClicked(false);
+                        }
+
+                        else if (square.getIsSelected()) {
+                            square.setIsSelected(false);
+                        }
+                    }
+
+                    // On a right click, reset the selected squares
+                    else if (event.getButton() == MouseButton.SECONDARY) {
+                        if (square.getIsSelected()) {
+                            square.setIsSelected(false);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+
+    public Board getBoard() { return board; }
+
+    public int getPlayerColor() { return playerColor; }
+
+    public void setPlayerColor(int playerColor) {
+        this.playerColor = playerColor;
     }
 
 
@@ -101,7 +140,7 @@ public class VisualBoard extends GridPane {
                             square.getChildren().remove(visualPiece);
                         }
 
-                        VisualPiece newPiece = new VisualPiece(pieceColor, pieceType, this.playerColor == 1);
+                        VisualPiece newPiece = new VisualPiece(pieceColor, pieceType, this.playerColor == Piece.BLACK);
                         square.setCurrentPiece(newPiece);
                     }
                 }
@@ -118,14 +157,5 @@ public class VisualBoard extends GridPane {
         }
 
         MainController.instance.bitboardVisualization(legalMovesBitboard);
-    }
-
-
-    public Board getBoard() { return board; }
-
-    public int getPlayerColor() { return playerColor; }
-
-    public void setPlayerColor(int playerColor) {
-        this.playerColor = playerColor;
     }
 }

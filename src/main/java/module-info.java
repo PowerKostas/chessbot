@@ -13,4 +13,5 @@ module com.chessbot {
     opens com.chessbot.engine.utils to javafx.fxml;
     exports com.chessbot.ui.controllers;
     opens com.chessbot.ui.controllers to javafx.fxml;
+    opens com.chessbot.ui.utils to javafx.fxml;
 }

@@ -1,6 +1,7 @@
 package com.chessbot.engine.movegen;
 
 import com.chessbot.engine.core.Board;
+import com.chessbot.engine.core.Piece;
 import com.chessbot.engine.core.Pieces.Bishop;
 import com.chessbot.engine.core.Pieces.Knight;
 import com.chessbot.engine.core.Pieces.Pawn;
@@ -16,16 +17,16 @@ public final class Checkers {
     public static long calculateSquares(Board board, int friendlyColor) {
         long checkers = 0L;
         int enemyColor = friendlyColor ^ 1;
-        long kingBitboard = board.getBitboard(friendlyColor, 5);
+        long kingBitboard = board.getBitboard(friendlyColor, Piece.KING);
         int kingSquare = Long.numberOfTrailingZeros(kingBitboard);
         long allPiecesBitboard = board.getOtherBitboard(2);
 
-        checkers |= Pawn.attacks(kingBitboard, friendlyColor == 0) & board.getBitboard(enemyColor, 0);
-        checkers |= Knight.attacks(kingBitboard) & board.getBitboard(enemyColor, 1);
+        checkers |= Pawn.attacks(friendlyColor, kingBitboard) & board.getBitboard(enemyColor, Piece.PAWN);
+        checkers |= Knight.attacks(kingBitboard) & board.getBitboard(enemyColor, Piece.KNIGHT);
 
         // Also checks if a queen is there for bishop/rook attacks
-        checkers |= Bishop.attacks(kingSquare, allPiecesBitboard) & (board.getBitboard(enemyColor, 2) | board.getBitboard(enemyColor, 4));
-        checkers |= Rook.attacks(kingSquare, allPiecesBitboard) & (board.getBitboard(enemyColor, 3) | board.getBitboard(enemyColor, 4));
+        checkers |= Bishop.attacks(kingSquare, allPiecesBitboard) & (board.getBitboard(enemyColor, Piece.BISHOP) | board.getBitboard(enemyColor, Piece.QUEEN));
+        checkers |= Rook.attacks(kingSquare, allPiecesBitboard) & (board.getBitboard(enemyColor, Piece.ROOK) | board.getBitboard(enemyColor, Piece.QUEEN));
 
         return checkers;
     }
@@ -34,7 +35,7 @@ public final class Checkers {
     // Other than moving the king away, rook, bishop and queen checks can be stopped by blocking and capturing, pawn and knight
     // checks can only be stopped by capturing. This function calculates all the squares that stop the check
     public static long calculateEvadeMask(Board board, int friendlyColor, int checkerSquare) {
-        long kingBitboard = board.getBitboard(friendlyColor, 5);
+        long kingBitboard = board.getBitboard(friendlyColor, Piece.KING);
         int kingSquare = Long.numberOfTrailingZeros(kingBitboard);
         long allPiecesBitboard = board.getOtherBitboard(2);
         long checkerBitboard = 1L << checkerSquare;

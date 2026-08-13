@@ -4,8 +4,7 @@ import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.engine.utils.FenParser;
 
 public class Board {
-    // 0 = White, 1 = Black
-    private int turn = 0;
+    private int turn = Piece.WHITE;
 
     // 12 64 bit variables, one for each piece color and piece type, first dimension is the piece color and second dimension
     // is the piece type, each bit indicates a piece on the board, used for board representation
@@ -26,6 +25,9 @@ public class Board {
 
     // Keeps track of how many legal moves are in the array
     private int legalMoveCount = 0;
+
+    // If the friendly king is in check
+    private boolean inCheck = false;
 
     public Board() {}
 
@@ -62,6 +64,10 @@ public class Board {
 
     public int getLegalMoveCount() { return legalMoveCount; }
 
+    public boolean getInCheck() { return inCheck; }
+
+    public void setInCheck(boolean inCheck) { this.inCheck = inCheck; }
+
 
     // Adds a piece to the board at the start of the game
     public void addPiece(int pieceColor, int pieceType, int squareIndex) {
@@ -88,8 +94,8 @@ public class Board {
         otherBitboards[2] |= addMask;
 
         // Resets the en passant bitboard after each move, and if a pawn moved 2 squares up, the square 1 up is an en passant
-        // target, don't worry about the bitwise operations, they work
-        if (pieceType == 1 && (endingSquare ^ startingSquare) == 16) {
+        // target, don't worry about the bitwise operations, they work and it's the fastest method
+        if (pieceType == Piece.PAWN && (endingSquare ^ startingSquare) == 16) {
             enPassantSquareBitboard = 1L << (endingSquare ^ 8);
         }
 
@@ -99,13 +105,45 @@ public class Board {
     }
 
 
+    // Removes a piece whenever a capture happens
+    public void removePiece(int pieceColor, int pieceType, int squareIndex) {
+        long removeMask = ~(1L << squareIndex);
+
+        bitboards[pieceColor][pieceType] &= removeMask;
+        otherBitboards[pieceColor] &= removeMask;
+        otherBitboards[2] &= removeMask;
+    }
+
+
     // Coordinates every job of a move cycle
     public void makeMove(int legalMove) {
-        // Gets the necessary info about the move and moves the piece
+        // Gets the necessary info about the move
         int startingSquare = Move.getStartingSquare(legalMove);
         int endingSquare = Move.getEndingSquare(legalMove);
+        int flag = Move.getFlag(legalMove);
+
         int[] pieceInfo = this.getPieceAtSquare(startingSquare);
-        this.movePiece(startingSquare, endingSquare, pieceInfo[0], pieceInfo[1]);
+        int pieceColor = pieceInfo[0];
+        int pieceType = pieceInfo[1];
+        int enemyColor = pieceColor ^ 1;
+
+        // Removes a piece if necessary, if a normal capture happened, the captured piece is in the ending square
+        if (flag == Move.FLAG_CAPTURE) {
+            int[] capturedPieceInfo = this.getPieceAtSquare(endingSquare);
+            if (capturedPieceInfo != null) {
+                this.removePiece(enemyColor, capturedPieceInfo[1], endingSquare);
+            }
+        }
+
+        // If an en passant capture happened, for white the captured pawn is a rank below the ending square, for black the
+        // captured pawn is a rank above the ending square
+        else if (flag == Move.FLAG_EN_PASSANT) {
+            int capturedPawnSquare = (pieceColor == Piece.WHITE) ? endingSquare - 8 : endingSquare + 8;
+            this.removePiece(enemyColor, Piece.PAWN, capturedPawnSquare);
+        }
+
+        // Moves the piece
+        this.movePiece(startingSquare, endingSquare, pieceColor, pieceType);
 
         // Flips the turn and generates moves for the next player
         this.turn ^= 1;

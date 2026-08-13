@@ -1,6 +1,7 @@
 package com.chessbot.engine.utils;
 
 import com.chessbot.engine.core.Board;
+import com.chessbot.engine.core.Piece;
 
 // Reads a FEN sequence and updates the bitboards
 public final class FenParser {
@@ -11,12 +12,12 @@ public final class FenParser {
         letter = Character.toLowerCase(letter);
 
         return switch (letter) {
-            case 'p' -> 0;
-            case 'n' -> 1;
-            case 'b' -> 2;
-            case 'r' -> 3;
-            case 'q' -> 4;
-            case 'k' -> 5;
+            case 'p' -> Piece.PAWN;
+            case 'n' -> Piece.KNIGHT;
+            case 'b' -> Piece.BISHOP;
+            case 'r' -> Piece.ROOK;
+            case 'q' -> Piece.QUEEN;
+            case 'k' -> Piece.KING;
             default -> throw new IllegalArgumentException("Unknown piece: " + letter);
         };
     }
@@ -31,7 +32,7 @@ public final class FenParser {
         // Numbers indicate the number of empty squares, slashes indicate new rows
         for (char letter : fen.toCharArray()) {
             if (Character.isLetter(letter)) {
-                int color = Character.isUpperCase(letter) ? 0 : 1; // 0 for White, 1 for Black
+                int color = Character.isUpperCase(letter) ? Piece.WHITE : Piece.BLACK;
                 int pieceType = getPieceTypeFromLetter(letter);
 
                 // Add piece to the engine board

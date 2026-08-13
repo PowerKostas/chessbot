@@ -2,7 +2,7 @@ package com.chessbot.engine.magic;
 
 // Precomputed constants
 public final class MagicConstants {
-    public static final long[] rookMagicNumbers = {
+    public static final long[] ROOK_MAGIC_NUMBERS = {
             5800636872595095552L, 90072061280034816L, 72075323742624000L, 1801457446909118468L, 144133467528101896L,
             -8863065373826612664L, 324260273764434432L, 4827861000378466560L, 1160943543592960016L, 8070591544683397248L,
             1020206190529872001L, 5188287576947103744L, 774759907781116928L, 748301234192253056L, 5211227753482813700L,
@@ -17,13 +17,13 @@ public final class MagicConstants {
             155655821572247553L, 2612650841471197186L, 1225542117334975490L, 720584805284643332L, 585468641039025154L
     };
 
-    public static final int[] rookBestBits = {
+    public static final int[] ROOK_BEST_BITS = {
             12, 11, 11, 11, 11, 11, 11, 12, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10,
             11, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11, 12, 11, 11, 11, 11, 11,
             11, 12
     };
 
-    public static final long[] bishopMagicNumbers = {
+    public static final long[] BISHOP_MAGIC_NUMBERS = {
             1974822271975552L, 9009127779008514L, 2884599556032430080L, 9166100168179712L, 5651627342070336L, 306808841843318852L,
             2306982262242025477L, -9196314137758431232L, 4611791709017096258L, 1698200139464768L, 1178687236194304L,
             2454576285714785283L, 864833035252531204L, 36382874163216384L, 4508036462940308L, 72104885931352096L, 1170938158582858250L,
@@ -38,7 +38,7 @@ public final class MagicConstants {
             72066398855234562L, -9182663714035719936L
     };
 
-    public static final int[] bishopBestBits = {
+    public static final int[] BISHOP_BEST_BITS = {
             6, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 9, 9, 7, 5, 5, 5, 5,
             7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6
     };
@@ -64,20 +64,20 @@ public final class MagicConstants {
         int currentOffset = 0;
         for (int i = 0; i < 64; i++) {
             rookOffsets[i] = currentOffset;
-            currentOffset += (1 << rookBestBits[i]);
+            currentOffset += (1 << ROOK_BEST_BITS[i]);
         }
 
         currentOffset = 0;
         for (int i = 0; i < 64; i++) {
             bishopOffsets[i] = currentOffset;
-            currentOffset += (1 << bishopBestBits[i]);
+            currentOffset += (1 << BISHOP_BEST_BITS[i]);
         }
 
         // Precomputes movesLookupTable
         RookMagicBitboards rookMagicBitboards = new RookMagicBitboards();
-        rookMovesLookupTable = rookMagicBitboards.createMovesLookupTable(rookMagicNumbers, rookBestBits, rookOffsets);
+        rookMovesLookupTable = rookMagicBitboards.createMovesLookupTable(ROOK_MAGIC_NUMBERS, ROOK_BEST_BITS, rookOffsets);
 
         BishopMagicBitboards bishopMagicBitboards = new BishopMagicBitboards();
-        bishopMovesLookupTable = bishopMagicBitboards.createMovesLookupTable(bishopMagicNumbers, bishopBestBits, bishopOffsets);
+        bishopMovesLookupTable = bishopMagicBitboards.createMovesLookupTable(BISHOP_MAGIC_NUMBERS, BISHOP_BEST_BITS, bishopOffsets);
     }
 }

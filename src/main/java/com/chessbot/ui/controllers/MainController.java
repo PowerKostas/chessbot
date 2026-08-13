@@ -1,5 +1,6 @@
 package com.chessbot.ui.controllers;
 
+import com.chessbot.engine.core.Piece;
 import com.chessbot.ui.components.Square;
 import com.chessbot.ui.components.VisualBoard;
 import javafx.fxml.FXML;
@@ -20,8 +21,8 @@ public class MainController {
     public void initialize() {
         instance = this;
 
-        boardTwo = new VisualBoard(0, "4k/8/8/8/8/8/8/4K"); // Kings are needed for the visualization board to not crash
-        boardOne = new VisualBoard(0, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+        boardTwo = new VisualBoard(Piece.WHITE, "4k/8/8/8/8/8/8/4K"); // Kings are needed for the visualization board to not crash
+        boardOne = new VisualBoard(Piece.WHITE, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 
         mainContainer.getChildren().addAll(boardOne, boardTwo);
     }

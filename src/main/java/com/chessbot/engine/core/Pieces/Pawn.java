@@ -1,12 +1,14 @@
 package com.chessbot.engine.core.Pieces;
 
+import com.chessbot.engine.core.Piece;
+
 // Normal moves and en passant moves are separated because there are instances that en passant moves don't need to be generated
 public final class Pawn {
     private Pawn() {}
 
 
-    public static long attacks(long pieceBitboard, boolean isWhite) {
-        if (isWhite) {
+    public static long attacks(int color, long pieceBitboard) {
+        if (color == Piece.WHITE) {
             // 1. If the piece is not in the A file and there is an opponent piece up and left 1 square, it can move there
             // 2. If the piece is not in the H file and there is an opponent piece up and right square, it can move there
             return (pieceBitboard & ~0x0101010101010101L) << 7 |
@@ -22,10 +24,10 @@ public final class Pawn {
     }
 
 
-    public static long pseudoLegalMoves(long pieceBitboard, long allPiecesBitboard, long enemyPiecesBitboard, boolean isWhite) {
+    public static long pseudoLegalMoves(int color, long pieceBitboard, long allPiecesBitboard, long enemyPiecesBitboard) {
         long singlePush, doublePush;
 
-        if (isWhite) {
+        if (color == Piece.WHITE) {
             // 1. Moves the pawn up 1 square, if there are no pieces there
             // 2. If the piece ends on the third rank, it can move up 1 square again, if there are no pieces there
             singlePush = (pieceBitboard << 8) & ~allPiecesBitboard;
@@ -40,7 +42,7 @@ public final class Pawn {
         }
 
         // Combines pushes with attacks to get all pawn pseudo legal moves
-        long attacks = attacks(pieceBitboard, isWhite) & enemyPiecesBitboard;
+        long attacks = attacks(color, pieceBitboard) & enemyPiecesBitboard;
         return singlePush | doublePush | attacks;
     }
 

@@ -3,9 +3,12 @@ package com.chessbot.engine.core.Pieces;
 import com.chessbot.engine.magic.MagicConstants;
 
 public final class Rook {
-    // rankMasks: 0xFF = Rank 1, 0xFF00 = Rank 2 ..., fileMasks: 0x0101010101010101 = File A ...
-    private static final long[] rankMasks = {0xFFL, 0xFF00L, 0xFF0000L, 0xFF000000L, 0xFF00000000L, 0xFF0000000000L, 0xFF000000000000L, 0xFF00000000000000L};
-    private static final long[] fileMasks = {0x0101010101010101L, 0x0202020202020202L, 0x0404040404040404L, 0x0808080808080808L, 0x1010101010101010L, 0x2020202020202020L, 0x4040404040404040L, 0x8080808080808080L};
+    // RANK_MASKS: 0xFF = Rank 1, 0xFF00 = Rank 2 ..., FILE_MASKS: 0x0101010101010101 = File A ...
+    private static final long[] RANK_MASKS = {0xFFL, 0xFF00L, 0xFF0000L, 0xFF000000L, 0xFF00000000L, 0xFF0000000000L, 0xFF000000000000L,
+                                              0xFF00000000000000L};
+
+    private static final long[] FILE_MASKS = {0x0101010101010101L, 0x0202020202020202L, 0x0404040404040404L, 0x0808080808080808L,
+                                              0x1010101010101010L, 0x2020202020202020L, 0x4040404040404040L, 0x8080808080808080L};
 
     private Rook() {}
 
@@ -18,8 +21,8 @@ public final class Rook {
         int rank = square / 8;
         int file = square % 8;
 
-        long rankAttacks = rankMasks[rank] & 0x7E7E7E7E7E7E7E7EL;
-        long fileAttacks = fileMasks[file] & 0x00FFFFFFFFFFFF00L;
+        long rankAttacks = RANK_MASKS[rank] & 0x7E7E7E7E7E7E7E7EL;
+        long fileAttacks = FILE_MASKS[file] & 0x00FFFFFFFFFFFF00L;
 
         return (rankAttacks | fileAttacks) & ~(1L << square);
     }
@@ -71,7 +74,7 @@ public final class Rook {
     // magicIndex. Enter those keys in the rook lookup table and get the rook's pseudo legal moves
     public static long attacks(int square, long allPiecesBitboard) {
         long blockingPatternBitboard = allPiecesBitboard & allAttacks(square);
-        int magicIndex = (int) ((blockingPatternBitboard * MagicConstants.rookMagicNumbers[square]) >>> 64 - MagicConstants.rookBestBits[square]);
+        int magicIndex = (int) ((blockingPatternBitboard * MagicConstants.ROOK_MAGIC_NUMBERS[square]) >>> 64 - MagicConstants.ROOK_BEST_BITS[square]);
         return MagicConstants.getRookMoves(square, magicIndex);
     }
 
