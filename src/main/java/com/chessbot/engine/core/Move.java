@@ -8,8 +8,9 @@ public final class Move {
     private static final int FLAG_MASK = 0b1111 << 12;
 
     public static final int FLAG_QUIET = 0;
-    public static final int FLAG_CAPTURE = 1;
-    public static final int FLAG_EN_PASSANT = 2;
+    public static final int FLAG_DOUBLE_PAWN_PUSH = 1;
+    public static final int FLAG_CAPTURE = 4;
+    public static final int FLAG_EN_PASSANT_CAPTURE = 5;
 
     private Move() {}
 

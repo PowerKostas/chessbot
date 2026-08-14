@@ -10,12 +10,17 @@ public final class MoveGenerator {
 
 
     // Places each piece legal move to the legal moves array
-    private static void packMoves(Board board, long pieceLegalMoves, int startingSquare, long enemyPieces) {
+    private static void packMoves(Board board, long pieceLegalMoves, int startingSquare, long enemyPieces, int pieceType) {
         while (pieceLegalMoves != 0L) {
             int endingSquare = Long.numberOfTrailingZeros(pieceLegalMoves);
 
             // Checks if it's a capture or a normal move
             int moveFlag = ((1L << endingSquare) & enemyPieces) != 0 ? Move.FLAG_CAPTURE : Move.FLAG_QUIET;
+
+            // Detects if a pawn moved 2 squares up, don't worry about the bitwise operation
+            if (pieceType == Piece.PAWN && (endingSquare ^ startingSquare) == 16) {
+                moveFlag = Move.FLAG_DOUBLE_PAWN_PUSH;
+            }
 
             board.addLegalMove(Move.createMove(startingSquare, endingSquare, moveFlag));
             pieceLegalMoves ^= (1L << endingSquare);
@@ -49,7 +54,7 @@ public final class MoveGenerator {
         long safeKingMoves = kingPseudoLegalMoves & ~attackMapBitboard;
 
         // Places each king safe move to the legal moves array
-        packMoves(board, safeKingMoves, kingSquare, enemyPieces);
+        packMoves(board, safeKingMoves, kingSquare, enemyPieces, Piece.KING);
 
 
         // Check detection
@@ -84,14 +89,14 @@ public final class MoveGenerator {
             long pawnBitboard = 1L << startingSquare;
             long pawnLegalMoves = Pawn.pseudoLegalMoves(friendlyColor, pawnBitboard, allPieces, enemyPieces) & checkMask;
 
-            packMoves(board, pawnLegalMoves, startingSquare, enemyPieces);
+            packMoves(board, pawnLegalMoves, startingSquare, enemyPieces, Piece.PAWN);
 
             // Handles en passant separately because it's a special move
             if (enPassantBitboard != 0L) {
                 long enPassantLegalMoves = Pawn.enPassant(pawnBitboard, enPassantBitboard, isWhite) & checkMask;
                 if (enPassantLegalMoves != 0L) {
                     int endingSquare = Long.numberOfTrailingZeros(enPassantLegalMoves);
-                    board.addLegalMove(Move.createMove(startingSquare, endingSquare, Move.FLAG_EN_PASSANT));
+                    board.addLegalMove(Move.createMove(startingSquare, endingSquare, Move.FLAG_EN_PASSANT_CAPTURE));
                 }
             }
 
@@ -104,7 +109,7 @@ public final class MoveGenerator {
             long knightBitboard = 1L << startingSquare;
             long knightLegalMoves = Knight.pseudoLegalMoves(knightBitboard, friendlyPieces) & checkMask;
 
-            packMoves(board, knightLegalMoves, startingSquare, enemyPieces);
+            packMoves(board, knightLegalMoves, startingSquare, enemyPieces, Piece.KNIGHT);
             knightsBitboard ^= knightBitboard;
         }
 
@@ -113,7 +118,7 @@ public final class MoveGenerator {
             int startingSquare = Long.numberOfTrailingZeros(bishopsBitboard);
             long bishopLegalMoves = Bishop.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces) & checkMask;
 
-            packMoves(board, bishopLegalMoves, startingSquare, enemyPieces);
+            packMoves(board, bishopLegalMoves, startingSquare, enemyPieces, Piece.BISHOP);
             bishopsBitboard ^= 1L << startingSquare;
         }
 
@@ -122,7 +127,7 @@ public final class MoveGenerator {
             int startingSquare = Long.numberOfTrailingZeros(rooksBitboard);
             long rookLegalMoves = Rook.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces) & checkMask;
 
-            packMoves(board, rookLegalMoves, startingSquare, enemyPieces);
+            packMoves(board, rookLegalMoves, startingSquare, enemyPieces, Piece.ROOK);
             rooksBitboard ^= (1L << startingSquare);
         }
 
@@ -133,7 +138,7 @@ public final class MoveGenerator {
                                    Bishop.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces)) &
                                    checkMask;
 
-            packMoves(board, queenLegalMoves, startingSquare, enemyPieces);
+            packMoves(board, queenLegalMoves, startingSquare, enemyPieces, Piece.QUEEN);
             queensBitboard ^= (1L << startingSquare);
         }
     }

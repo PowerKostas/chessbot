@@ -20,7 +20,7 @@ public final class SoundManager {
             checkSound.play();
         }
 
-        else if (flag == Move.FLAG_CAPTURE || flag == Move.FLAG_EN_PASSANT) {
+        else if (flag == Move.FLAG_CAPTURE || flag == Move.FLAG_EN_PASSANT_CAPTURE) {
             captureSound.play();
         }
 

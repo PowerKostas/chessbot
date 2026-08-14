@@ -69,6 +69,14 @@ public class Board {
     public void setInCheck(boolean inCheck) { this.inCheck = inCheck; }
 
 
+    // Coordinates every job at the start of the game
+    public void loadPosition(String fen) {
+        // Loads pieces onto the board and generates moves for the next player
+        FenParser.loadFen(fen, this);
+        MoveGenerator.generate(this);
+    }
+
+
     // Adds a piece to the board at the start of the game
     public void addPiece(int pieceColor, int pieceType, int squareIndex) {
         long addMask = 1L << squareIndex;
@@ -92,16 +100,6 @@ public class Board {
 
         otherBitboards[2] &= ~removeMask;
         otherBitboards[2] |= addMask;
-
-        // Resets the en passant bitboard after each move, and if a pawn moved 2 squares up, the square 1 up is an en passant
-        // target, don't worry about the bitwise operations, they work and it's the fastest method
-        if (pieceType == Piece.PAWN && (endingSquare ^ startingSquare) == 16) {
-            enPassantSquareBitboard = 1L << (endingSquare ^ 8);
-        }
-
-        else {
-            enPassantSquareBitboard = 0L;
-        }
     }
 
 
@@ -122,22 +120,18 @@ public class Board {
         int endingSquare = Move.getEndingSquare(legalMove);
         int flag = Move.getFlag(legalMove);
 
-        int[] pieceInfo = this.getPieceAtSquare(startingSquare);
-        int pieceColor = pieceInfo[0];
-        int pieceType = pieceInfo[1];
+        int pieceColor = this.getPieceColorAtSquare(startingSquare);
+        int pieceType = this.getPieceTypeAtSquare(startingSquare);
         int enemyColor = pieceColor ^ 1;
 
         // Removes a piece if necessary, if a normal capture happened, the captured piece is in the ending square
         if (flag == Move.FLAG_CAPTURE) {
-            int[] capturedPieceInfo = this.getPieceAtSquare(endingSquare);
-            if (capturedPieceInfo != null) {
-                this.removePiece(enemyColor, capturedPieceInfo[1], endingSquare);
-            }
+            this.removePiece(enemyColor, this.getPieceTypeAtSquare(endingSquare), endingSquare);
         }
 
         // If an en passant capture happened, for white the captured pawn is a rank below the ending square, for black the
         // captured pawn is a rank above the ending square
-        else if (flag == Move.FLAG_EN_PASSANT) {
+        else if (flag == Move.FLAG_EN_PASSANT_CAPTURE) {
             int capturedPawnSquare = (pieceColor == Piece.WHITE) ? endingSquare - 8 : endingSquare + 8;
             this.removePiece(enemyColor, Piece.PAWN, capturedPawnSquare);
         }
@@ -145,33 +139,21 @@ public class Board {
         // Moves the piece
         this.movePiece(startingSquare, endingSquare, pieceColor, pieceType);
 
+        // Resets the en passant bitboard after each move, unless a double pawn push happened, then the square 1 down of the
+        // pawn is an en passant target, don't worry about the bitwise operation
+        if (flag == Move.FLAG_DOUBLE_PAWN_PUSH) {
+            this.enPassantSquareBitboard = 1L << (endingSquare ^ 8);
+        }
+
+        else {
+            this.enPassantSquareBitboard = 0L;
+        }
+
+        System.out.println(flag);
+
         // Flips the turn and generates moves for the next player
         this.turn ^= 1;
         MoveGenerator.generate(this);
-    }
-
-
-    // Coordinates every job at the start of the game
-    public void loadPosition(String fen) {
-        // Loads pieces onto the board and generates moves for the next player
-        FenParser.loadFen(fen, this);
-        MoveGenerator.generate(this);
-    }
-
-
-    // Gets the piece info (color and piece type) at a specific square
-    public int[] getPieceAtSquare(int squareIndex) {
-        long squareMask = 1L << squareIndex;
-
-        for (int color = 0; color < 2; color += 1) {
-            for (int pieceType = 0; pieceType < 6; pieceType += 1) {
-                if ((bitboards[color][pieceType] & squareMask) != 0) {
-                    return new int[]{color, pieceType};
-                }
-            }
-        }
-
-        return null;
     }
 
 
@@ -184,5 +166,67 @@ public class Board {
     // The old moves are still in memory, but they will just get overwritten
     public void clearLegalMoves() {
         legalMoveCount = 0;
+    }
+
+
+    // Loops through all the legal moves to find a move whose starting and ending squares match the given starting and
+    // ending squares
+    public int searchLegalMove(int startingSquare, int endingSquare) {
+        for (int i = 0; i < legalMoveCount; i++) {
+            int legalMove = legalMoves[i];
+            if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
+                return legalMove;
+            }
+        }
+
+        return -1;
+    }
+
+
+    // Loops through all the legal moves to find moves whose starting square matches the given starting square, used to find
+    // all the piece's legal moves
+    public long searchPieceLegalMoves(int startingSquare) {
+        long pieceLegalMovesBitboard = 0L;
+
+        for (int i = 0; i < legalMoveCount; i++) {
+            int move = legalMoves[i];
+            if (Move.getStartingSquare(move) == startingSquare) {
+                int endingSquare = Move.getEndingSquare(move);
+                pieceLegalMovesBitboard |= (1L << endingSquare);
+            }
+        }
+
+        return pieceLegalMovesBitboard;
+    }
+
+
+    // Gets a piece's color at a specific square
+    public int getPieceColorAtSquare(int squareIndex) {
+        long squareMask = 1L << squareIndex;
+
+        if ((otherBitboards[Piece.WHITE] & squareMask) != 0) {
+            return Piece.WHITE;
+        }
+
+        if ((otherBitboards[Piece.BLACK] & squareMask) != 0) {
+            return Piece.BLACK;
+        }
+
+        return -1;
+    }
+
+
+    // Gets a piece's type at a specific square
+    public int getPieceTypeAtSquare(int squareIndex) {
+        long squareMask = 1L << squareIndex;
+
+        // Checks if either white or black has that piece type on that square
+        for (int pieceType = 0; pieceType < 6; pieceType += 1) {
+            if (((bitboards[Piece.WHITE][pieceType] | bitboards[Piece.BLACK][pieceType]) & squareMask) != 0) {
+                return pieceType;
+            }
+        }
+
+        return -1;
     }
 }
