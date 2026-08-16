@@ -3,8 +3,10 @@ package com.chessbot.engine.core;
 import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.engine.utils.FenParser;
 
+import java.util.Arrays;
+
 public class Board {
-    private int turn = Piece.WHITE;
+    private int turn;
 
     // 12 64 bit variables, one for each piece color and piece type, first dimension is the piece color and second dimension
     // is the piece type, each bit indicates a piece on the board, used for board representation
@@ -24,10 +26,41 @@ public class Board {
     private final int[] legalMoves = new int[256];
 
     // Keeps track of how many legal moves are in the array
-    private int legalMoveCount = 0;
+    private int legalMovesCount = 0;
 
     // If the friendly king is in check
     private boolean inCheck = false;
+
+    // Holds the castling rights info, 1111 means all castling rights are available
+    private int castlingRights = 0b1111;
+
+    // Each constant points to a bit of castling rights
+    public static final int WHITE_KINGSIDE = 1;
+    public static final int WHITE_QUEENSIDE = 2;
+    public static final int BLACK_KINGSIDE = 4;
+    public static final int BLACK_QUEENSIDE = 8;
+
+    // Helper mask to update castling rights when pieces move from/to critical squares. All non-critical squares get an initial
+    // value of 15 which equals the initial value of castlingRights. The reason for that is: If the player still has castling
+    // rights and a move in a non-critical square happens, the operation becomes castlingRights = castlingRights & CASTLING_MASK
+    // = 1111 & 1111 = 1111, so the variable remains untouched. If a move in a critical square happens, the appropriate bits
+    // of castlingRights are turned off
+    private static final int[] CASTLING_MASKS = new int[64];
+    static {
+        Arrays.fill(CASTLING_MASKS, 15);
+
+        // If the a1 rook moves/gets captured, white queenside castling gets turned off. If the e1 king moves, white
+        // kingside/queenside castling gets turned off, the same logic applies for the h1 rook, the a8 rook, the e8 king and
+        // the h8 rook
+        CASTLING_MASKS[0]  = 15 ^ WHITE_QUEENSIDE;
+        CASTLING_MASKS[4]  = 15 ^ (WHITE_KINGSIDE | WHITE_QUEENSIDE);
+        CASTLING_MASKS[7]  = 15 ^ WHITE_KINGSIDE;
+        CASTLING_MASKS[56] = 15 ^ BLACK_QUEENSIDE;
+        CASTLING_MASKS[60] = 15 ^ (BLACK_KINGSIDE | BLACK_QUEENSIDE);
+        CASTLING_MASKS[63] = 15 ^ BLACK_KINGSIDE;
+    }
+
+    private int halfMoveClock;
 
     public Board() {}
 
@@ -58,15 +91,26 @@ public class Board {
         return enPassantSquareBitboard;
     }
 
-    public void setEnPassantSquareBitboard(long enPassantSquareBitboard) {this.enPassantSquareBitboard = enPassantSquareBitboard; }
+    public void setEnPassantSquareBitboard(long bitboard) { this.enPassantSquareBitboard = bitboard; }
 
     public int getLegalMove(int index) { return legalMoves[index]; }
 
-    public int getLegalMoveCount() { return legalMoveCount; }
+    public int getLegalMovesCount() { return legalMovesCount; }
 
     public boolean getInCheck() { return inCheck; }
 
     public void setInCheck(boolean inCheck) { this.inCheck = inCheck; }
+
+    // Returns the castlingRights bit that is given as a parameter
+    public boolean getCastlingRight(int castlingRight) {
+        return (this.castlingRights & castlingRight) != 0;
+    }
+
+    public void setCastlingRights(int castlingRights) { this.castlingRights = castlingRights; }
+
+    public int getHalfMoveClock() { return halfMoveClock; }
+
+    public void setHalfMoveClock(int halfMoveClock) { this.halfMoveClock = halfMoveClock; }
 
 
     // Coordinates every job at the start of the game
@@ -149,7 +193,38 @@ public class Board {
             this.enPassantSquareBitboard = 0L;
         }
 
-        System.out.println(flag);
+        // Kingside/queenside castling for the white/black king
+        if (flag == Move.FLAG_KING_CASTLE) {
+            if (pieceColor == Piece.WHITE) {
+                this.movePiece(7, 5, Piece.WHITE, Piece.ROOK);
+            }
+
+            else {
+                this.movePiece(63, 61, Piece.BLACK, Piece.ROOK);
+            }
+        }
+
+        else if (flag == Move.FLAG_QUEEN_CASTLE) {
+            if (pieceColor == Piece.WHITE) {
+                this.movePiece(0, 3, Piece.WHITE, Piece.ROOK);
+            }
+
+            else {
+                this.movePiece(56, 59, Piece.BLACK, Piece.ROOK);
+            }
+        }
+
+        // Updates castling rights as described above, the starting square mask is about rook/king moves, the ending square
+        // mask is about rooks getting captured
+        this.castlingRights &= CASTLING_MASKS[startingSquare] & CASTLING_MASKS[endingSquare];
+
+        if (pieceType != Piece.PAWN && flag != Move.FLAG_CAPTURE && flag != Move.FLAG_EN_PASSANT_CAPTURE) {
+            this.halfMoveClock += 1;
+        }
+
+        else {
+            halfMoveClock = 0;
+        }
 
         // Flips the turn and generates moves for the next player
         this.turn ^= 1;
@@ -158,21 +233,21 @@ public class Board {
 
 
     public void addLegalMove(int move) {
-        legalMoves[legalMoveCount] = move;
-        legalMoveCount += 1;
+        legalMoves[legalMovesCount] = move;
+        legalMovesCount += 1;
     }
 
 
     // The old moves are still in memory, but they will just get overwritten
     public void clearLegalMoves() {
-        legalMoveCount = 0;
+        legalMovesCount = 0;
     }
 
 
     // Loops through all the legal moves to find a move whose starting and ending squares match the given starting and
     // ending squares
     public int searchLegalMove(int startingSquare, int endingSquare) {
-        for (int i = 0; i < legalMoveCount; i++) {
+        for (int i = 0; i < legalMovesCount; i++) {
             int legalMove = legalMoves[i];
             if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
                 return legalMove;
@@ -188,7 +263,7 @@ public class Board {
     public long searchPieceLegalMoves(int startingSquare) {
         long pieceLegalMovesBitboard = 0L;
 
-        for (int i = 0; i < legalMoveCount; i++) {
+        for (int i = 0; i < legalMovesCount; i++) {
             int move = legalMoves[i];
             if (Move.getStartingSquare(move) == startingSquare) {
                 int endingSquare = Move.getEndingSquare(move);
@@ -198,7 +273,6 @@ public class Board {
 
         return pieceLegalMovesBitboard;
     }
-
 
     // Gets a piece's color at a specific square
     public int getPieceColorAtSquare(int squareIndex) {

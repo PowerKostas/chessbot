@@ -21,9 +21,9 @@ public abstract class MagicBitboards {
         // Number of patterns = 2 ^ number of valid attacks
         int numPatterns = 1 << attackIndices.size();
 
-        // For every pattern, for every valid attack, shift the pattern by attack and get the first bit (0 or 1), move
-        // that bit by attack and put it in the list of all blocking patterns, watch Coding Adventure: Making a Better
-        // Chess Bot, Magic Bitboards (minus the magic) for better understanding
+        // For every pattern, for every valid attack, shift the pattern by attack and get the first bit (0 or 1), move that
+        // bit by attack and put it in the list of all blocking patterns, watch Coding Adventure: Making a Better Chess Bot, Magic
+        // Bitboards (minus the magic) for better understanding
         long[] blockingPatternsBitboards = new long[numPatterns];
         for (int patternIndex = 0; patternIndex < numPatterns; patternIndex += 1) {
             for (int attackIndex = 0; attackIndex < attackIndices.size(); attackIndex += 1) {
@@ -45,15 +45,15 @@ public abstract class MagicBitboards {
             // Generates a random magic number with not a lot of 1s
             long magic = rand.nextLong() & rand.nextLong() & rand.nextLong();
 
-            // Creates the used array, for each blocking pattern there is a starting value of -1, the goal is to fill
-            // most of the array with distinct pseudo legal moves, in the least amount of space
+            // Creates the used array, for each blocking pattern there is a starting value of -1, the goal is to fill most of
+            // the array with distinct pseudo legal moves, in the least amount of space
             long[] used = new long[1 << requestedBits];
             Arrays.fill(used, -1);
 
-            // For every blocking pattern generate an index using the potential magic number with the below formula, if
-            // the generated index doesn't point to an already used slot in the used array, it continues. If it's already
-            // used and the pseudo legal moves in that slot are different from the current ones, it means that this
-            // potential magic number doesn't fill the used array with distinct pseudo legal moves, so it's discarded
+            // For every blocking pattern generate an index using the potential magic number with the below formula, if the
+            // generated index doesn't point to an already used slot in the used array, it continues. If it's already used and
+            // the pseudo legal moves in that slot are different from the current ones, it means that this potential magic
+            // number doesn't fill the used array with distinct pseudo legal moves, so it's discarded
             boolean fail = false;
             for (int j = 0; j < blockingPatternsBitboards.length; j += 1) {
                 int magicIndex = (int) ((blockingPatternsBitboards[j] * magic) >>> (64 - requestedBits));

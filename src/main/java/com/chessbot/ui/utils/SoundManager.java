@@ -6,9 +6,10 @@ import javafx.scene.media.AudioClip;
 
 // Separate class to not clutter the code
 public final class SoundManager {
-    private static final AudioClip moveSound = new AudioClip(ChessApplication.class.getResource("Sounds/move.mp3").toString());
     private static final AudioClip checkSound = new AudioClip(ChessApplication.class.getResource("Sounds/check.mp3").toString());
     private static final AudioClip captureSound = new AudioClip(ChessApplication.class.getResource("Sounds/capture.mp3").toString());
+    private static final AudioClip castleSound = new AudioClip(ChessApplication.class.getResource("Sounds/castle.mp3").toString());
+    private static final AudioClip moveSound = new AudioClip(ChessApplication.class.getResource("Sounds/move.mp3").toString());
     private static final AudioClip illegalSound = new AudioClip(ChessApplication.class.getResource("Sounds/illegal.mp3").toString());
 
     private SoundManager() {}
@@ -22,6 +23,10 @@ public final class SoundManager {
 
         else if (flag == Move.FLAG_CAPTURE || flag == Move.FLAG_EN_PASSANT_CAPTURE) {
             captureSound.play();
+        }
+
+        else if (flag == Move.FLAG_KING_CASTLE || flag == Move.FLAG_QUEEN_CASTLE) {
+            castleSound.play();
         }
 
         else {

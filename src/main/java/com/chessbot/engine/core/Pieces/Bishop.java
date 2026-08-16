@@ -31,7 +31,9 @@ public final class Bishop {
 
     public static long slowAttacks(int square, long blockingPatternBitboard) {
         long attacksBitboard = 0L;
-        int[] directions = {7, 9, -7, -9}; // Up and left 1 square, up and right 1 square, down and right 1 square, down and left 1 square
+
+        // Up and left 1 square, up and right 1 square, down and right 1 square, down and left 1 square
+        int[] directions = {7, 9, -7, -9};
 
         for (int dir : directions) {
             int tempSquare = square;

@@ -16,8 +16,8 @@ public class VisualBoard extends GridPane {
     // Holds a reference to the engine board
     private final Board board;
 
-    // 0 = White, 1 = Black. In the engine board the first square is a1, in the visual board the first square
-    // is h8, if the player is black the first squares remain the same, but the visual board is flipped
+    // 0 = White, 1 = Black. In the engine board the first square is a1, in the visual board the first square is h8, if the
+    // player is black the first squares remain the same, but the visual board is flipped
     private int playerColor;
 
 
@@ -123,8 +123,8 @@ public class VisualBoard extends GridPane {
                     }
                 }
 
-                // If the engine square isn't empty and the visual square is or has different data, set the piece from
-                // the engine to the visual square
+                // If the engine square isn't empty and the visual square is or has different data, set the piece from the engine
+                // to the visual square
                 else {
                     boolean needsUpdate = visualPiece == null || visualPiece.getColor() != pieceColor || visualPiece.getType() != pieceType;
                     if (needsUpdate) {
@@ -142,13 +142,13 @@ public class VisualBoard extends GridPane {
         // Creates a legal moves bitboard for UI debugging
         long legalMovesBitboard = 0L;
 
-        for (int i = 0; i < this.board.getLegalMoveCount(); i += 1) {
+        for (int i = 0; i < this.board.getLegalMovesCount(); i += 1) {
             int legalMove = this.board.getLegalMove(i);
             int endingSquare = Move.getEndingSquare(legalMove);
             legalMovesBitboard |= 1L << endingSquare;
         }
 
-        MainController.instance.bitboardVisualization(legalMovesBitboard);
+        MainController.instance.bitboardVisualization(board.getAttackMapBitboard(board.getTurn() ^ 1));
     }
 
 

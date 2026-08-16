@@ -80,6 +80,54 @@ public final class MoveGenerator {
         }
 
 
+        // Adds special castling moves. Castling is only permitted if the king is not in check. Code is placed here because
+        // checks need to be calculated first
+        if (!board.getInCheck()) {
+            if (friendlyColor == Piece.WHITE) {
+                // White kingside castle, checks if that castling right is true and if the f1 and g1 squares are empty and unattacked
+                long whiteKingsideEmptyMask = (1L << 5) | (1L << 6);
+                if (board.getCastlingRight(Board.WHITE_KINGSIDE)
+                        && (allPieces & whiteKingsideEmptyMask) == 0L
+                        && (attackMapBitboard & whiteKingsideEmptyMask) == 0L)
+                {
+                    board.addLegalMove(Move.createMove(4, 6, Move.FLAG_KING_CASTLE));
+                }
+
+                // White queenside castle, checks if that right is true, if the b1, c1 and d1 squares are empty and if the c1
+                // and d1 squares are unattacked, the b1 square can be attacked and the white king will still be able to
+                // queenside castle
+                long whiteQueensideEmptyMask = (1L << 1) | (1L << 2) | (1L << 3);
+                long whiteQueensideSafeMask = (1L << 2) | (1L << 3);
+                if (board.getCastlingRight(Board.WHITE_QUEENSIDE)
+                        && (allPieces & whiteQueensideEmptyMask) == 0L
+                        && (attackMapBitboard & whiteQueensideSafeMask) == 0L)
+                {
+                    board.addLegalMove(Move.createMove(4, 2, Move.FLAG_QUEEN_CASTLE));
+                }
+            }
+
+            // Same logic as above
+            else {
+                long blackKingsideEmptyMask = (1L << 61) | (1L << 62);
+                if (board.getCastlingRight(Board.BLACK_KINGSIDE)
+                        && (allPieces & blackKingsideEmptyMask) == 0L
+                        && (attackMapBitboard & blackKingsideEmptyMask) == 0L)
+                {
+                    board.addLegalMove(Move.createMove(60, 62, Move.FLAG_KING_CASTLE));
+                }
+
+                long blackQueensideEmptyMask = (1L << 57) | (1L << 58) | (1L << 59);
+                long blackQueensideSafeMask = (1L << 58) | (1L << 59);
+                if (board.getCastlingRight(Board.BLACK_QUEENSIDE)
+                        && (allPieces & blackQueensideEmptyMask) == 0L
+                        && (attackMapBitboard & blackQueensideSafeMask) == 0L)
+                {
+                    board.addLegalMove(Move.createMove(60, 58, Move.FLAG_QUEEN_CASTLE));
+                }
+            }
+        }
+
+
         // Rest of the pieces pseudo legal moves filtering
         long pawnsBitboard = board.getBitboard(friendlyColor, Piece.PAWN);
         long enPassantBitboard = board.getEnPassantSquareBitboard();
@@ -91,7 +139,7 @@ public final class MoveGenerator {
 
             packMoves(board, pawnLegalMoves, startingSquare, enemyPieces, Piece.PAWN);
 
-            // Handles en passant separately because it's a special move
+            // Adds special en passant moves
             if (enPassantBitboard != 0L) {
                 long enPassantLegalMoves = Pawn.enPassant(pawnBitboard, enPassantBitboard, isWhite) & checkMask;
                 if (enPassantLegalMoves != 0L) {
