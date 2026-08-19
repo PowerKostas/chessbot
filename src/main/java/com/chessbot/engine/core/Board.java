@@ -60,6 +60,7 @@ public class Board {
         CASTLING_MASKS[63] = 15 ^ BLACK_KINGSIDE;
     }
 
+    // Counter of half moves since the last capture or pawn push, used in the 50-move rule
     private int halfMoveClock;
 
     public Board() {}
@@ -162,68 +163,106 @@ public class Board {
         // Gets the necessary info about the move
         int startingSquare = Move.getStartingSquare(legalMove);
         int endingSquare = Move.getEndingSquare(legalMove);
-        int flag = Move.getFlag(legalMove);
+        int moveFlag = Move.getFlag(legalMove);
 
         int pieceColor = this.getPieceColorAtSquare(startingSquare);
         int pieceType = this.getPieceTypeAtSquare(startingSquare);
         int enemyColor = pieceColor ^ 1;
 
-        // Removes a piece if necessary, if a normal capture happened, the captured piece is in the ending square
-        if (flag == Move.FLAG_CAPTURE) {
-            this.removePiece(enemyColor, this.getPieceTypeAtSquare(endingSquare), endingSquare);
-        }
+        // Resets the en passant bitboard after each move
+        this.enPassantSquareBitboard = 0L;
 
-        // If an en passant capture happened, for white the captured pawn is a rank below the ending square, for black the
-        // captured pawn is a rank above the ending square
-        else if (flag == Move.FLAG_EN_PASSANT_CAPTURE) {
-            int capturedPawnSquare = (pieceColor == Piece.WHITE) ? endingSquare - 8 : endingSquare + 8;
-            this.removePiece(enemyColor, Piece.PAWN, capturedPawnSquare);
-        }
+        // Handles all cases of the move flag
+        switch (moveFlag) {
+            // If there is no special move flag, just move the piece
+            case Move.FLAG_QUIET:
+                this.movePiece(startingSquare, endingSquare, pieceColor, pieceType);
+                break;
 
-        // Moves the piece
-        this.movePiece(startingSquare, endingSquare, pieceColor, pieceType);
+            // If it's a double pawn push, move the pawn and make the square down of the pawn an en passant target, don't
+            // worry about the bitwise operation
+            case Move.FLAG_DOUBLE_PAWN_PUSH:
+                this.movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
+                this.enPassantSquareBitboard = 1L << (endingSquare ^ 8);
+                break;
 
-        // Resets the en passant bitboard after each move, unless a double pawn push happened, then the square 1 down of the
-        // pawn is an en passant target, don't worry about the bitwise operation
-        if (flag == Move.FLAG_DOUBLE_PAWN_PUSH) {
-            this.enPassantSquareBitboard = 1L << (endingSquare ^ 8);
-        }
+            // If it's a normal capture, remove the captured piece from the ending square and move the piece
+            case Move.FLAG_CAPTURE:
+                this.removePiece(enemyColor, this.getPieceTypeAtSquare(endingSquare), endingSquare);
+                this.movePiece(startingSquare, endingSquare, pieceColor, pieceType);
+                break;
 
-        else {
-            this.enPassantSquareBitboard = 0L;
-        }
+            // If it's an en passant capture, for white, remove the captured piece from the square that is a rank below the
+            // ending square. For black, the captured piece is a rank above the ending square. Then move the pawn
+            case Move.FLAG_EN_PASSANT_CAPTURE:
+                int capturedPawnSquare = (pieceColor == Piece.WHITE) ? endingSquare - 8 : endingSquare + 8;
+                this.removePiece(enemyColor, Piece.PAWN, capturedPawnSquare);
+                this.movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
+                break;
 
-        // Kingside/queenside castling for the white/black king
-        if (flag == Move.FLAG_KING_CASTLE) {
-            if (pieceColor == Piece.WHITE) {
-                this.movePiece(7, 5, Piece.WHITE, Piece.ROOK);
-            }
+            // Kingside castling for the white/black king
+            case Move.FLAG_KING_CASTLE:
+                this.movePiece(startingSquare, endingSquare, pieceColor, pieceType); // King move
 
-            else {
-                this.movePiece(63, 61, Piece.BLACK, Piece.ROOK);
-            }
-        }
+                // Rook move
+                if (pieceColor == Piece.WHITE) {
+                    this.movePiece(7, 5, Piece.WHITE, Piece.ROOK);
+                }
 
-        else if (flag == Move.FLAG_QUEEN_CASTLE) {
-            if (pieceColor == Piece.WHITE) {
-                this.movePiece(0, 3, Piece.WHITE, Piece.ROOK);
-            }
+                else {
+                    this.movePiece(63, 61, Piece.BLACK, Piece.ROOK);
+                }
 
-            else {
-                this.movePiece(56, 59, Piece.BLACK, Piece.ROOK);
-            }
+                break;
+
+            // Queenside castling for the white/black king
+            case Move.FLAG_QUEEN_CASTLE:
+                this.movePiece(startingSquare, endingSquare, pieceColor, pieceType); // King move
+
+                // Rook move
+                if (pieceColor == Piece.WHITE) {
+                    this.movePiece(0, 3, Piece.WHITE, Piece.ROOK);
+                }
+
+                else {
+                    this.movePiece(56, 59, Piece.BLACK, Piece.ROOK);
+                }
+
+                break;
+
+            // If it's none of the above, it must be a promotion
+            default:
+                // Because of how move flag is structured, all promotion or promotion capture move flags are after the knight
+                // promotion move flag
+                if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION) {
+                    // All promotion capture move flags are after the knight promotion capture move flag, removes the enemy piece
+                    // if it's a promotion capture
+                    if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION_CAPTURE) {
+                        this.removePiece(enemyColor, this.getPieceTypeAtSquare(endingSquare), endingSquare);
+                    }
+
+                    // Remove the pawn from the second to last rank, derive the promoted piece from the 1st and 2nd special bits
+                    // of move flag, add the promoted piece to the last rank
+                    this.removePiece(pieceColor, Piece.PAWN, startingSquare);
+
+                    int promotedPiece = (moveFlag & 3) + 1;
+                    this.addPiece(pieceColor, promotedPiece, endingSquare);
+                }
+
+                break;
         }
 
         // Updates castling rights as described above, the starting square mask is about rook/king moves, the ending square
         // mask is about rooks getting captured
         this.castlingRights &= CASTLING_MASKS[startingSquare] & CASTLING_MASKS[endingSquare];
 
-        if (pieceType != Piece.PAWN && flag != Move.FLAG_CAPTURE && flag != Move.FLAG_EN_PASSANT_CAPTURE) {
-            this.halfMoveClock += 1;
+        // Resets the half move clock if a capture or a pawn push happened, otherwise it's incremented
+        if (pieceType == Piece.PAWN || moveFlag == Move.FLAG_CAPTURE || moveFlag == Move.FLAG_EN_PASSANT_CAPTURE) {
+            this.halfMoveClock = 0;
         }
 
         else {
-            halfMoveClock = 0;
+            this.halfMoveClock += 1;
         }
 
         // Flips the turn and generates moves for the next player
@@ -273,6 +312,7 @@ public class Board {
 
         return pieceLegalMovesBitboard;
     }
+
 
     // Gets a piece's color at a specific square
     public int getPieceColorAtSquare(int squareIndex) {

@@ -2,6 +2,8 @@ package com.chessbot.ui.input;
 
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Move;
+import com.chessbot.engine.core.Piece;
+import com.chessbot.ui.components.PromotionDialog;
 import com.chessbot.ui.components.Square;
 import com.chessbot.ui.components.VisualBoard;
 import com.chessbot.ui.components.VisualPiece;
@@ -35,17 +37,6 @@ public class MoveHandler {
     }
 
 
-    // Clears the selected square color, the starting square and the legal hints
-    public void cancelSelection() {
-        if (startingSquare != null) { // When right-clicking an empty square, startingSquare is null, have to check against that
-            startingSquare.setIsSelected(false);
-            startingSquare = null;
-            visualBoard.clearLegalHints();
-        }
-    }
-
-
-    // Logic for selecting a piece, used by both Drag Move and Click Move
     private void selectPiece(Square square, int squareIndex) {
         startingSquare = square;
         startingSquareIndex = squareIndex;
@@ -55,7 +46,16 @@ public class MoveHandler {
     }
 
 
-    // Logic for successfully executing a move, used by both Drag Move and Click Move
+    public void cancelSelection() {
+        if (startingSquare != null) { // When right-clicking an empty square, startingSquare is null, have to check against that
+            // Clears the selected square's color, the starting square and the legal hints
+            startingSquare.setIsSelected(false);
+            startingSquare = null;
+            visualBoard.clearLegalHints();
+        }
+    }
+
+
     private void executeMove(int legalMove, Square targetSquare) {
         board.makeMove(legalMove);
 
@@ -85,15 +85,34 @@ public class MoveHandler {
     }
 
 
+    private void promotePawn(Square promotionSquare, int promotionSquareIndex) {
+        int pieceColor = board.getPieceColorAtSquare(startingSquareIndex);
+
+        // Opens the promotion dialog and waits for the user to select a piece
+        PromotionDialog.display(visualBoard, pieceColor, visualBoard.getPlayerColor() == Piece.BLACK, chosenPiece -> {
+            // If the user didn't click the 'x' button, execute the promotion legal move
+            if (chosenPiece != -1) {
+                int legalMove = visualBoard.searchPromotionLegalMove(startingSquareIndex, promotionSquareIndex, chosenPiece);
+                executeMove(legalMove, promotionSquare);
+            }
+
+            // Else, make the dragged/clicked piece visible again, cancel the selection and remove the target square's selected color
+            else {
+                draggedPiece.setVisible(true);
+                cancelSelection();
+                promotionSquare.updateColor();
+            }
+        });
+    }
+
+
     // Drag Move
     // Triggers when a drag operation starts
     public void dragDetected(MouseEvent event) {
         Square dragSource = (Square) event.getSource();
 
         // If the square has no pieces, return
-        if (dragSource.getCurrentPiece() == null) {
-            return;
-        }
+        if (dragSource.getCurrentPiece() == null) return;
 
         // If a piece is already selected from a click and the user drags a different piece, cancel the old selection
         if (this.startingSquare != null && this.startingSquare != dragSource) {
@@ -177,8 +196,9 @@ public class MoveHandler {
         Square hoveredSquare = (Square) event.getSource();
         hoveredSquare.setStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
 
-        // Ending square needs the square that the mouse is currently hovering in order to play the illegal sound, because the
-        // code will never go to dragDropped when playing an illegal move
+        // Ending square needs the square that the piece is currently hovering in order to play, if needed, the illegal sound, in
+        // dragDone. The code will never go to dragDropped when playing an illegal move which is where endingSquare normally
+        // gets its value
         endingSquare = hoveredSquare;
 
         event.consume();
@@ -187,18 +207,13 @@ public class MoveHandler {
 
     // Triggers when letting off the drag operation
     public void dragDropped(DragEvent event) {
-        // Gets the square that the piece was dropped off
+        // Sets the legal square that the piece was dropped off
         endingSquare = (Square) event.getSource();
-
-        // Makes the legal move
-        int endingSquareIndex = (7 - endingSquare.getRow()) * 8 + endingSquare.getCol();
-        int legalMove = board.searchLegalMove(startingSquareIndex, endingSquareIndex);
-        executeMove(legalMove, endingSquare);
 
         // Tells dragDone that the drag was successful
         event.setDropCompleted(true);
-
         event.consume();
+
     }
 
 
@@ -215,17 +230,32 @@ public class MoveHandler {
     public void dragDone(DragEvent event) {
         Square dragSource = (Square) event.getSource();
 
-        // If the drag was successful, set the default cursor
+        // If the drag was successful
         if (event.getTransferMode() == TransferMode.MOVE) {
+            // Sets the default cursor
             dragSource.setCursor(Cursor.DEFAULT);
+
+            int endingSquareIndex = (7 - endingSquare.getRow()) * 8 + endingSquare.getCol();
+            int pieceType = board.getPieceTypeAtSquare(startingSquareIndex);
+
+            // If the dragged piece is a pawn and its ending square is in the final rank, it's a promotion and handled separately
+            if (pieceType == Piece.PAWN && (endingSquareIndex <= 7 || endingSquareIndex >= 56)) {
+                promotePawn(endingSquare, endingSquareIndex);
+            }
+
+            // Executes normal legal moves
+            else {
+                int legalMove = board.searchLegalMove(startingSquareIndex, endingSquareIndex);
+                executeMove(legalMove, endingSquare);
+            }
         }
 
-        // If the drag was unsuccessful (illegal move, drop in the starting square or drop out of bounds), make the piece
-        // visible again
+        // If the drag was unsuccessful (illegal move, drop in the starting square or drop out of bounds)
         else {
+            // Makes the dragged piece visible again
             draggedPiece.setVisible(true);
 
-            // Doesn't play the illegal sound if the piece was dropped in it's starting square
+            // Plays the illegal sound if the piece wasn't dropped in the starting square
             if (dragSource != endingSquare) {
                 SoundManager.playIllegalSound();
             }
@@ -239,9 +269,7 @@ public class MoveHandler {
     // Triggers when a square is clicked
     public void mouseReleased(MouseEvent event) {
         // Only left clicks are accepted
-        if (event.getButton() != MouseButton.PRIMARY) {
-            return;
-        }
+        if (event.getButton() != MouseButton.PRIMARY) return;
 
         Square clickedSquare = (Square) event.getSource();
         int clickedSquareIndex = (7 - clickedSquare.getRow()) * 8 + clickedSquare.getCol();
@@ -258,28 +286,46 @@ public class MoveHandler {
                 cancelSelection();
             }
 
+            // For any other square click
             else {
-                int legalMove = board.searchLegalMove(startingSquareIndex, clickedSquareIndex);
+                int pieceType = board.getPieceTypeAtSquare(startingSquareIndex);
 
-                // If the click is a legal move
-                if (legalMove != -1) {
-                    executeMove(legalMove, clickedSquare);
+                // If the clicked piece is a pawn, its ending square is in the final rank and the move the user is trying to
+                // do is legal, it's a promotion and handled separately
+                if (pieceType == Piece.PAWN &&
+                    (clickedSquareIndex <= 7 || clickedSquareIndex >= 56) &&
+                    board.searchLegalMove(startingSquareIndex, clickedSquareIndex) != -1)
+                {
+                    // Hides the pawn while the promotion dialog is open
+                    startingSquare.getCurrentPiece().setVisible(false);
+
+                    promotePawn(clickedSquare, clickedSquareIndex);
+                    event.consume();
                 }
 
-                // If the click is an illegal move
+                // Executes normal legal moves
                 else {
-                    // If the user clicked a square with a piece on it, cancel the current selection and switch the selection
-                    // to the new clicked piece
-                    if (clickedSquare.getCurrentPiece() != null) {
-                        cancelSelection();
-                        selectPiece(clickedSquare, clickedSquareIndex);
+                    int legalMove = board.searchLegalMove(startingSquareIndex, clickedSquareIndex);
+
+                    // If the click is a legal move
+                    if (legalMove != -1) {
+                        executeMove(legalMove, clickedSquare);
                     }
 
-                    // If it's just an illegal move, play the appropriate sound, cancel the selection and remove the border effect
+                    // If the click is an illegal move
                     else {
-                        SoundManager.playIllegalSound();
-                        cancelSelection();
-                        clickedSquare.updateColor();
+                        // If the user clicked a square with a piece on it, cancel the current selection and switch the selection
+                        // to the new clicked piece
+                        if (clickedSquare.getCurrentPiece() != null) {
+                            cancelSelection();
+                            selectPiece(clickedSquare, clickedSquareIndex);
+                        }
+
+                        // If it's just an illegal move, play the appropriate sound and cancel the selection
+                        else {
+                            SoundManager.playIllegalSound();
+                            cancelSelection();
+                        }
                     }
                 }
             }

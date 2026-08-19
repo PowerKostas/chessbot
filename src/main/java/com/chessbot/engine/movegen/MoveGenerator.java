@@ -9,20 +9,38 @@ public final class MoveGenerator {
     private MoveGenerator() {}
 
 
-    // Places each piece legal move to the legal moves array
+    // Places each legal move of a piece to the legal moves array
     private static void packMoves(Board board, long pieceLegalMoves, int startingSquare, long enemyPieces, int pieceType) {
         while (pieceLegalMoves != 0L) {
             int endingSquare = Long.numberOfTrailingZeros(pieceLegalMoves);
+            boolean isCapture = ((1L << endingSquare) & enemyPieces) != 0;
 
-            // Checks if it's a capture or a normal move
-            int moveFlag = ((1L << endingSquare) & enemyPieces) != 0 ? Move.FLAG_CAPTURE : Move.FLAG_QUIET;
+            // If it's a pawn legal move, and it ends on the 1st or 8th rank, it's a promotion. 4 possible legal moves are
+            // added in this situation. A knight, bishop, rook or queen promotion or a knight, bishop, rook or queen promotion
+            // and capture. Because of how move flag is structured, we can get a piece's flag by adding on to the respective
+            // knight flag
+            if (pieceType == Piece.PAWN && (endingSquare <= 7 || endingSquare >= 56)) {
+                int baseFlag = isCapture ? Move.FLAG_KNIGHT_PROMOTION_CAPTURE : Move.FLAG_KNIGHT_PROMOTION;
 
-            // Detects if a pawn moved 2 squares up, don't worry about the bitwise operation
-            if (pieceType == Piece.PAWN && (endingSquare ^ startingSquare) == 16) {
-                moveFlag = Move.FLAG_DOUBLE_PAWN_PUSH;
+                board.addLegalMove(Move.createMove(startingSquare, endingSquare, baseFlag)); // Knight
+                board.addLegalMove(Move.createMove(startingSquare, endingSquare, baseFlag + 1)); // Bishop
+                board.addLegalMove(Move.createMove(startingSquare, endingSquare, baseFlag + 2)); // Rook
+                board.addLegalMove(Move.createMove(startingSquare, endingSquare, baseFlag + 3)); // Queen
             }
 
-            board.addLegalMove(Move.createMove(startingSquare, endingSquare, moveFlag));
+            // If it's any other move
+            else {
+                // Checks if it's a capture or a normal move
+                int moveFlag = isCapture ? Move.FLAG_CAPTURE : Move.FLAG_QUIET;
+
+                // Detects if a pawn moved 2 squares up, don't worry about the bitwise operation
+                if (pieceType == Piece.PAWN && (endingSquare ^ startingSquare) == 16) {
+                    moveFlag = Move.FLAG_DOUBLE_PAWN_PUSH;
+                }
+
+                board.addLegalMove(Move.createMove(startingSquare, endingSquare, moveFlag));
+            }
+
             pieceLegalMoves ^= (1L << endingSquare);
         }
     }
@@ -65,13 +83,13 @@ public final class MoveGenerator {
         board.setInCheck(checkCount > 0);
 
         // Default value, if there are no checks, safe king moves and all the rest of the pseudo legal moves are allowed
-        long checkMask = 0xFFFFFFFFFFFFFFFFL;
+        long evadeMask = 0xFFFFFFFFFFFFFFFFL;
 
         // If there is only 1 check, the legal moves are the safe king moves and all the moves that evade the check, more info
         // on Checkers.calculateEvadeMask
         if (checkCount == 1) {
             int checkerSquare = Long.numberOfTrailingZeros(checkers);
-            checkMask = Checkers.calculateEvadeMask(board, friendlyColor, checkerSquare);
+            evadeMask = Checkers.calculateEvadeMask(board, friendlyColor, checkerSquare);
         }
 
         // If there are 2 or more checks, only the king safe moves are legal
@@ -135,13 +153,25 @@ public final class MoveGenerator {
         while (pawnsBitboard != 0L) {
             int startingSquare = Long.numberOfTrailingZeros(pawnsBitboard);
             long pawnBitboard = 1L << startingSquare;
-            long pawnLegalMoves = Pawn.pseudoLegalMoves(friendlyColor, pawnBitboard, allPieces, enemyPieces) & checkMask;
+            long pawnLegalMoves = Pawn.pseudoLegalMoves(friendlyColor, pawnBitboard, allPieces, enemyPieces) & evadeMask;
 
             packMoves(board, pawnLegalMoves, startingSquare, enemyPieces, Piece.PAWN);
 
-            // Adds special en passant moves
+            // En passant handling
             if (enPassantBitboard != 0L) {
-                long enPassantLegalMoves = Pawn.enPassant(pawnBitboard, enPassantBitboard, isWhite) & checkMask;
+                // The special case of evading checks by en passant needs to be added separately because the capture happens
+                // in a different square than where the pawn is. Finds where the pawn that is about to be captured by en passant
+                // actually is, if capturing this pawn evades the check, temporarily add the en passant square to the evade
+                // mask
+                long epEvadeMask = evadeMask;
+                long enPassantPawnBitboard = isWhite ? (enPassantBitboard >>> 8) : (enPassantBitboard << 8);
+
+                if ((evadeMask & enPassantPawnBitboard) != 0L) {
+                    epEvadeMask |= enPassantBitboard;
+                }
+
+                // Adds en passant moves
+                long enPassantLegalMoves = Pawn.enPassant(pawnBitboard, enPassantBitboard, isWhite) & epEvadeMask;
                 if (enPassantLegalMoves != 0L) {
                     int endingSquare = Long.numberOfTrailingZeros(enPassantLegalMoves);
                     board.addLegalMove(Move.createMove(startingSquare, endingSquare, Move.FLAG_EN_PASSANT_CAPTURE));
@@ -155,7 +185,7 @@ public final class MoveGenerator {
         while (knightsBitboard != 0L) {
             int startingSquare = Long.numberOfTrailingZeros(knightsBitboard);
             long knightBitboard = 1L << startingSquare;
-            long knightLegalMoves = Knight.pseudoLegalMoves(knightBitboard, friendlyPieces) & checkMask;
+            long knightLegalMoves = Knight.pseudoLegalMoves(knightBitboard, friendlyPieces) & evadeMask;
 
             packMoves(board, knightLegalMoves, startingSquare, enemyPieces, Piece.KNIGHT);
             knightsBitboard ^= knightBitboard;
@@ -164,7 +194,7 @@ public final class MoveGenerator {
         long bishopsBitboard = board.getBitboard(friendlyColor, Piece.BISHOP);
         while (bishopsBitboard != 0L) {
             int startingSquare = Long.numberOfTrailingZeros(bishopsBitboard);
-            long bishopLegalMoves = Bishop.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces) & checkMask;
+            long bishopLegalMoves = Bishop.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces) & evadeMask;
 
             packMoves(board, bishopLegalMoves, startingSquare, enemyPieces, Piece.BISHOP);
             bishopsBitboard ^= 1L << startingSquare;
@@ -173,7 +203,7 @@ public final class MoveGenerator {
         long rooksBitboard = board.getBitboard(friendlyColor, Piece.ROOK);
         while (rooksBitboard != 0L) {
             int startingSquare = Long.numberOfTrailingZeros(rooksBitboard);
-            long rookLegalMoves = Rook.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces) & checkMask;
+            long rookLegalMoves = Rook.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces) & evadeMask;
 
             packMoves(board, rookLegalMoves, startingSquare, enemyPieces, Piece.ROOK);
             rooksBitboard ^= (1L << startingSquare);
@@ -184,7 +214,7 @@ public final class MoveGenerator {
             int startingSquare = Long.numberOfTrailingZeros(queensBitboard);
             long queenLegalMoves = (Rook.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces) |
                                    Bishop.pseudoLegalMoves(startingSquare, allPieces, friendlyPieces)) &
-                                   checkMask;
+                                   evadeMask;
 
             packMoves(board, queenLegalMoves, startingSquare, enemyPieces, Piece.QUEEN);
             queensBitboard ^= (1L << startingSquare);

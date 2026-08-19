@@ -187,9 +187,9 @@ public class Square extends StackPane {
             this.setStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
         }
 
-        // If a move was made, and it doesn't affect this square (used to reset the color of the old previous move squares). Or
-        // if a left/right click happened on the board (a left click resets the right-clicked and selected squares and a right
-        // click resets the selected squares)
+        // If a move was made, and it doesn't affect this square (used to reset the color of a hovered square or old previous
+        // move squares). Or if a left/right click happened on the board (a left click resets the right-clicked and selected
+        // squares colors and a right click resets the selected square color)
         else {
             this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
         }

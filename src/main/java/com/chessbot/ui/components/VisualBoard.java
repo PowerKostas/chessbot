@@ -11,8 +11,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.StackPane;
 
-public class VisualBoard extends GridPane {
+public class VisualBoard extends StackPane {
     // Holds a reference to the engine board
     private final Board board;
 
@@ -20,10 +21,15 @@ public class VisualBoard extends GridPane {
     // player is black the first squares remain the same, but the visual board is flipped
     private int playerColor;
 
+    // VisualBoard extends StackPane in order to center the promotion dialog inside the board, the actual board grid is just
+    // a child inside the StackPane
+    private final GridPane boardGrid;
+
 
     public VisualBoard(int playerColor, String fen) {
         this.board = new Board();
         this.playerColor = playerColor;
+        this.boardGrid = new GridPane();
 
         // Reverse the board, if the player is black
         if (playerColor == Piece.BLACK) {
@@ -36,20 +42,20 @@ public class VisualBoard extends GridPane {
         for (int i = 0; i < 8; i++) {
             ColumnConstraints colConstraint = new ColumnConstraints();
             colConstraint.setPercentWidth(12.5);
-            this.getColumnConstraints().add(colConstraint);
+            boardGrid.getColumnConstraints().add(colConstraint);
         }
 
         for (int i = 0; i < 8; i++) {
             RowConstraints rowConstraint = new RowConstraints();
             rowConstraint.setPercentHeight(12.5);
-            this.getRowConstraints().add(rowConstraint);
+            boardGrid.getRowConstraints().add(rowConstraint);
         }
 
         // One instance of the classes for every board
         MoveHandler moveHandler = new MoveHandler(this);
         RightClick rightClick = new RightClick();
 
-        // Prepares every custom square class for the JavaFX board
+        // Prepares every custom square class for the UI board
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
                 Square square = new Square(row, col, this);
@@ -65,9 +71,12 @@ public class VisualBoard extends GridPane {
 
                 square.setOnMouseClicked(rightClick::mouseClicked);
 
-                this.add(square, col, row);
+                boardGrid.add(square, col, row);
             }
         }
+
+        // Adds the board grid to the StackPane
+        this.getChildren().add(boardGrid);
 
         // Sets pieces on the board
         this.board.loadPosition(fen);
@@ -84,7 +93,7 @@ public class VisualBoard extends GridPane {
             if (event.getButton() == MouseButton.PRIMARY) {
                 for (int row = 0; row < 8; row++) {
                     for (int col = 0; col < 8; col++) {
-                        Square square = (Square) this.getChildren().get(row * 8 + col);
+                        Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
                         if (square.getIsRightClicked()) {
                             square.setIsRightClicked(false);
                         }
@@ -112,7 +121,7 @@ public class VisualBoard extends GridPane {
                 int squareIndex = (7 - row) * 8 + col;
                 int pieceColor = board.getPieceColorAtSquare(squareIndex);
                 int pieceType = board.getPieceTypeAtSquare(squareIndex);
-                Square square = (Square) this.getChildren().get(row * 8 + col);
+                Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
                 VisualPiece visualPiece = square.getCurrentPiece();
 
                 // If the engine square is empty and the visual square isn't, clear the visual square
@@ -148,7 +157,7 @@ public class VisualBoard extends GridPane {
             legalMovesBitboard |= 1L << endingSquare;
         }
 
-        MainController.instance.bitboardVisualization(board.getAttackMapBitboard(board.getTurn() ^ 1));
+        MainController.instance.bitboardVisualization(legalMovesBitboard);
     }
 
 
@@ -164,7 +173,7 @@ public class VisualBoard extends GridPane {
                 // Updates the square's legal hint if there is a legal move/capture there. If there is not a piece, it's a
                 // normal move, if there is, it's a capture
                 if (isLegal) {
-                    Square square = (Square) this.getChildren().get(row * 8 + col);
+                    Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
                     boolean hasPiece = this.board.getPieceColorAtSquare(squareIndex) != -1;
                     square.updateLegalHint(!hasPiece, hasPiece);
                 }
@@ -177,9 +186,29 @@ public class VisualBoard extends GridPane {
     public void clearLegalHints() {
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
-                Square square = (Square) this.getChildren().get(row * 8 + col);
+                Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
                 square.updateLegalHint(false, false);
             }
         }
+    }
+
+
+    // Works in a similar way to Board.searchLegalMove, but this function is for the UI only because it's used to find the
+    // legal move that promotes the pawn to the piece that the user has selected
+    public int searchPromotionLegalMove(int startingSquare, int endingSquare, int chosenPiece) {
+        for (int i = 0; i < board.getLegalMovesCount(); i++) {
+            int legalMove = board.getLegalMove(i);
+            if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
+                int moveFlag = Move.getFlag(legalMove);
+
+                // Verifies that it's a promotion or a promotion capture move flag and that the move flag special bits match
+                // the piece that the user has selected to promote to
+                if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION && ((moveFlag & 3) + 1) == chosenPiece) {
+                    return legalMove;
+                }
+            }
+        }
+
+        return -1;
     }
 }

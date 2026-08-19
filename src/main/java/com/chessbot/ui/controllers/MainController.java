@@ -4,6 +4,7 @@ import com.chessbot.engine.core.Piece;
 import com.chessbot.ui.components.Square;
 import com.chessbot.ui.components.VisualBoard;
 import javafx.fxml.FXML;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 
 // This class runs after view.fxml is loaded from ChessApplication
@@ -21,8 +22,8 @@ public class MainController {
     public void initialize() {
         instance = this;
 
-        boardTwo = new VisualBoard(Piece.WHITE, "4k/8/8/8/8/8/8/4K w - - 0 1"); // Kings are needed for the visualization board to not crash
-        boardOne = new VisualBoard(Piece.WHITE, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 30 1");
+        boardTwo = new VisualBoard(Piece.WHITE, "4k/8/8/8/8/8/8/4K w - - 0 1"); // Kings are needed for the board to not crash
+        boardOne = new VisualBoard(Piece.WHITE, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
         mainContainer.getChildren().addAll(boardOne, boardTwo);
     }
@@ -35,8 +36,9 @@ public class MainController {
             return;
         }
 
+        GridPane boardGrid = (GridPane) boardTwo.getChildren().getFirst();
         for (int i = 0; i < 64; i += 1) {
-            Square square = (Square) boardTwo.getChildren().get(i);
+            Square square = (Square) boardGrid.getChildren().get(i);
 
             long mask = 1L << i;
             if ((bitboard & mask) != 0) {
