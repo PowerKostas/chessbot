@@ -3,9 +3,8 @@ package com.chessbot.ui.components;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Move;
 import com.chessbot.engine.core.Piece;
-import com.chessbot.ui.controllers.MainController;
 import com.chessbot.ui.input.MoveHandler;
-import com.chessbot.ui.input.RightClick;
+import com.chessbot.ui.input.RightClickHandler;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
@@ -14,29 +13,33 @@ import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
 
 public class VisualBoard extends StackPane {
-    // Holds a reference to the engine board
-    private final Board board;
+    // VisualBoard extends StackPane in order to center the promotion dialog inside the board, the actual board grid is just
+    // a child inside the StackPane
+    private final GridPane boardGrid;
 
     // 0 = White, 1 = Black. In the engine board the first square is a1, in the visual board the first square is h8, if the
     // player is black the first squares remain the same, but the visual board is flipped
     private int playerColor;
 
-    // VisualBoard extends StackPane in order to center the promotion dialog inside the board, the actual board grid is just
-    // a child inside the StackPane
-    private final GridPane boardGrid;
+    // Flag to determine if this board is gonna show debug visuals
+    private final boolean isDebugBoard;
+
+    // Holds a reference to the engine board
+    private final Board board;
 
 
-    public VisualBoard(int playerColor, String fen) {
-        this.board = new Board();
-        this.playerColor = playerColor;
+    public VisualBoard(int playerColor, String fen, boolean isDebugBoard) {
         this.boardGrid = new GridPane();
+        this.playerColor = playerColor;
+        this.isDebugBoard = isDebugBoard;
+        this.board = new Board();
 
         // Reverse the board, if the player is black
         if (playerColor == Piece.BLACK) {
             this.setRotate(180);
         }
 
-        // Sets up FXML
+        // Creates the 8x8 grid
         this.setPrefSize(700, 700);
 
         for (int i = 0; i < 8; i++) {
@@ -53,7 +56,7 @@ public class VisualBoard extends StackPane {
 
         // One instance of the classes for every board
         MoveHandler moveHandler = new MoveHandler(this);
-        RightClick rightClick = new RightClick();
+        RightClickHandler rightClickHandler = new RightClickHandler();
 
         // Prepares every custom square class for the UI board
         for (int row = 0; row < 8; row += 1) {
@@ -69,8 +72,9 @@ public class VisualBoard extends StackPane {
                 square.setOnDragDone(moveHandler::dragDone);
                 square.setOnMouseReleased(moveHandler::mouseReleased);
 
-                square.setOnMouseClicked(rightClick::mouseClicked);
+                square.setOnMouseClicked(rightClickHandler::mouseClicked);
 
+                // Adds the square to the board grid, the square will automatically get scaled
                 boardGrid.add(square, col, row);
             }
         }
@@ -113,7 +117,7 @@ public class VisualBoard extends StackPane {
     }
 
 
-    // Syncs the visual board to the engine board
+    // Syncs the visual board to the engine board, runs after every move
     public void sync() {
         // For every square
         for (int row = 0; row < 8; row += 1) {
@@ -148,16 +152,18 @@ public class VisualBoard extends StackPane {
             }
         }
 
-        // Creates a legal moves bitboard for UI debugging
-        long legalMovesBitboard = 0L;
+        // If this is a debug board, create a legal moves bitboard to visualize
+        if (this.isDebugBoard) {
+            long legalMovesBitboard = 0L;
 
-        for (int i = 0; i < this.board.getLegalMovesCount(); i += 1) {
-            int legalMove = this.board.getLegalMove(i);
-            int endingSquare = Move.getEndingSquare(legalMove);
-            legalMovesBitboard |= 1L << endingSquare;
+            for (int i = 0; i < this.board.getLegalMovesCount(); i += 1) {
+                int legalMove = this.board.getLegalMove(i);
+                int endingSquare = Move.getEndingSquare(legalMove);
+                legalMovesBitboard |= 1L << endingSquare;
+            }
+
+            bitboardVisualization(legalMovesBitboard);
         }
-
-        MainController.instance.bitboardVisualization(legalMovesBitboard);
     }
 
 
@@ -188,6 +194,33 @@ public class VisualBoard extends StackPane {
             for (int col = 0; col < 8; col += 1) {
                 Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
                 square.updateLegalHint(false, false);
+            }
+        }
+    }
+
+
+    // Iterates through each bit of the bitboard that was given, if the bit equals 1, the corresponding square gets painted
+    // red, all other squares get the default colors
+    public void bitboardVisualization(long bitboard) {
+        // The engine board starts from a1, but the JavaFX board starts from a8, so the bitboard has to be reversed
+        bitboard = Long.reverseBytes(bitboard);
+
+        for (int i = 0; i < 64; i += 1) {
+            Square square = (Square) boardGrid.getChildren().get(i);
+            long squareMask = 1L << i;
+
+            if ((bitboard & squareMask) != 0) {
+                square.setStyle("-fx-background-color: red");
+            }
+
+            else {
+                if ((square.getRow() + square.getCol()) % 2 == 0) { // If light square
+                    square.setStyle("-fx-background-color: #ebecd0");
+                }
+
+                else { // If dark square
+                    square.setStyle("-fx-background-color: #739552");
+                }
             }
         }
     }

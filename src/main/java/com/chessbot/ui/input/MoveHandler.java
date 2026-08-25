@@ -59,7 +59,7 @@ public class MoveHandler {
     private void executeMove(int legalMove, Square targetSquare) {
         board.makeMove(legalMove);
 
-        // Forces the UI to redraw based on the engine board
+        // The UI gets redrawn based on the engine board
         visualBoard.sync();
 
         // Plays the appropriate move sound

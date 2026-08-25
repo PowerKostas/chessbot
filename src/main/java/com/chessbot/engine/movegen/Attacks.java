@@ -4,13 +4,13 @@ import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Piece;
 import com.chessbot.engine.core.Pieces.*;
 
-public final class AttackMap {
-    private AttackMap() {}
+public final class Attacks {
+    private Attacks() {}
 
 
     // An attack map calculates all the squares that are being attacked by any piece of the opponent. The color parameter
     // indicates which player's attack map will be generated
-    public static void generate(Board board, int color) {
+    public static void generateMap(Board board, int color) {
         // Filters out the friendly king in the calculations. This is done in order to avoid the king being able to move backwards
         // in the same direction as a checking slider when filtering the attack map to legal moves
         long allPiecesBitboard = board.getOtherBitboard(2) & ~board.getBitboard(color ^ 1, Piece.KING);

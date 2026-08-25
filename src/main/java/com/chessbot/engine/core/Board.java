@@ -8,12 +8,13 @@ import java.util.Arrays;
 public class Board {
     private int turn;
 
-    // 12 64 bit variables, one for each piece color and piece type, first dimension is the piece color and second dimension
-    // is the piece type, each bit indicates a piece on the board, used for board representation
-    private final long[][] bitboards = new long[2][6];
+    // 12 64 bit variables, one for each piece. The first 6 bitboards are for the white pieces (pawn, knight, bishop, rook,
+    // queen, king), the other 6 are for the black pieces. Each bit indicates a square on the board, if the bit equals 0, there
+    // is no piece in that square, if it's 1, there is
+    private final long[] bitboards = new long[12];
 
-    // 0 = White bitboard, 1 = Black bitboard, 2 = All bitboard
-    private final long[] otherBitboards = new long [3];
+    // 0 = White's bitboard, 1 = Black's bitboard, 2 = All pieces bitboard
+    private final long[] otherBitboards = new long[3];
 
     // 0 = White's attack map for the current turn, = 1 Black's attack map for the current turn
     private final long[] attackMapBitboard = new long[2];
@@ -74,9 +75,7 @@ public class Board {
         this.turn = turn;
     }
 
-    public long getBitboard(int color, int pieceType) {
-        return bitboards[color][pieceType];
-    }
+    public long getBitboard(int color, int pieceType) { return bitboards[(color * 6) + pieceType]; }
 
     public long getOtherBitboard(int index) {
         return otherBitboards[index];
@@ -126,7 +125,7 @@ public class Board {
     public void addPiece(int pieceColor, int pieceType, int squareIndex) {
         long addMask = 1L << squareIndex;
 
-        bitboards[pieceColor][pieceType] |= addMask;
+        bitboards[pieceColor * 6 + pieceType] |= addMask;
         otherBitboards[pieceColor] |= addMask;
         otherBitboards[2] |= addMask;
     }
@@ -137,8 +136,8 @@ public class Board {
         long removeMask = 1L << startingSquare;
         long addMask = 1L << endingSquare;
 
-        bitboards[pieceColor][pieceType] &= ~removeMask;
-        bitboards[pieceColor][pieceType] |= addMask;
+        bitboards[pieceColor * 6 + pieceType] &= ~removeMask;
+        bitboards[pieceColor * 6 + pieceType] |= addMask;
 
         otherBitboards[pieceColor] &= ~removeMask;
         otherBitboards[pieceColor] |= addMask;
@@ -152,7 +151,7 @@ public class Board {
     public void removePiece(int pieceColor, int pieceType, int squareIndex) {
         long removeMask = ~(1L << squareIndex);
 
-        bitboards[pieceColor][pieceType] &= removeMask;
+        bitboards[pieceColor * 6 + pieceType] &= removeMask;
         otherBitboards[pieceColor] &= removeMask;
         otherBitboards[2] &= removeMask;
     }
@@ -336,7 +335,7 @@ public class Board {
 
         // Checks if either white or black has that piece type on that square
         for (int pieceType = 0; pieceType < 6; pieceType += 1) {
-            if (((bitboards[Piece.WHITE][pieceType] | bitboards[Piece.BLACK][pieceType]) & squareMask) != 0) {
+            if (((bitboards[pieceType] | bitboards[6 + pieceType]) & squareMask) != 0) {
                 return pieceType;
             }
         }
