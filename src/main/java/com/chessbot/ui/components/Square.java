@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -26,6 +27,73 @@ public class Square extends StackPane {
         this.row = row;
         this.col = col;
 
+        // Adds square color
+        this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+
+        // If the player is white, put the numbers at the left column, if the player is black (board will be reversed)
+        // put the numbers in the right column
+        if ((board.getBoardPerspective() == Piece.WHITE && col == 0) || (board.getBoardPerspective() == Piece.BLACK && col == 7)) {
+            Label number = new Label();
+
+            if ((row + col) % 2 == 0) {
+                number.setTextFill(Color.web("#739552"));
+            }
+
+            else {
+                number.setTextFill(Color.web("#ebecd0"));
+            }
+
+            number.setText(Integer.toString(8 - row));
+            number.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
+            StackPane.setAlignment(number, Pos.TOP_LEFT);
+            StackPane.setMargin(number, new Insets(0, 0, 0, 4));
+
+            // If the player is black, reverse the numbers
+            if (board.getBoardPerspective() == Piece.BLACK) {
+                number.setRotate(180);
+                StackPane.setAlignment(number, Pos.BOTTOM_RIGHT);
+                StackPane.setMargin(number, new Insets(0, 4, 0, 0));
+            }
+
+            else {
+                StackPane.setAlignment(number, Pos.TOP_LEFT);
+                StackPane.setMargin(number, new Insets(0, 0, 0, 4));
+            }
+
+            this.getChildren().add(number);
+        }
+
+        // If the player is white, put the letters at the bottom row, if the player is black (board will be reversed)
+        // put the letters in the top row
+        if ((board.getBoardPerspective() == Piece.WHITE && row == 7) || (board.getBoardPerspective() == Piece.BLACK && row == 0)) {
+            Label letter = new Label();
+
+            if ((row + col) % 2 == 0) {
+                letter.setTextFill(Color.web("#739552"));
+            }
+
+            else {
+                letter.setTextFill(Color.web("#ebecd0"));
+            }
+
+            letter.setText(String.valueOf((char) ('a' + col)));
+            letter.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
+
+            // If the player is black, reverse the letters
+            if (board.getBoardPerspective() == Piece.BLACK) {
+                letter.setRotate(180);
+                StackPane.setAlignment(letter, Pos.TOP_LEFT);
+                StackPane.setMargin(letter, new Insets(0, 0, 0, 4));
+            }
+
+            else {
+                StackPane.setAlignment(letter, Pos.BOTTOM_RIGHT);
+                StackPane.setMargin(letter, new Insets(0, 4, 0, 0));
+            }
+
+            this.getChildren().add(letter);
+        }
+
         // Adds a circle that indicates a legal move and makes it invisible
         legalMoveHint = new Circle(14, Color.web("#000000", 0.2));
         legalMoveHint.setMouseTransparent(true);
@@ -43,72 +111,12 @@ public class Square extends StackPane {
         legalCaptureHint.setVisible(false);
         this.getChildren().add(legalCaptureHint);
 
-        // Adds square color
-        this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
-
-        // If the player is white, put the numbers at the left column, if the player is black (board will be reversed)
-        // put the numbers in the right column
-        if ((board.getPlayerColor() == Piece.WHITE && col == 0) || (board.getPlayerColor() == Piece.BLACK && col == 7)) {
-            Label number = new Label();
-
-            if ((row + col) % 2 == 0) {
-                number.setTextFill(Color.web("#739552"));
+        // If a right click happens, toggle the square's right-clicked status
+        this.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.SECONDARY) {
+                this.setIsRightClicked(!this.getIsRightClicked());
             }
-
-            else {
-                number.setTextFill(Color.web("#ebecd0"));
-            }
-
-            number.setText(Integer.toString(8 - row));
-            number.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
-            StackPane.setAlignment(number, Pos.TOP_LEFT);
-            StackPane.setMargin(number, new Insets(0, 0, 0, 4));
-
-            // If the player is black, reverse the numbers
-            if (board.getPlayerColor() == Piece.BLACK) {
-                number.setRotate(180);
-                StackPane.setAlignment(number, Pos.BOTTOM_RIGHT);
-                StackPane.setMargin(number, new Insets(0, 4, 0, 0));
-            }
-
-            else {
-                StackPane.setAlignment(number, Pos.TOP_LEFT);
-                StackPane.setMargin(number, new Insets(0, 0, 0, 4));
-            }
-
-            this.getChildren().add(number);
-        }
-
-        // If the player is white, put the letters at the bottom row, if the player is black (board will be reversed)
-        // put the letters in the top row
-        if ((board.getPlayerColor() == Piece.WHITE && row == 7) || (board.getPlayerColor() == Piece.BLACK && row == 0)) {
-            Label letter = new Label();
-
-            if ((row + col) % 2 == 0) {
-                letter.setTextFill(Color.web("#739552"));
-            }
-
-            else {
-                letter.setTextFill(Color.web("#ebecd0"));
-            }
-
-            letter.setText(String.valueOf((char) ('a' + col)));
-            letter.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
-
-            // If the player is black, reverse the letters
-            if (board.getPlayerColor() == Piece.BLACK) {
-                letter.setRotate(180);
-                StackPane.setAlignment(letter, Pos.TOP_LEFT);
-                StackPane.setMargin(letter, new Insets(0, 0, 0, 4));
-            }
-
-            else {
-                StackPane.setAlignment(letter, Pos.BOTTOM_RIGHT);
-                StackPane.setMargin(letter, new Insets(0, 4, 0, 0));
-            }
-
-            this.getChildren().add(letter);
-        }
+        });
     }
 
 
@@ -137,16 +145,10 @@ public class Square extends StackPane {
         }
     }
 
-    public Boolean getIsSelected() {
-        return isSelected;
-    }
-
     public void setIsSelected(boolean isSelected) {
         this.isSelected = isSelected;
         this.updateColor();
     }
-
-    public Boolean getIsPreviousMove() { return isPreviousMove; }
 
     public void setIsPreviousMove(boolean isPreviousMove) {
         this.isPreviousMove = isPreviousMove;

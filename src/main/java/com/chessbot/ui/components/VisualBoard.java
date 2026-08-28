@@ -4,7 +4,6 @@ import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Move;
 import com.chessbot.engine.core.Piece;
 import com.chessbot.ui.input.MoveHandler;
-import com.chessbot.ui.input.RightClickHandler;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
@@ -17,25 +16,32 @@ public class VisualBoard extends StackPane {
     // a child inside the StackPane
     private final GridPane boardGrid;
 
-    // 0 = White, 1 = Black. In the engine board the first square is a1, in the visual board the first square is h8, if the
-    // player is black the first squares remain the same, but the visual board is flipped
-    private int playerColor;
+    // 0 = White's pieces first, 1 = Black's pieces first. In the engine board the first square is a1, in the visual board the
+    // first square is h8, if the player is black the first squares remain the same, but the visual board is flipped
+    private final int boardPerspective;
+
+    // The squares that will be highlighted when a move is made
+    private Square previousStartingSquare;
+    private Square previousEndingSquare;
 
     // Flag to determine if this board is gonna show debug visuals
     private final boolean isDebugBoard;
 
-    // Holds a reference to the engine board
+    // Flag to not allow human moves when the AI is thinking
+    private boolean isBoardLocked = false;
+
+    // Holds a reference to the engine board in order to access its methods
     private final Board board;
 
 
-    public VisualBoard(int playerColor, String fen, boolean isDebugBoard) {
+    public VisualBoard(int boardPerspective, String fen, boolean isDebugBoard) {
         this.boardGrid = new GridPane();
-        this.playerColor = playerColor;
+        this.boardPerspective = boardPerspective;
         this.isDebugBoard = isDebugBoard;
         this.board = new Board();
 
         // Reverse the board, if the player is black
-        if (playerColor == Piece.BLACK) {
+        if (boardPerspective == Piece.BLACK) {
             this.setRotate(180);
         }
 
@@ -54,27 +60,10 @@ public class VisualBoard extends StackPane {
             boardGrid.getRowConstraints().add(rowConstraint);
         }
 
-        // One instance of the classes for every board
-        MoveHandler moveHandler = new MoveHandler(this);
-        RightClickHandler rightClickHandler = new RightClickHandler();
-
-        // Prepares every custom square class for the UI board
+        // Adds every custom square to the board grid, the square will automatically get scaled
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
                 Square square = new Square(row, col, this);
-
-                // Makes every square draggable/clickable, more info on the specific classes
-                square.setOnDragDetected(moveHandler::dragDetected);
-                square.setOnDragOver(moveHandler::dragOver);
-                square.setOnDragEntered(moveHandler::dragEntered);
-                square.setOnDragExited(moveHandler::dragExited);
-                square.setOnDragDropped(moveHandler::dragDropped);
-                square.setOnDragDone(moveHandler::dragDone);
-                square.setOnMouseReleased(moveHandler::mouseReleased);
-
-                square.setOnMouseClicked(rightClickHandler::mouseClicked);
-
-                // Adds the square to the board grid, the square will automatically get scaled
                 boardGrid.add(square, col, row);
             }
         }
@@ -86,14 +75,8 @@ public class VisualBoard extends StackPane {
         this.board.loadPosition(fen);
         this.sync();
 
-        // Listens for clicks inside the board
+        // Listens for clicks inside the board, on a left click, reset the right-clicked squares
         this.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
-            // On a right click, cancel the selected square
-            if (event.getButton() == MouseButton.SECONDARY) {
-                moveHandler.cancelSelection();
-            }
-
-            // On a left click, reset the right-clicked squares
             if (event.getButton() == MouseButton.PRIMARY) {
                 for (int row = 0; row < 8; row++) {
                     for (int col = 0; col < 8; col++) {
@@ -110,10 +93,64 @@ public class VisualBoard extends StackPane {
 
     public Board getBoard() { return board; }
 
-    public int getPlayerColor() { return playerColor; }
+    public int getBoardPerspective() { return boardPerspective; }
 
-    public void setPlayerColor(int playerColor) {
-        this.playerColor = playerColor;
+    public boolean getIsBoardLocked() { return isBoardLocked; }
+
+    public void setIsBoardLocked(boolean isBoardLocked) { this.isBoardLocked = isBoardLocked; }
+
+
+    // Makes every square draggable/clickable, more info on the specific classes. The reason it's a function and not inside the
+    // constructor is because MoveHandler's constructor needs a callback and VisualBoard shouldn't know about that
+    public void attachMoveHandler(MoveHandler moveHandler) {
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
+
+                square.setOnDragDetected(moveHandler::dragDetected);
+                square.setOnDragOver(moveHandler::dragOver);
+                square.setOnDragEntered(moveHandler::dragEntered);
+                square.setOnDragExited(moveHandler::dragExited);
+                square.setOnDragDropped(moveHandler::dragDropped);
+                square.setOnDragDone(moveHandler::dragDone);
+                square.setOnMouseReleased(moveHandler::mouseReleased);
+            }
+        }
+
+        // Listens for clicks inside the board, on a right click, cancel the selected square
+        this.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (event.getButton() == MouseButton.SECONDARY) {
+                moveHandler.cancelSelection();
+            }
+        });
+    }
+
+
+    // Retrieves a Square object from the GridPane using a bitboard index
+    public Square getSquare(int squareIndex) {
+        int targetRow = 7 - (squareIndex / 8);
+        int targetCol = squareIndex % 8;
+        return (Square) boardGrid.getChildren().get(targetRow * 8 + targetCol);
+    }
+
+
+    // Works in a similar way to Board.searchLegalMove, but this function is for the UI only because it's used to find the
+    // legal move that promotes the pawn to the piece that the user has selected
+    public int searchPromotionLegalMove(int startingSquare, int endingSquare, int chosenPiece) {
+        for (int i = 0; i < board.getLegalMovesCount(); i++) {
+            int legalMove = board.getLegalMove(i);
+            if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
+                int moveFlag = Move.getFlag(legalMove);
+
+                // Verifies that it's a promotion or a promotion capture move flag and that the move flag special bits match
+                // the piece that the user has selected to promote to
+                if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION && ((moveFlag & 3) + 1) == chosenPiece) {
+                    return legalMove;
+                }
+            }
+        }
+
+        return -1;
     }
 
 
@@ -145,7 +182,7 @@ public class VisualBoard extends StackPane {
                             square.getChildren().remove(visualPiece);
                         }
 
-                        VisualPiece newPiece = new VisualPiece(pieceColor, pieceType, this.playerColor == Piece.BLACK);
+                        VisualPiece newPiece = new VisualPiece(pieceColor, pieceType, this.boardPerspective == Piece.BLACK);
                         square.setCurrentPiece(newPiece);
                     }
                 }
@@ -163,6 +200,24 @@ public class VisualBoard extends StackPane {
             }
 
             bitboardVisualization(legalMovesBitboard);
+        }
+    }
+
+
+    public void highlightPreviousMove(int startingSquareIndex, int endingSquareIndex) {
+        // Resets the colors of the previous move squares
+        if (previousStartingSquare != null && previousEndingSquare != null) {
+            previousStartingSquare.setIsPreviousMove(false);
+            previousEndingSquare.setIsPreviousMove(false);
+        }
+
+        // Sets new previous move squares and highlights them
+        previousStartingSquare = getSquare(startingSquareIndex);
+        previousEndingSquare = getSquare(endingSquareIndex);
+
+        if (previousStartingSquare != null && previousEndingSquare != null) {
+            previousStartingSquare.setIsPreviousMove(true);
+            previousEndingSquare.setIsPreviousMove(true);
         }
     }
 
@@ -223,25 +278,5 @@ public class VisualBoard extends StackPane {
                 }
             }
         }
-    }
-
-
-    // Works in a similar way to Board.searchLegalMove, but this function is for the UI only because it's used to find the
-    // legal move that promotes the pawn to the piece that the user has selected
-    public int searchPromotionLegalMove(int startingSquare, int endingSquare, int chosenPiece) {
-        for (int i = 0; i < board.getLegalMovesCount(); i++) {
-            int legalMove = board.getLegalMove(i);
-            if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
-                int moveFlag = Move.getFlag(legalMove);
-
-                // Verifies that it's a promotion or a promotion capture move flag and that the move flag special bits match
-                // the piece that the user has selected to promote to
-                if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION && ((moveFlag & 3) + 1) == chosenPiece) {
-                    return legalMove;
-                }
-            }
-        }
-
-        return -1;
     }
 }

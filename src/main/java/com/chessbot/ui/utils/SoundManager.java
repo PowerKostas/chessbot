@@ -1,17 +1,18 @@
 package com.chessbot.ui.utils;
 
-import com.chessbot.ChessApplication;
+import com.chessbot.application.ChessApplication;
 import com.chessbot.engine.core.Move;
 import javafx.scene.media.AudioClip;
 
 // Separate class to not clutter the code
 public final class SoundManager {
-    private static final AudioClip checkSound = new AudioClip(ChessApplication.class.getResource("Sounds/check.mp3").toString());
-    private static final AudioClip captureSound = new AudioClip(ChessApplication.class.getResource("Sounds/capture.mp3").toString());
-    private static final AudioClip castleSound = new AudioClip(ChessApplication.class.getResource("Sounds/castle.mp3").toString());
-    private static final AudioClip moveSound = new AudioClip(ChessApplication.class.getResource("Sounds/move.mp3").toString());
-    private static final AudioClip promoteSound = new AudioClip(ChessApplication.class.getResource("Sounds/promote.mp3").toString());
-    private static final AudioClip illegalSound = new AudioClip(ChessApplication.class.getResource("Sounds/illegal.mp3").toString());
+    private static final AudioClip checkSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/check.mp3").toString());
+    private static final AudioClip captureSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/capture.mp3").toString());
+    private static final AudioClip castleSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/castle.mp3").toString());
+    private static final AudioClip moveSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/move.mp3").toString());
+    private static final AudioClip promoteSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/promote.mp3").toString());
+    private static final AudioClip illegalSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/illegal.mp3").toString());
+    private static final AudioClip endSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/end.mp3").toString());
 
     private SoundManager() {}
 
@@ -43,4 +44,6 @@ public final class SoundManager {
     public static void playIllegalSound() {
         illegalSound.play();
     }
+
+    public static void playEndSound() { endSound.play(); }
 }

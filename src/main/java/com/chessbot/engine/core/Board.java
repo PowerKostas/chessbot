@@ -342,4 +342,33 @@ public class Board {
 
         return -1;
     }
+
+
+    public boolean isCheckmate() { return this.legalMovesCount == 0 && this.inCheck; }
+
+    public boolean isStalemate() { return this.legalMovesCount == 0 && !this.inCheck; }
+
+    public boolean isInsufficientMaterial() {
+        // If there are any pawns, rooks, or queens on the board, checkmate is always possible
+        long majorPieces = getBitboard(Piece.WHITE, Piece.PAWN) | getBitboard(Piece.BLACK, Piece.PAWN) |
+                           getBitboard(Piece.WHITE, Piece.ROOK) | getBitboard(Piece.BLACK, Piece.ROOK) |
+                           getBitboard(Piece.WHITE, Piece.QUEEN) | getBitboard(Piece.BLACK, Piece.QUEEN);
+
+        if (majorPieces != 0L) {
+            return false;
+        }
+
+        // If there is 0 or 1 minor piece on the board, it's a draw
+        long knights = getBitboard(Piece.WHITE, Piece.KNIGHT) | getBitboard(Piece.BLACK, Piece.KNIGHT);
+        long bishops = getBitboard(Piece.WHITE, Piece.BISHOP) | getBitboard(Piece.BLACK, Piece.BISHOP);
+        long minorPieces = knights | bishops;
+
+        if (Long.bitCount(minorPieces) <= 1) return true;
+
+        // There is an insufficient material edge case where if there are only 1 or more bishops for each player, if they are
+        // all on same colored squares, it's a draw. Checks if there are no knights (so there are only bishops) and if all bishops
+        // are on dark or light squares (so all bishops are on same colored squares)
+        long lightSquaredBishops = bishops & 0x55AA55AA55AA55AAL; // 0x55AA55AA55AA55AAL = All light squares
+        return knights == 0L && (lightSquaredBishops == 0L || lightSquaredBishops == bishops);
+    }
 }

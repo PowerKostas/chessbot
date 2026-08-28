@@ -1,4 +1,4 @@
-package com.chessbot;
+package com.chessbot.application;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -6,11 +6,11 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.io.IOException;
 
-// Starting UI class
+// UI starting class
 public class ChessApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(ChessApplication.class.getResource("Views/view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(ChessApplication.class.getResource("/com/chessbot/Views/view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
         stage.setTitle("chessbot");

@@ -1,4 +1,4 @@
-package com.chessbot;
+package com.chessbot.application;
 
 public class Main {
     void main(String[] args) {

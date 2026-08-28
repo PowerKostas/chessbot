@@ -1,7 +1,6 @@
 package com.chessbot.ui.input;
 
 import com.chessbot.engine.core.Board;
-import com.chessbot.engine.core.Move;
 import com.chessbot.engine.core.Piece;
 import com.chessbot.ui.components.PromotionDialog;
 import com.chessbot.ui.components.Square;
@@ -17,26 +16,35 @@ import javafx.scene.input.*;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
 
+import java.util.function.Consumer;
+
+// This class is responsible for handling input in the visual board and translating it for the engine board
 public class MoveHandler {
     // Both Drag Move and Click Move use these variables
     private final VisualBoard visualBoard;
     private final Board board;
     private Square startingSquare;
-    private Square previousStartingSquare;
-    private Square previousEndingSquare;
     private int startingSquareIndex; // The starting square index is used multiple times, a class variable is needed for efficiency
 
     // Drag Move specific variables
     private VisualPiece draggedPiece;
     private Square endingSquare;
 
-    // Initializes a VisualBoard/Board reference so the listeners can access its methods
-    public MoveHandler(VisualBoard visualBoard) {
+    // Callback function that runs the method that was given as a parameter when the MoveHandler object was created in
+    // MainController. In this instance it passes and plays moves in GameManager. This architecture was chosen in order to
+    // avoid relying on a GameManager object inside this class
+    private final Consumer<Integer> onMovePlayed;
+
+
+    // Initializes the references in order for the listeners to access their methods
+    public MoveHandler(VisualBoard visualBoard, Consumer<Integer> onMovePlayed) {
         this.visualBoard = visualBoard;
         this.board = visualBoard.getBoard();
+        this.onMovePlayed = onMovePlayed;
     }
 
 
+    // The function colors a square, and it shows the legal moves hints for any piece there
     private void selectPiece(Square square, int squareIndex) {
         startingSquare = square;
         startingSquareIndex = squareIndex;
@@ -46,9 +54,9 @@ public class MoveHandler {
     }
 
 
+    // Clears the square's color, the starting square and any legal hints
     public void cancelSelection() {
         if (startingSquare != null) { // When right-clicking an empty square, startingSquare is null, have to check against that
-            // Clears the selected square's color, the starting square and the legal hints
             startingSquare.setIsSelected(false);
             startingSquare = null;
             visualBoard.clearLegalHints();
@@ -56,44 +64,16 @@ public class MoveHandler {
     }
 
 
-    private void executeMove(int legalMove, Square targetSquare) {
-        board.makeMove(legalMove);
-
-        // The UI gets redrawn based on the engine board
-        visualBoard.sync();
-
-        // Plays the appropriate move sound
-        SoundManager.playMoveSound(board.getInCheck(), Move.getFlag(legalMove));
-
-        // Resets the colors of the previous move squares
-        if (previousStartingSquare != null && previousEndingSquare != null) {
-            previousStartingSquare.setIsPreviousMove(false);
-            previousEndingSquare.setIsPreviousMove(false);
-        }
-
-        // Sets new previous move squares
-        startingSquare.setIsSelected(false);
-        startingSquare.setIsPreviousMove(true);
-        targetSquare.setIsSelected(false);
-        targetSquare.setIsPreviousMove(true);
-
-        // Prepares for the next turn
-        previousStartingSquare = startingSquare;
-        previousEndingSquare = targetSquare;
-        startingSquare = null;
-        visualBoard.clearLegalHints();
-    }
-
-
     private void promotePawn(Square promotionSquare, int promotionSquareIndex) {
         int pieceColor = board.getPieceColorAtSquare(startingSquareIndex);
 
         // Opens the promotion dialog and waits for the user to select a piece
-        PromotionDialog.display(visualBoard, pieceColor, visualBoard.getPlayerColor() == Piece.BLACK, chosenPiece -> {
+        PromotionDialog.display(visualBoard, pieceColor, visualBoard.getBoardPerspective() == Piece.BLACK, chosenPiece -> {
             // If the user didn't click the 'x' button, execute the promotion legal move
             if (chosenPiece != -1) {
                 int legalMove = visualBoard.searchPromotionLegalMove(startingSquareIndex, promotionSquareIndex, chosenPiece);
-                executeMove(legalMove, promotionSquare);
+                onMovePlayed.accept(legalMove);
+                cancelSelection();
             }
 
             // Else, make the dragged/clicked piece visible again, cancel the selection and remove the target square's selected color
@@ -109,6 +89,9 @@ public class MoveHandler {
     // Drag Move
     // Triggers when a drag operation starts
     public void dragDetected(MouseEvent event) {
+        // Blocks human input if it's the AI's turn
+        if (visualBoard.getIsBoardLocked()) return;
+
         Square dragSource = (Square) event.getSource();
 
         // If the square has no pieces, return
@@ -246,7 +229,8 @@ public class MoveHandler {
             // Executes normal legal moves
             else {
                 int legalMove = board.searchLegalMove(startingSquareIndex, endingSquareIndex);
-                executeMove(legalMove, endingSquare);
+                onMovePlayed.accept(legalMove);
+                cancelSelection();
             }
         }
 
@@ -268,8 +252,8 @@ public class MoveHandler {
     // Click Move
     // Triggers when a square is clicked
     public void mouseReleased(MouseEvent event) {
-        // Only left clicks are accepted
-        if (event.getButton() != MouseButton.PRIMARY) return;
+        if (event.getButton() != MouseButton.PRIMARY) return; // Only left clicks are accepted
+        if (visualBoard.getIsBoardLocked()) return;
 
         Square clickedSquare = (Square) event.getSource();
         int clickedSquareIndex = (7 - clickedSquare.getRow()) * 8 + clickedSquare.getCol();
@@ -309,7 +293,8 @@ public class MoveHandler {
 
                     // If the click is a legal move
                     if (legalMove != -1) {
-                        executeMove(legalMove, clickedSquare);
+                        onMovePlayed.accept(legalMove);
+                        cancelSelection();
                     }
 
                     // If the click is an illegal move

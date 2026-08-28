@@ -1,6 +1,6 @@
 package com.chessbot.ui.components;
 
-import com.chessbot.ChessApplication;
+import com.chessbot.application.ChessApplication;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -18,7 +18,7 @@ public class VisualPiece extends ImageView {
         char[] colorNames = {'w', 'b'};
         char[] pieceNames = {'p', 'n', 'b', 'r', 'q', 'k'};
 
-        Image image = new Image(ChessApplication.class.getResourceAsStream("Images/" + colorNames[color] + pieceNames[type] + ".png"));
+        Image image = new Image(ChessApplication.class.getResourceAsStream("/com/chessbot/Images/" + colorNames[color] + pieceNames[type] + ".png"));
         this.setImage(image);
         this.setFitWidth(75);
         this.setFitHeight(75);
