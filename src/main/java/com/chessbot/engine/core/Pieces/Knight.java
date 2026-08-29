@@ -23,7 +23,7 @@ public final class Knight {
     }
 
 
-    // Only difference of knight attacks and knight pseudo legal moves are that the pseudo legal moves can't fall on friendly pieces
+    // Only difference of knight attacks and knight pseudo legal moves is that the pseudo legal moves can't fall on friendly pieces
     public static long pseudoLegalMoves(long pieceBitboard, long friendlyPiecesBitboard) {
         return attacks(pieceBitboard) & ~friendlyPiecesBitboard;
     }

@@ -4,7 +4,7 @@ import com.chessbot.engine.magic.MagicConstants;
 
 // This class uses similar logic to Rook
 public final class Bishop {
-    // DIAGONAL_MASKS: From left to right, ANTI_DIAGONAL_MASKS: From right to left
+    // DIAGONAL_MASKS: Diagonal from left to right, ANTI_DIAGONAL_MASKS: Diagonal from right to left
     private static final long[] DIAGONAL_MASKS = {0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L,
                                                   0x80402010080402L, 0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L,
                                                   0x1008040201000000L, 0x804020100000000L, 0x402010000000000L, 0x201000000000000L,

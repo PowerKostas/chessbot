@@ -38,8 +38,8 @@ public final class Checks {
         long kingBitboard = board.getBitboard(friendlyColor, Piece.KING);
         int kingSquare = Long.numberOfTrailingZeros(kingBitboard);
 
-        // Returns a bitboard of all the squares between the king and the checker, more information about the BETWEEN constant
-        // in the Rays class. The checker's square is also part of the evadeMask because you can always just capture it
+        // Returns a bitboard of all the squares between the king and the checker. The checker's square is also part of the
+        // evadeMask because you can always just capture it
         return (1L << checkerSquare) | Rays.BETWEEN[(kingSquare << 6) | checkerSquare];
     }
 }

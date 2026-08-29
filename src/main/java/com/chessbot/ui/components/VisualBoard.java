@@ -11,6 +11,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
 
+import static com.chessbot.engine.utils.FenParser.loadFen;
+
 public class VisualBoard extends StackPane {
     // VisualBoard extends StackPane in order to center the promotion dialog inside the board, the actual board grid is just
     // a child inside the StackPane
@@ -30,7 +32,6 @@ public class VisualBoard extends StackPane {
     // Flag to not allow human moves when the AI is thinking
     private boolean isBoardLocked = false;
 
-    // Holds a reference to the engine board in order to access its methods
     private final Board board;
 
 
@@ -68,11 +69,10 @@ public class VisualBoard extends StackPane {
             }
         }
 
-        // Adds the board grid to the StackPane
         this.getChildren().add(boardGrid);
 
-        // Sets pieces on the board
-        this.board.loadPosition(fen);
+        // Sets pieces on the engine and visual board
+        loadFen(fen, board);
         this.sync();
 
         // Listens for clicks inside the board, on a left click, reset the right-clicked squares
@@ -243,7 +243,6 @@ public class VisualBoard extends StackPane {
     }
 
 
-    // Clears all the legal hints
     public void clearLegalHints() {
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {

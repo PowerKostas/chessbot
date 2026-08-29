@@ -4,7 +4,6 @@ import com.chessbot.application.ChessApplication;
 import com.chessbot.engine.core.Move;
 import javafx.scene.media.AudioClip;
 
-// Separate class to not clutter the code
 public final class SoundManager {
     private static final AudioClip checkSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/check.mp3").toString());
     private static final AudioClip captureSound = new AudioClip(ChessApplication.class.getResource("/com/chessbot/Sounds/capture.mp3").toString());

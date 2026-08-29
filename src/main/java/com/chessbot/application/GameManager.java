@@ -3,6 +3,7 @@ package com.chessbot.application;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Move;
 import com.chessbot.engine.core.Piece;
+import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.ui.components.VisualBoard;
 import com.chessbot.ui.utils.SoundManager;
 import javafx.animation.PauseTransition;
@@ -15,7 +16,6 @@ import java.util.Random;
 // regardless of if the input is coming from the UI, an AI or anything else. This way there is no need to write extra code on any
 // specific input class
 public class GameManager {
-    // References to other classes
     private final Board board;
     private final VisualBoard visualBoard;
     private final Random random = new Random();
@@ -31,10 +31,10 @@ public class GameManager {
     }
 
 
-    // Sets the player types and decides what to do in the first turn
     public void startGame(int whitePlayerType, int blackPlayerType) {
         this.whitePlayerType = whitePlayerType;
         this.blackPlayerType = blackPlayerType;
+        MoveGenerator.generate(board);
         checkTurn();
     }
 
@@ -48,7 +48,7 @@ public class GameManager {
         if (currentPlayerType == PlayerType.AI) {
             visualBoard.setIsBoardLocked(true);
 
-            // Adds a small delay in order for the AI moves to seem natural
+            // Adds a small delay to make the AI moves seem natural
             PauseTransition pause = new PauseTransition(Duration.millis(600));
             pause.setOnFinished(e -> playRandomAIMove());
             pause.play();
@@ -65,7 +65,7 @@ public class GameManager {
     }
 
 
-    // If the game ended, lock the board, play the end sound and close the window after 3 seconds
+    // If the game ended, lock the board, play the end sound and close the window after 5 seconds
     private void triggerGameOverSequence() {
         visualBoard.setIsBoardLocked(true);
         SoundManager.playEndSound();
@@ -79,6 +79,7 @@ public class GameManager {
     // Handles human and AI moves
     public void playMove(int legalMove) {
         board.makeMove(legalMove);
+        MoveGenerator.generate(board);
         visualBoard.sync();
 
         int startingSquare = Move.getStartingSquare(legalMove);
@@ -100,10 +101,9 @@ public class GameManager {
 
     // Handles AI moves
     private void playRandomAIMove() {
-        int count = board.getLegalMovesCount();
-
         // Picks and plays a random legal move
-        int randomLegalMove = board.getLegalMove(random.nextInt(count));
+        int legalMovesCount = board.getLegalMovesCount();
+        int randomLegalMove = board.getLegalMove(random.nextInt(legalMovesCount));
         playMove(randomLegalMove);
     }
 }

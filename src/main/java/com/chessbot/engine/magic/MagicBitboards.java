@@ -108,7 +108,7 @@ public abstract class MagicBitboards {
                 }
             }
 
-            // Prints the magic number and the best bits, so I can write them down, they are needed for later
+            // Prints the magic number and the best bits, so I can write them down
             System.out.printf("Square: %d | Magic: %d | Bits: %d%n", square, magicNumber, bestBits);
         }
     }

@@ -27,7 +27,6 @@ public class Square extends StackPane {
         this.row = row;
         this.col = col;
 
-        // Adds square color
         this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
 
         // If the player is white, put the numbers at the left column, if the player is black (board will be reversed)

@@ -1,11 +1,11 @@
 package com.chessbot.engine.core;
 
-import com.chessbot.engine.movegen.MoveGenerator;
-import com.chessbot.engine.utils.FenParser;
-
 import java.util.Arrays;
 
+import static com.chessbot.engine.core.Undo.*;
+
 public class Board {
+    // 0 = White's turn, 1 = Black's turn
     private int turn;
 
     // 12 64 bit variables, one for each piece. The first 6 bitboards are for the white pieces (pawn, knight, bishop, rook,
@@ -113,14 +113,6 @@ public class Board {
     public void setHalfMoveClock(int halfMoveClock) { this.halfMoveClock = halfMoveClock; }
 
 
-    // Coordinates every job at the start of the game
-    public void loadPosition(String fen) {
-        // Loads pieces onto the board and generates moves for the next player
-        FenParser.loadFen(fen, this);
-        MoveGenerator.generate(this);
-    }
-
-
     // Adds a piece to the board at the start of the game
     public void addPiece(int pieceColor, int pieceType, int squareIndex) {
         long addMask = 1L << squareIndex;
@@ -157,16 +149,22 @@ public class Board {
     }
 
 
-    // Coordinates every job of a move cycle
-    public void makeMove(int legalMove) {
-        // Gets the necessary info about the move
-        int startingSquare = Move.getStartingSquare(legalMove);
-        int endingSquare = Move.getEndingSquare(legalMove);
-        int moveFlag = Move.getFlag(legalMove);
-
-        int pieceColor = this.getPieceColorAtSquare(startingSquare);
+    // Coordinates every job of a move cycle and returns an Undo int object in order to, if needed, unmake the move later in
+    // the search algorithm
+    public int makeMove(int move) {
+        int startingSquare = Move.getStartingSquare(move);
+        int endingSquare = Move.getEndingSquare(move);
+        int moveFlag = Move.getFlag(move);
+        int pieceColor = this.turn;
         int pieceType = this.getPieceTypeAtSquare(startingSquare);
         int enemyColor = pieceColor ^ 1;
+
+        // Snapshots the irreversible data that's about to be overwritten, defaults capturedPieceType to NONE_PIECE_TYPE but
+        // the capture/promotion capture cases below overwrite it if needed
+        int capturedPieceType = Undo.NONE_PIECE_TYPE;
+        long previousEnPassantSquareBitboard = this.enPassantSquareBitboard;
+        int previousCastlingRights = this.castlingRights;
+        int previousHalfMoveClock = this.halfMoveClock;
 
         // Resets the en passant bitboard after each move
         this.enPassantSquareBitboard = 0L;
@@ -187,13 +185,15 @@ public class Board {
 
             // If it's a normal capture, remove the captured piece from the ending square and move the piece
             case Move.FLAG_CAPTURE:
-                this.removePiece(enemyColor, this.getPieceTypeAtSquare(endingSquare), endingSquare);
+                capturedPieceType = this.getPieceTypeAtSquare(endingSquare);
+                this.removePiece(enemyColor, capturedPieceType, endingSquare);
                 this.movePiece(startingSquare, endingSquare, pieceColor, pieceType);
                 break;
 
             // If it's an en passant capture, for white, remove the captured piece from the square that is a rank below the
             // ending square. For black, the captured piece is a rank above the ending square. Then move the pawn
             case Move.FLAG_EN_PASSANT_CAPTURE:
+                capturedPieceType = Piece.PAWN;
                 int capturedPawnSquare = (pieceColor == Piece.WHITE) ? endingSquare - 8 : endingSquare + 8;
                 this.removePiece(enemyColor, Piece.PAWN, capturedPawnSquare);
                 this.movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
@@ -237,13 +237,13 @@ public class Board {
                     // All promotion capture move flags are after the knight promotion capture move flag, removes the enemy piece
                     // if it's a promotion capture
                     if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION_CAPTURE) {
-                        this.removePiece(enemyColor, this.getPieceTypeAtSquare(endingSquare), endingSquare);
+                        capturedPieceType = this.getPieceTypeAtSquare(endingSquare);
+                        this.removePiece(enemyColor, capturedPieceType, endingSquare);
                     }
 
-                    // Remove the pawn from the second to last rank, derive the promoted piece from the 1st and 2nd special bits
+                    // Removes the pawn from the second to last rank, derive the promoted piece from the 1st and 2nd special bits
                     // of move flag, add the promoted piece to the last rank
                     this.removePiece(pieceColor, Piece.PAWN, startingSquare);
-
                     int promotedPiece = (moveFlag & 3) + 1;
                     this.addPiece(pieceColor, promotedPiece, endingSquare);
                 }
@@ -264,9 +264,98 @@ public class Board {
             this.halfMoveClock += 1;
         }
 
-        // Flips the turn and generates moves for the next player
         this.turn ^= 1;
-        MoveGenerator.generate(this);
+        return createUndo(capturedPieceType, previousEnPassantSquareBitboard, previousCastlingRights, previousHalfMoveClock);
+    }
+
+
+    // Reverses a move made by makeMove
+    public void unmakeMove(int move, int undo) {
+        int startingSquare = Move.getStartingSquare(move);
+        int endingSquare = Move.getEndingSquare(move);
+        int moveFlag = Move.getFlag(move);
+        int pieceType = this.getPieceTypeAtSquare(endingSquare);
+
+        // Flips the turn back in order to reference whoever made the move being undone
+        this.turn ^= 1;
+        int pieceColor = this.turn;
+        int enemyColor = pieceColor ^ 1;
+
+        // Restores the irreversible data from before the move was made
+        int capturedPieceType = undoCapturedPieceType(undo);
+        this.castlingRights = undoCastlingRights(undo);
+        this.enPassantSquareBitboard = undoEnPassantSquareBitboard(undo);
+        this.halfMoveClock = undoHalfMoveClock(undo);
+
+        switch (moveFlag) {
+            // Since the en passant square bitboard is gonna get recovered from the Undo int object, quiet moves and double pawn
+            // pushes are undone by just moving the piece back
+            case Move.FLAG_QUIET:
+            case Move.FLAG_DOUBLE_PAWN_PUSH:
+                this.movePiece(endingSquare, startingSquare, pieceColor, pieceType);
+                break;
+
+            // Moves the piece back and restores the captured piece onto the now empty ending square
+            case Move.FLAG_CAPTURE:
+                this.movePiece(endingSquare, startingSquare, pieceColor, pieceType);
+                this.addPiece(enemyColor, capturedPieceType, endingSquare);
+                break;
+
+            // Moves the friendly en passant pawn back and restores the captured en passant pawn to the square it was, a rank
+            // away from the ending square
+            case Move.FLAG_EN_PASSANT_CAPTURE:
+                int capturedPawnSquare = (pieceColor == Piece.WHITE) ? endingSquare - 8 : endingSquare + 8;
+                this.movePiece(endingSquare, startingSquare, pieceColor, Piece.PAWN);
+                this.addPiece(enemyColor, Piece.PAWN, capturedPawnSquare);
+                break;
+
+            case Move.FLAG_KING_CASTLE:
+                // Moves the king back
+                this.movePiece(endingSquare, startingSquare, pieceColor, Piece.KING);
+
+                // Moves the rook back
+                if (pieceColor == Piece.WHITE) {
+                    this.movePiece(5, 7, Piece.WHITE, Piece.ROOK);
+                }
+
+                else {
+                    this.movePiece(61, 63, Piece.BLACK, Piece.ROOK);
+                }
+
+                break;
+
+            case Move.FLAG_QUEEN_CASTLE:
+                // Moves the king back
+                this.movePiece(endingSquare, startingSquare, pieceColor, Piece.KING);
+
+                // Moves the rook back
+                if (pieceColor == Piece.WHITE) {
+                    this.movePiece(3, 0, Piece.WHITE, Piece.ROOK);
+                }
+
+                else {
+                    this.movePiece(59, 56, Piece.BLACK, Piece.ROOK);
+                }
+
+                break;
+
+            default:
+                if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION) {
+                    // Derives the promoted piece from the 1st and 2nd special bits of move flag and removes it from the last rank
+                    int promotedPiece = (moveFlag & 3) + 1;
+                    this.removePiece(pieceColor, promotedPiece, endingSquare);
+
+                    // Puts the pawn back on the second to last rank
+                    this.addPiece(pieceColor, Piece.PAWN, startingSquare);
+
+                    // If it was a promotion capture, restore the captured piece onto the now empty ending square
+                    if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION_CAPTURE) {
+                        this.addPiece(enemyColor, capturedPieceType, endingSquare);
+                    }
+                }
+
+                break;
+        }
     }
 
 
@@ -276,7 +365,7 @@ public class Board {
     }
 
 
-    // The old moves are still in memory, but they will just get overwritten
+    // The old moves will still be in memory, but they will just get overwritten
     public void clearLegalMoves() {
         legalMovesCount = 0;
     }

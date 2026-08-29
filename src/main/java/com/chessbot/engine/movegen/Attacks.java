@@ -18,10 +18,7 @@ public final class Attacks {
         // Resets each turn
         long attackMapBitboard = 0L;
 
-        // Pawn attack map
         attackMapBitboard |= Pawn.attacks(color, board.getBitboard(color, Piece.PAWN));
-
-        // Knight attack map
         attackMapBitboard |= Knight.attacks(board.getBitboard(color, Piece.KNIGHT));
 
         // Rook attack map, it also calculates a rook attack map for the queen
@@ -44,7 +41,6 @@ public final class Attacks {
             }
         }
 
-        // King attack map
         attackMapBitboard |= King.attacks(board.getBitboard(color, Piece.KING));
 
         board.setAttackMapBitboard(color, attackMapBitboard);

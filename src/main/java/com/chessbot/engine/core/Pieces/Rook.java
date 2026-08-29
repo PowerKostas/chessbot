@@ -13,11 +13,10 @@ public final class Rook {
     private Rook() {}
 
 
+    // Treats the board as empty, gets the rank and file of the square that the rook is in and returns all the squares in that
+    // rank/file except of the edge square. We use these attacks for blocking patterns and a piece on the edge of the board doesn't
+    // block anything (we treat all pieces as enemy pieces, for now). Also doesn't return the square that the rook is in
     public static long allAttacks(int square) {
-        // Treats the board as empty, gets the rank and file of the square that the rook is in and returns all the squares in
-        // that rank/file except of the edge square. We use these attacks for blocking patterns and a piece on the edge of the
-        // board doesn't block anything (we treat all pieces as enemy pieces, for now). Also doesn't return the square that the
-        // rook is in
         int rank = square / 8;
         int file = square % 8;
 

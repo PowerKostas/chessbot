@@ -1,6 +1,5 @@
 package com.chessbot.engine.core;
 
-// Optional class, but it's clearer in code to reference a String rather than an integer
 public final class Piece {
     private Piece() {}
 

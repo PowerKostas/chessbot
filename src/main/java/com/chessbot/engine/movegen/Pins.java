@@ -31,8 +31,7 @@ public final class Pins {
 
             // If a rook or queen is found in a rook attack ray from the king square
             if ((Rook.attacks(kingSquare, 0L) & (1L << sliderSquare)) != 0) {
-                // Gets a bitboard of all the squares between the king and the checker, more information about the BETWEEN constant
-                // in the Rays class
+                // Gets a bitboard of all the squares between the king and the checker
                 long rayBitboard = Rays.BETWEEN[(kingSquare << 6) | sliderSquare];
 
                 // If exactly one piece is in the ray, and it's a friendly piece, it's pinned. Add the pinned piece to the bitboard

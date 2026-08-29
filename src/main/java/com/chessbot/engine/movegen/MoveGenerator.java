@@ -9,7 +9,7 @@ public final class MoveGenerator {
     private MoveGenerator() {}
 
 
-    // Places each legal move of a piece to the legal moves array
+    // Adds each legal move of a piece to Board.legalMoves
     private static void packMoves(Board board, long pieceLegalMoves, int startingSquare, long enemyPieces, int pieceType) {
         while (pieceLegalMoves != 0L) {
             int endingSquare = Long.numberOfTrailingZeros(pieceLegalMoves);
@@ -46,9 +46,8 @@ public final class MoveGenerator {
     }
 
 
-    // Filters pseudo legal moves into legal moves
+    // Filters pseudo legal moves into legal moves and adds them to Board.legalMoves
     public static void generate(Board board) {
-        // Resets legal moves each turn
         board.clearLegalMoves();
 
         int friendlyColor = board.getTurn();
@@ -72,7 +71,6 @@ public final class MoveGenerator {
         // Filters out the king moves that put the king in check
         long safeKingMoves = kingPseudoLegalMoves & ~attackMapBitboard;
 
-        // Places each king safe move to the legal moves array
         packMoves(board, safeKingMoves, kingSquare, enemyPiecesBitboard, Piece.KING);
 
 
@@ -112,9 +110,9 @@ public final class MoveGenerator {
                     board.addLegalMove(Move.createMove(4, 6, Move.FLAG_KING_CASTLE));
                 }
 
-                // White queenside castle, checks if that right is true, if the b1, c1 and d1 squares are empty and if the c1
-                // and d1 squares are unattacked, the b1 square can be attacked and the white king will still be able to
-                // queenside castle
+                // White queenside castle, checks if that castling right is true and if the b1, c1 and d1 squares are empty and
+                // if the c1 and d1 squares are unattacked, the b1 square can be attacked and the white king will still be able
+                // to queenside castle
                 long whiteQueensideEmptyMask = (1L << 1) | (1L << 2) | (1L << 3);
                 long whiteQueensideSafeMask = (1L << 2) | (1L << 3);
                 if (board.getCastlingRight(Board.WHITE_QUEENSIDE)
@@ -125,7 +123,6 @@ public final class MoveGenerator {
                 }
             }
 
-            // Same logic as above
             else {
                 long blackKingsideEmptyMask = (1L << 61) | (1L << 62);
                 if (board.getCastlingRight(Board.BLACK_KINGSIDE)
@@ -149,14 +146,14 @@ public final class MoveGenerator {
 
         // Rest of the pieces pseudo legal moves filtering
         long pawnsBitboard = board.getBitboard(friendlyColor, Piece.PAWN);
-        long enPassantBitboard = board.getEnPassantSquareBitboard();
+        long enPassantSquareBitboard = board.getEnPassantSquareBitboard();
         boolean isWhite = (friendlyColor == 0);
         while (pawnsBitboard != 0L) {
             int startingSquare = Long.numberOfTrailingZeros(pawnsBitboard);
             long pawnBitboard = 1L << startingSquare;
 
-            // If a pawn is pinned, restrict it to the line from the pawn to the friendly king, more information about the LINE
-            // constant in the Rays class. If it's not pinned, safe king moves and all the rest of the pseudo legal moves are allowed
+            // If a pawn is pinned, restrict it to the line from the pawn to the friendly king. If it's not pinned, safe king
+            // moves and all the rest of the pseudo legal moves are allowed
             long pinMask = ((pinnedPiecesBitboard & pawnBitboard) != 0L) ? Rays.LINE[(kingSquare << 6) | startingSquare] : 0xFFFFFFFFFFFFFFFFL;
 
             // Filters the pawn's pseudo legal moves based on the evade and pin masks. The 2 masks are independent of each
@@ -166,9 +163,9 @@ public final class MoveGenerator {
             packMoves(board, pawnLegalMoves, startingSquare, enemyPiecesBitboard, Piece.PAWN);
 
             // En passant handling
-            if (enPassantBitboard != 0L) {
+            if (enPassantSquareBitboard != 0L) {
                 // Finds where the pawn that is about to be captured by en passant is
-                long enPassantPawnBitboard = isWhite ? (enPassantBitboard >>> 8) : (enPassantBitboard << 8);
+                long enPassantPawnBitboard = isWhite ? (enPassantSquareBitboard >>> 8) : (enPassantSquareBitboard << 8);
 
                 // There is a very rare edge case if the friendly king and an enemy rook/queen are in the same rank and an
                 // en passant capture also happens there. Suddenly both pawns disappear from that rank and the friendly king
@@ -196,11 +193,11 @@ public final class MoveGenerator {
                 if (!epPinned) {
                     long epEvadeMask = evadeMask;
                     if ((evadeMask & enPassantPawnBitboard) != 0L) {
-                        epEvadeMask |= enPassantBitboard;
+                        epEvadeMask |= enPassantSquareBitboard;
                     }
 
                     // Adds en passant moves
-                    long enPassantLegalMoves = Pawn.enPassant(pawnBitboard, enPassantBitboard, isWhite) & epEvadeMask & pinMask;
+                    long enPassantLegalMoves = Pawn.enPassant(pawnBitboard, enPassantSquareBitboard, isWhite) & epEvadeMask & pinMask;
                     if (enPassantLegalMoves != 0L) {
                         int endingSquare = Long.numberOfTrailingZeros(enPassantLegalMoves);
                         board.addLegalMove(Move.createMove(startingSquare, endingSquare, Move.FLAG_EN_PASSANT_CAPTURE));

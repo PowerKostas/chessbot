@@ -22,8 +22,8 @@ public final class PromotionDialog {
         // Clears the legal hints before showing the dialog
         visualBoard.clearLegalHints();
 
-        // Creates an overlay that spans across the whole board to capture outside clicks. It's the deepest layer, if the
-        // user clicks it, not the top-level dialog container, close the promotion dialog
+        // Creates an overlay that spans across the whole board to capture outside clicks. It's the deepest layer, if the user
+        // clicks it, not the top-level dialog container, close the promotion dialog
         StackPane overlay = new StackPane();
         overlay.setOnMousePressed(e -> {
             if (e.getTarget() == overlay) {
@@ -40,7 +40,7 @@ public final class PromotionDialog {
         layout.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         overlay.getChildren().add(layout);
 
-        // Adds the 4 piece choices, in the order of chess.com, to the HBox
+        // Adds the 4 piece choices to the HBox, in the order of chess.com
         int[] pieceTypes = {Piece.QUEEN, Piece.KNIGHT, Piece.ROOK, Piece.BISHOP};
         for (int type : pieceTypes) {
             VisualPiece piece = new VisualPiece(color, type, reversed);

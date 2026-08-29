@@ -3,7 +3,6 @@ package com.chessbot.engine.utils;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Piece;
 
-// Reads a FEN sequence and updates the bitboards
 public final class FenParser {
     private FenParser() {}
 
@@ -23,8 +22,8 @@ public final class FenParser {
     }
 
 
-    // The sixth part of a FEN string, the fullmove number, isn't included in the calculations because it's not needed anywhere
-    // in the engine
+    // Reads a FEN sequence and updates the bitboards. The sixth part of a FEN string, the fullmove number, isn't included in
+    // the calculations because it's not needed anywhere in the engine
     public static void loadFen(String fen, Board board) {
         // Splits the fen string for every whitespace in it
         String[] parts = fen.split("\\s+");
@@ -39,8 +38,6 @@ public final class FenParser {
             if (Character.isLetter(letter)) {
                 int color = Character.isUpperCase(letter) ? Piece.WHITE : Piece.BLACK;
                 int pieceType = getPieceTypeFromLetter(letter);
-
-                // Add piece to the engine board
                 board.addPiece(color, pieceType, row * 8 + col);
 
                 col += 1;
@@ -100,8 +97,8 @@ public final class FenParser {
             }
         }
 
-        // Fifth part of the FEN string indicates the number of half moves made, if the string doesn't include that
-        // information, the number is set to 0
+        // Fifth part of the FEN string indicates the number of half moves made, if the string doesn't include that information, the
+        // number is set to 0
         if (parts.length > 4) {
             board.setHalfMoveClock(Integer.parseInt(parts[4]));
         }

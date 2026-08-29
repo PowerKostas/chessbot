@@ -20,11 +20,10 @@ import java.util.function.Consumer;
 
 // This class is responsible for handling input in the visual board and translating it for the engine board
 public class MoveHandler {
-    // Both Drag Move and Click Move use these variables
     private final VisualBoard visualBoard;
     private final Board board;
     private Square startingSquare;
-    private int startingSquareIndex; // The starting square index is used multiple times, a class variable is needed for efficiency
+    private int startingSquareIndex; // The starting square index is used multiple times, a class variable is utilized for efficiency
 
     // Drag Move specific variables
     private VisualPiece draggedPiece;
@@ -44,7 +43,7 @@ public class MoveHandler {
     }
 
 
-    // The function colors a square, and it shows the legal moves hints for any piece there
+    // Colors a square, and shows the legal moves hints for any piece in that square
     private void selectPiece(Square square, int squareIndex) {
         startingSquare = square;
         startingSquareIndex = squareIndex;
@@ -215,7 +214,6 @@ public class MoveHandler {
 
         // If the drag was successful
         if (event.getTransferMode() == TransferMode.MOVE) {
-            // Sets the default cursor
             dragSource.setCursor(Cursor.DEFAULT);
 
             int endingSquareIndex = (7 - endingSquare.getRow()) * 8 + endingSquare.getCol();
@@ -297,7 +295,6 @@ public class MoveHandler {
                         cancelSelection();
                     }
 
-                    // If the click is an illegal move
                     else {
                         // If the user clicked a square with a piece on it, cancel the current selection and switch the selection
                         // to the new clicked piece
@@ -306,7 +303,7 @@ public class MoveHandler {
                             selectPiece(clickedSquare, clickedSquareIndex);
                         }
 
-                        // If it's just an illegal move, play the appropriate sound and cancel the selection
+                        // If it's just an illegal move
                         else {
                             SoundManager.playIllegalSound();
                             cancelSelection();
