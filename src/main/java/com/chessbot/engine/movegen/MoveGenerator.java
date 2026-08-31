@@ -9,8 +9,8 @@ public final class MoveGenerator {
     private MoveGenerator() {}
 
 
-    // Adds each legal move of a piece to Board.legalMoves
-    private static void packMoves(Board board, long pieceLegalMoves, int startingSquare, long enemyPieces, int pieceType) {
+    // Helper function of MoveGenerator.generate, adds each legal move of a piece to the given MoveList
+    private static void packMoves(MoveList moveList, long pieceLegalMoves, int startingSquare, long enemyPieces, int pieceType) {
         while (pieceLegalMoves != 0L) {
             int endingSquare = Long.numberOfTrailingZeros(pieceLegalMoves);
             boolean isCapture = ((1L << endingSquare) & enemyPieces) != 0;
@@ -22,10 +22,10 @@ public final class MoveGenerator {
             if (pieceType == Piece.PAWN && (endingSquare <= 7 || endingSquare >= 56)) {
                 int baseFlag = isCapture ? Move.FLAG_KNIGHT_PROMOTION_CAPTURE : Move.FLAG_KNIGHT_PROMOTION;
 
-                board.addLegalMove(Move.createMove(startingSquare, endingSquare, baseFlag)); // Knight
-                board.addLegalMove(Move.createMove(startingSquare, endingSquare, baseFlag + 1)); // Bishop
-                board.addLegalMove(Move.createMove(startingSquare, endingSquare, baseFlag + 2)); // Rook
-                board.addLegalMove(Move.createMove(startingSquare, endingSquare, baseFlag + 3)); // Queen
+                moveList.add(Move.createMove(startingSquare, endingSquare, baseFlag)); // Knight
+                moveList.add(Move.createMove(startingSquare, endingSquare, baseFlag + 1)); // Bishop
+                moveList.add(Move.createMove(startingSquare, endingSquare, baseFlag + 2)); // Rook
+                moveList.add(Move.createMove(startingSquare, endingSquare, baseFlag + 3)); // Queen
             }
 
             // If it's any other move
@@ -38,7 +38,7 @@ public final class MoveGenerator {
                     moveFlag = Move.FLAG_DOUBLE_PAWN_PUSH;
                 }
 
-                board.addLegalMove(Move.createMove(startingSquare, endingSquare, moveFlag));
+                moveList.add(Move.createMove(startingSquare, endingSquare, moveFlag));
             }
 
             pieceLegalMoves ^= (1L << endingSquare);
@@ -46,9 +46,11 @@ public final class MoveGenerator {
     }
 
 
-    // Filters pseudo legal moves into legal moves and adds them to Board.legalMoves
-    public static void generate(Board board) {
-        board.clearLegalMoves();
+    // Filters pseudo legal moves into legal moves and adds them in the given MoveList
+    public static void generate(Board board, MoveList moveList) {
+        // Clears the move list because the same object is reused either per search depth or persistently by the GameManager in
+        // order to avoid new memory allocations
+        moveList.clear();
 
         int friendlyColor = board.getTurn();
         int enemyColor = friendlyColor ^ 1;
@@ -59,7 +61,7 @@ public final class MoveGenerator {
 
         // Gets all the squares that the opponent is attacking
         Attacks.generateMap(board, enemyColor);
-        long attackMapBitboard = board.getAttackMapBitboard(enemyColor);
+        long attackMapBitboard = Attacks.generateMap(board, enemyColor);
 
 
         // King pseudo legal moves filtering
@@ -71,15 +73,12 @@ public final class MoveGenerator {
         // Filters out the king moves that put the king in check
         long safeKingMoves = kingPseudoLegalMoves & ~attackMapBitboard;
 
-        packMoves(board, safeKingMoves, kingSquare, enemyPiecesBitboard, Piece.KING);
+        packMoves(moveList, safeKingMoves, kingSquare, enemyPiecesBitboard, Piece.KING);
 
 
         // Check detection
         long checkers = Checks.calculateSquares(board, friendlyColor);
         int checkCount = Long.bitCount(checkers);
-
-        // Used in other parts of the code
-        board.setInCheck(checkCount > 0);
 
         // Default value, if there are no checks, safe king moves and all the rest of the pseudo legal moves are allowed
         long evadeMask = 0xFFFFFFFFFFFFFFFFL;
@@ -99,7 +98,7 @@ public final class MoveGenerator {
 
         // Adds special castling moves. Castling is only permitted if the king is not in check. Code is placed here because
         // checks need to be calculated first
-        if (!board.getInCheck()) {
+        if (checkCount == 0) {
             if (friendlyColor == Piece.WHITE) {
                 // White kingside castle, checks if that castling right is true and if the f1 and g1 squares are empty and unattacked
                 long whiteKingsideEmptyMask = (1L << 5) | (1L << 6);
@@ -107,7 +106,7 @@ public final class MoveGenerator {
                         && (allPiecesBitboard & whiteKingsideEmptyMask) == 0L
                         && (attackMapBitboard & whiteKingsideEmptyMask) == 0L)
                 {
-                    board.addLegalMove(Move.createMove(4, 6, Move.FLAG_KING_CASTLE));
+                    moveList.add(Move.createMove(4, 6, Move.FLAG_KING_CASTLE));
                 }
 
                 // White queenside castle, checks if that castling right is true and if the b1, c1 and d1 squares are empty and
@@ -119,7 +118,7 @@ public final class MoveGenerator {
                         && (allPiecesBitboard & whiteQueensideEmptyMask) == 0L
                         && (attackMapBitboard & whiteQueensideSafeMask) == 0L)
                 {
-                    board.addLegalMove(Move.createMove(4, 2, Move.FLAG_QUEEN_CASTLE));
+                    moveList.add(Move.createMove(4, 2, Move.FLAG_QUEEN_CASTLE));
                 }
             }
 
@@ -129,7 +128,7 @@ public final class MoveGenerator {
                         && (allPiecesBitboard & blackKingsideEmptyMask) == 0L
                         && (attackMapBitboard & blackKingsideEmptyMask) == 0L)
                 {
-                    board.addLegalMove(Move.createMove(60, 62, Move.FLAG_KING_CASTLE));
+                    moveList.add(Move.createMove(60, 62, Move.FLAG_KING_CASTLE));
                 }
 
                 long blackQueensideEmptyMask = (1L << 57) | (1L << 58) | (1L << 59);
@@ -138,7 +137,7 @@ public final class MoveGenerator {
                         && (allPiecesBitboard & blackQueensideEmptyMask) == 0L
                         && (attackMapBitboard & blackQueensideSafeMask) == 0L)
                 {
-                    board.addLegalMove(Move.createMove(60, 58, Move.FLAG_QUEEN_CASTLE));
+                    moveList.add(Move.createMove(60, 58, Move.FLAG_QUEEN_CASTLE));
                 }
             }
         }
@@ -160,7 +159,7 @@ public final class MoveGenerator {
             // other, and they may include squares that are illegal, but those will in turn get filtered by the pawn's pseudo
             // legal moves
             long pawnLegalMoves = Pawn.pseudoLegalMoves(friendlyColor, pawnBitboard, allPiecesBitboard, enemyPiecesBitboard) & evadeMask & pinMask;
-            packMoves(board, pawnLegalMoves, startingSquare, enemyPiecesBitboard, Piece.PAWN);
+            packMoves(moveList, pawnLegalMoves, startingSquare, enemyPiecesBitboard, Piece.PAWN);
 
             // En passant handling
             if (enPassantSquareBitboard != 0L) {
@@ -200,7 +199,7 @@ public final class MoveGenerator {
                     long enPassantLegalMoves = Pawn.enPassant(pawnBitboard, enPassantSquareBitboard, isWhite) & epEvadeMask & pinMask;
                     if (enPassantLegalMoves != 0L) {
                         int endingSquare = Long.numberOfTrailingZeros(enPassantLegalMoves);
-                        board.addLegalMove(Move.createMove(startingSquare, endingSquare, Move.FLAG_EN_PASSANT_CAPTURE));
+                        moveList.add(Move.createMove(startingSquare, endingSquare, Move.FLAG_EN_PASSANT_CAPTURE));
                     }
                 }
             }
@@ -216,7 +215,7 @@ public final class MoveGenerator {
             long knightBitboard = 1L << startingSquare;
 
             long knightLegalMoves = Knight.pseudoLegalMoves(knightBitboard, friendlyPiecesBitboard) & evadeMask;
-            packMoves(board, knightLegalMoves, startingSquare, enemyPiecesBitboard, Piece.KNIGHT);
+            packMoves(moveList, knightLegalMoves, startingSquare, enemyPiecesBitboard, Piece.KNIGHT);
 
             knightsBitboard ^= knightBitboard;
         }
@@ -228,7 +227,7 @@ public final class MoveGenerator {
             long pinMask = ((pinnedPiecesBitboard & bishopBitboard) != 0L) ? Rays.LINE[(kingSquare << 6) | startingSquare] : 0xFFFFFFFFFFFFFFFFL;
 
             long bishopLegalMoves = Bishop.pseudoLegalMoves(startingSquare, allPiecesBitboard, friendlyPiecesBitboard) & evadeMask & pinMask;
-            packMoves(board, bishopLegalMoves, startingSquare, enemyPiecesBitboard, Piece.BISHOP);
+            packMoves(moveList, bishopLegalMoves, startingSquare, enemyPiecesBitboard, Piece.BISHOP);
 
             bishopsBitboard ^= 1L << startingSquare;
         }
@@ -240,7 +239,7 @@ public final class MoveGenerator {
             long pinMask = ((pinnedPiecesBitboard & rookBitboard) != 0L) ? Rays.LINE[(kingSquare << 6) | startingSquare] : 0xFFFFFFFFFFFFFFFFL;
 
             long rookLegalMoves = Rook.pseudoLegalMoves(startingSquare, allPiecesBitboard, friendlyPiecesBitboard) & evadeMask & pinMask;
-            packMoves(board, rookLegalMoves, startingSquare, enemyPiecesBitboard, Piece.ROOK);
+            packMoves(moveList, rookLegalMoves, startingSquare, enemyPiecesBitboard, Piece.ROOK);
 
             rooksBitboard ^= (1L << startingSquare);
         }
@@ -254,7 +253,7 @@ public final class MoveGenerator {
             long queenLegalMoves = (Rook.pseudoLegalMoves(startingSquare, allPiecesBitboard, friendlyPiecesBitboard) |
                                    Bishop.pseudoLegalMoves(startingSquare, allPiecesBitboard, friendlyPiecesBitboard)) &
                                    evadeMask & pinMask;
-            packMoves(board, queenLegalMoves, startingSquare, enemyPiecesBitboard, Piece.QUEEN);
+            packMoves(moveList, queenLegalMoves, startingSquare, enemyPiecesBitboard, Piece.QUEEN);
 
             queensBitboard ^= (1L << startingSquare);
         }

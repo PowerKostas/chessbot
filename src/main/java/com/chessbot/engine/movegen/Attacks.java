@@ -10,13 +10,12 @@ public final class Attacks {
 
     // An attack map calculates all the squares that are being attacked by any piece of the opponent. The color parameter
     // indicates which player's attack map will be generated
-    public static void generateMap(Board board, int color) {
+    public static long generateMap(Board board, int color) {
+        long attackMapBitboard = 0L;
+
         // Filters out the friendly king in the calculations. This is done in order to avoid the king being able to move backwards
         // in the same direction as a checking slider when filtering the attack map to legal moves
         long allPiecesBitboard = board.getOtherBitboard(2) & ~board.getBitboard(color ^ 1, Piece.KING);
-
-        // Resets each turn
-        long attackMapBitboard = 0L;
 
         attackMapBitboard |= Pawn.attacks(color, board.getBitboard(color, Piece.PAWN));
         attackMapBitboard |= Knight.attacks(board.getBitboard(color, Piece.KNIGHT));
@@ -43,6 +42,6 @@ public final class Attacks {
 
         attackMapBitboard |= King.attacks(board.getBitboard(color, Piece.KING));
 
-        board.setAttackMapBitboard(color, attackMapBitboard);
+        return attackMapBitboard;
     }
 }

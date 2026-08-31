@@ -3,6 +3,7 @@ package com.chessbot.ui.components;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Move;
 import com.chessbot.engine.core.Piece;
+import com.chessbot.engine.movegen.MoveList;
 import com.chessbot.ui.input.MoveHandler;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -73,7 +74,7 @@ public class VisualBoard extends StackPane {
 
         // Sets pieces on the engine and visual board
         loadFen(fen, board);
-        this.sync();
+        this.sync(null); // Passing null because legal moves haven't been generated yet
 
         // Listens for clicks inside the board, on a left click, reset the right-clicked squares
         this.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
@@ -136,9 +137,9 @@ public class VisualBoard extends StackPane {
 
     // Works in a similar way to Board.searchLegalMove, but this function is for the UI only because it's used to find the
     // legal move that promotes the pawn to the piece that the user has selected
-    public int searchPromotionLegalMove(int startingSquare, int endingSquare, int chosenPiece) {
-        for (int i = 0; i < board.getLegalMovesCount(); i++) {
-            int legalMove = board.getLegalMove(i);
+    public int searchPromotionLegalMove(MoveList moveList, int startingSquare, int endingSquare, int chosenPiece) {
+        for (int i = 0; i < moveList.count; i += 1) {
+            int legalMove = moveList.moves[i];
             if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
                 int moveFlag = Move.getFlag(legalMove);
 
@@ -155,7 +156,7 @@ public class VisualBoard extends StackPane {
 
 
     // Syncs the visual board to the engine board, runs after every move
-    public void sync() {
+    public void sync(MoveList moveList) {
         // For every square
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
@@ -193,8 +194,8 @@ public class VisualBoard extends StackPane {
         if (this.isDebugBoard) {
             long legalMovesBitboard = 0L;
 
-            for (int i = 0; i < this.board.getLegalMovesCount(); i += 1) {
-                int legalMove = this.board.getLegalMove(i);
+            for (int i = 0; i < moveList.count; i += 1) {
+                int legalMove = moveList.moves[i];
                 int endingSquare = Move.getEndingSquare(legalMove);
                 legalMovesBitboard |= 1L << endingSquare;
             }

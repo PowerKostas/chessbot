@@ -4,10 +4,8 @@ import java.util.Arrays;
 
 import static com.chessbot.engine.core.Undo.*;
 
+// The board class should only hold information about the game state, specifically all the data contained in a FEN string
 public class Board {
-    // 0 = White's turn, 1 = Black's turn
-    private int turn;
-
     // 12 64 bit variables, one for each piece. The first 6 bitboards are for the white pieces (pawn, knight, bishop, rook,
     // queen, king), the other 6 are for the black pieces. Each bit indicates a square on the board, if the bit equals 0, there
     // is no piece in that square, if it's 1, there is
@@ -16,21 +14,8 @@ public class Board {
     // 0 = White's bitboard, 1 = Black's bitboard, 2 = All pieces bitboard
     private final long[] otherBitboards = new long[3];
 
-    // 0 = White's attack map for the current turn, = 1 Black's attack map for the current turn
-    private final long[] attackMapBitboard = new long[2];
-
-    // 1 for the square that an en passant capture can happen, 0 for everything else
-    private long enPassantSquareBitboard = 0L;
-
-    // Holds the legal moves for the current turn. 256 is a safe max limit (the highest number of possible legal moves in any
-    // position is 218). The int objects hold info about the legal moves, more information in the Move class
-    private final int[] legalMoves = new int[256];
-
-    // Keeps track of how many legal moves are in the array
-    private int legalMovesCount = 0;
-
-    // If the friendly king is in check
-    private boolean inCheck = false;
+    // 0 = White's turn, 1 = Black's turn
+    private int turn;
 
     // Holds the castling rights info, 1111 means all castling rights are available
     private int castlingRights = 0b1111;
@@ -61,11 +46,20 @@ public class Board {
         CASTLING_MASKS[63] = 15 ^ BLACK_KINGSIDE;
     }
 
+    // 1 for the square that an en passant capture can happen, 0 for everything else
+    private long enPassantSquareBitboard = 0L;
+
     // Counter of half moves since the last capture or pawn push, used in the 50-move rule
     private int halfMoveClock;
 
     public Board() {}
 
+
+    public long getBitboard(int color, int pieceType) { return bitboards[(color * 6) + pieceType]; }
+
+    public long getOtherBitboard(int index) {
+        return otherBitboards[index];
+    }
 
     public int getTurn() {
         return turn;
@@ -75,38 +69,18 @@ public class Board {
         this.turn = turn;
     }
 
-    public long getBitboard(int color, int pieceType) { return bitboards[(color * 6) + pieceType]; }
-
-    public long getOtherBitboard(int index) {
-        return otherBitboards[index];
-    }
-
-    public long getAttackMapBitboard(int color) {
-        return attackMapBitboard[color];
-    }
-
-    public void setAttackMapBitboard(int color, long bitboard) { this.attackMapBitboard[color] = bitboard; }
-
-    public long getEnPassantSquareBitboard() {
-        return enPassantSquareBitboard;
-    }
-
-    public void setEnPassantSquareBitboard(long bitboard) { this.enPassantSquareBitboard = bitboard; }
-
-    public int getLegalMove(int index) { return legalMoves[index]; }
-
-    public int getLegalMovesCount() { return legalMovesCount; }
-
-    public boolean getInCheck() { return inCheck; }
-
-    public void setInCheck(boolean inCheck) { this.inCheck = inCheck; }
-
     // Returns the castlingRights bit that is given as a parameter
     public boolean getCastlingRight(int castlingRight) {
         return (this.castlingRights & castlingRight) != 0;
     }
 
     public void setCastlingRights(int castlingRights) { this.castlingRights = castlingRights; }
+
+    public long getEnPassantSquareBitboard() {
+        return enPassantSquareBitboard;
+    }
+
+    public void setEnPassantSquareBitboard(long bitboard) { this.enPassantSquareBitboard = bitboard; }
 
     public int getHalfMoveClock() { return halfMoveClock; }
 
@@ -194,7 +168,7 @@ public class Board {
             // ending square. For black, the captured piece is a rank above the ending square. Then move the pawn
             case Move.FLAG_EN_PASSANT_CAPTURE:
                 capturedPieceType = Piece.PAWN;
-                int capturedPawnSquare = (pieceColor == Piece.WHITE) ? endingSquare - 8 : endingSquare + 8;
+                int capturedPawnSquare = endingSquare + (pieceColor * 16) - 8;
                 this.removePiece(enemyColor, Piece.PAWN, capturedPawnSquare);
                 this.movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
                 break;
@@ -304,7 +278,7 @@ public class Board {
             // Moves the friendly en passant pawn back and restores the captured en passant pawn to the square it was, a rank
             // away from the ending square
             case Move.FLAG_EN_PASSANT_CAPTURE:
-                int capturedPawnSquare = (pieceColor == Piece.WHITE) ? endingSquare - 8 : endingSquare + 8;
+                int capturedPawnSquare = endingSquare + (pieceColor * 16) - 8;
                 this.movePiece(endingSquare, startingSquare, pieceColor, Piece.PAWN);
                 this.addPiece(enemyColor, Piece.PAWN, capturedPawnSquare);
                 break;
@@ -359,49 +333,6 @@ public class Board {
     }
 
 
-    public void addLegalMove(int move) {
-        legalMoves[legalMovesCount] = move;
-        legalMovesCount += 1;
-    }
-
-
-    // The old moves will still be in memory, but they will just get overwritten
-    public void clearLegalMoves() {
-        legalMovesCount = 0;
-    }
-
-
-    // Loops through all the legal moves to find a move whose starting and ending squares match the given starting and
-    // ending squares
-    public int searchLegalMove(int startingSquare, int endingSquare) {
-        for (int i = 0; i < legalMovesCount; i++) {
-            int legalMove = legalMoves[i];
-            if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
-                return legalMove;
-            }
-        }
-
-        return -1;
-    }
-
-
-    // Loops through all the legal moves to find moves whose starting square matches the given starting square, used to find
-    // all the piece's legal moves
-    public long searchPieceLegalMoves(int startingSquare) {
-        long pieceLegalMovesBitboard = 0L;
-
-        for (int i = 0; i < legalMovesCount; i++) {
-            int move = legalMoves[i];
-            if (Move.getStartingSquare(move) == startingSquare) {
-                int endingSquare = Move.getEndingSquare(move);
-                pieceLegalMovesBitboard |= (1L << endingSquare);
-            }
-        }
-
-        return pieceLegalMovesBitboard;
-    }
-
-
     // Gets a piece's color at a specific square
     public int getPieceColorAtSquare(int squareIndex) {
         long squareMask = 1L << squareIndex;
@@ -430,34 +361,5 @@ public class Board {
         }
 
         return -1;
-    }
-
-
-    public boolean isCheckmate() { return this.legalMovesCount == 0 && this.inCheck; }
-
-    public boolean isStalemate() { return this.legalMovesCount == 0 && !this.inCheck; }
-
-    public boolean isInsufficientMaterial() {
-        // If there are any pawns, rooks, or queens on the board, checkmate is always possible
-        long majorPieces = getBitboard(Piece.WHITE, Piece.PAWN) | getBitboard(Piece.BLACK, Piece.PAWN) |
-                           getBitboard(Piece.WHITE, Piece.ROOK) | getBitboard(Piece.BLACK, Piece.ROOK) |
-                           getBitboard(Piece.WHITE, Piece.QUEEN) | getBitboard(Piece.BLACK, Piece.QUEEN);
-
-        if (majorPieces != 0L) {
-            return false;
-        }
-
-        // If there is 0 or 1 minor piece on the board, it's a draw
-        long knights = getBitboard(Piece.WHITE, Piece.KNIGHT) | getBitboard(Piece.BLACK, Piece.KNIGHT);
-        long bishops = getBitboard(Piece.WHITE, Piece.BISHOP) | getBitboard(Piece.BLACK, Piece.BISHOP);
-        long minorPieces = knights | bishops;
-
-        if (Long.bitCount(minorPieces) <= 1) return true;
-
-        // There is an insufficient material edge case where if there are only 1 or more bishops for each player, if they are
-        // all on same colored squares, it's a draw. Checks if there are no knights (so there are only bishops) and if all bishops
-        // are on dark or light squares (so all bishops are on same colored squares)
-        long lightSquaredBishops = bishops & 0x55AA55AA55AA55AAL; // 0x55AA55AA55AA55AAL = All light squares
-        return knights == 0L && (lightSquaredBishops == 0L || lightSquaredBishops == bishops);
     }
 }

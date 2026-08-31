@@ -28,7 +28,7 @@ public class MainController {
         mainContainer.getChildren().addAll(visualBoardOne);
         Board boardOne = visualBoardOne.getBoard();
         GameManager gameManager = new GameManager(boardOne, visualBoardOne);
-        MoveHandler moveHandler = new MoveHandler(visualBoardOne, gameManager::playMove);
+        MoveHandler moveHandler = new MoveHandler(visualBoardOne, gameManager);
         visualBoardOne.attachMoveHandler(moveHandler);
         gameManager.startGame(whitePlayerType, blackPlayerType);
     }

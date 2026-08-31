@@ -3,7 +3,10 @@ package com.chessbot.application;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Move;
 import com.chessbot.engine.core.Piece;
+import com.chessbot.engine.movegen.Checks;
 import com.chessbot.engine.movegen.MoveGenerator;
+import com.chessbot.engine.movegen.MoveList;
+import com.chessbot.engine.utils.ResultDetector;
 import com.chessbot.ui.components.VisualBoard;
 import com.chessbot.ui.utils.SoundManager;
 import javafx.animation.PauseTransition;
@@ -24,6 +27,11 @@ public class GameManager {
     private int whitePlayerType;
     private int blackPlayerType;
 
+    // Pre-allocates one move list object for the entire lifecycle of the UI
+    private final MoveList moveList = new MoveList();
+
+    private boolean inCheck;
+
 
     public GameManager(Board board, VisualBoard visualBoard) {
         this.board = board;
@@ -31,10 +39,15 @@ public class GameManager {
     }
 
 
+    public MoveList getMoveList() { return moveList; }
+
+
+    // Initializes the class variables and decides what to do in the first turn
     public void startGame(int whitePlayerType, int blackPlayerType) {
         this.whitePlayerType = whitePlayerType;
         this.blackPlayerType = blackPlayerType;
-        MoveGenerator.generate(board);
+        MoveGenerator.generate(board, moveList);
+        inCheck = (Checks.calculateSquares(board, board.getTurn()) != 0L);
         checkTurn();
     }
 
@@ -61,7 +74,7 @@ public class GameManager {
 
 
     private boolean getGameResult() {
-        return board.isCheckmate() || board.isStalemate() || board.isInsufficientMaterial() || board.getHalfMoveClock() >= 100;
+        return ResultDetector.isCheckmate(moveList, inCheck) || ResultDetector.isStalemate(moveList, inCheck) || ResultDetector.isFiftyMoveRule(board) || ResultDetector.isInsufficientMaterial(board);
     }
 
 
@@ -79,8 +92,12 @@ public class GameManager {
     // Handles human and AI moves
     public void playMove(int legalMove) {
         board.makeMove(legalMove);
-        MoveGenerator.generate(board);
-        visualBoard.sync();
+
+        // Updates the class variables after the move was made
+        MoveGenerator.generate(board, moveList);
+        inCheck = (Checks.calculateSquares(board, board.getTurn()) != 0L);
+
+        visualBoard.sync(moveList);
 
         int startingSquare = Move.getStartingSquare(legalMove);
         int endingSquare = Move.getEndingSquare(legalMove);
@@ -93,7 +110,7 @@ public class GameManager {
         }
 
         else {
-            SoundManager.playMoveSound(board.getInCheck(), Move.getFlag(legalMove));
+            SoundManager.playMoveSound(inCheck, Move.getFlag(legalMove));
             checkTurn();
         }
     }
@@ -102,8 +119,8 @@ public class GameManager {
     // Handles AI moves
     private void playRandomAIMove() {
         // Picks and plays a random legal move
-        int legalMovesCount = board.getLegalMovesCount();
-        int randomLegalMove = board.getLegalMove(random.nextInt(legalMovesCount));
+        int legalMovesCount = moveList.count;
+        int randomLegalMove = moveList.moves[random.nextInt(legalMovesCount)];
         playMove(randomLegalMove);
     }
 }
