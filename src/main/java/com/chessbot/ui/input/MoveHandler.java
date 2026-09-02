@@ -33,7 +33,7 @@ public class MoveHandler {
     // Initializes the references in order for the listeners to access their methods
     public MoveHandler(VisualBoard visualBoard, GameManager gameManager) {
         this.visualBoard = visualBoard;
-        this.board = visualBoard.getBoard();
+        board = visualBoard.getBoard();
         this.gameManager = gameManager;
     }
 
@@ -92,7 +92,7 @@ public class MoveHandler {
         if (dragSource.getCurrentPiece() == null) return;
 
         // If a piece is already selected from a click and the user drags a different piece, cancel the old selection
-        if (this.startingSquare != null && this.startingSquare != dragSource) {
+        if (startingSquare != null && startingSquare != dragSource) {
             cancelSelection();
         }
 
@@ -171,7 +171,7 @@ public class MoveHandler {
     public void dragEntered(DragEvent event) {
         // Adds a border effect to the square
         Square hoveredSquare = (Square) event.getSource();
-        hoveredSquare.setStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
+        hoveredSquare.setSquareStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
 
         // Ending square needs the square that the piece is currently hovering in order to play, if needed, the illegal sound, in
         // dragDone. The code will never go to dragDropped when playing an illegal move which is where endingSquare normally

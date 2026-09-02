@@ -1,5 +1,8 @@
 package com.chessbot.engine.core;
 
+import com.chessbot.engine.utils.FenParser;
+import com.chessbot.engine.utils.Zobrist;
+
 import java.util.Arrays;
 
 import static com.chessbot.engine.core.Undo.*;
@@ -38,9 +41,9 @@ public class Board {
         // If the a1 rook moves/gets captured, white queenside castling gets turned off. If the e1 king moves, white
         // kingside/queenside castling gets turned off, the same logic applies for the h1 rook, the a8 rook, the e8 king and
         // the h8 rook
-        CASTLING_MASKS[0]  = 15 ^ WHITE_QUEENSIDE;
-        CASTLING_MASKS[4]  = 15 ^ (WHITE_KINGSIDE | WHITE_QUEENSIDE);
-        CASTLING_MASKS[7]  = 15 ^ WHITE_KINGSIDE;
+        CASTLING_MASKS[0] = 15 ^ WHITE_QUEENSIDE;
+        CASTLING_MASKS[4] = 15 ^ (WHITE_KINGSIDE | WHITE_QUEENSIDE);
+        CASTLING_MASKS[7] = 15 ^ WHITE_KINGSIDE;
         CASTLING_MASKS[56] = 15 ^ BLACK_QUEENSIDE;
         CASTLING_MASKS[60] = 15 ^ (BLACK_KINGSIDE | BLACK_QUEENSIDE);
         CASTLING_MASKS[63] = 15 ^ BLACK_KINGSIDE;
@@ -51,6 +54,12 @@ public class Board {
 
     // Counter of half moves since the last capture or pawn push, used in the 50-move rule
     private int halfMoveClock;
+
+    // A history array containing every past Zobrist key created in this game. An array is used for detecting threefold repetitions
+    // and easily unmaking moves. The currentZobristKey variable is used for easily referencing the key of the current position
+    private int zobristHistoryIndex = 0;
+    private final long[] zobristHistory = new long[Constants.MAX_GAME_MOVES];
+    private long currentZobristKey = 0L;
 
     public Board() {}
 
@@ -71,7 +80,7 @@ public class Board {
 
     // Returns the castlingRights bit that is given as a parameter
     public boolean getCastlingRight(int castlingRight) {
-        return (this.castlingRights & castlingRight) != 0;
+        return (castlingRights & castlingRight) != 0;
     }
 
     public void setCastlingRights(int castlingRights) { this.castlingRights = castlingRights; }
@@ -80,11 +89,50 @@ public class Board {
         return enPassantSquareBitboard;
     }
 
-    public void setEnPassantSquareBitboard(long bitboard) { this.enPassantSquareBitboard = bitboard; }
+    public void setEnPassantSquareBitboard(long bitboard) { enPassantSquareBitboard = bitboard; }
 
     public int getHalfMoveClock() { return halfMoveClock; }
 
     public void setHalfMoveClock(int halfMoveClock) { this.halfMoveClock = halfMoveClock; }
+
+    public int getZobristHistoryIndex() { return zobristHistoryIndex; }
+
+    public long[] getZobristHistory() { return zobristHistory; }
+
+    public long getCurrentZobristKey() { return currentZobristKey; }
+
+
+    // Uses the precomputed random longs to calculate the Zobrist hash key that represents the initial position
+    public void calculateInitialZobristKey() {
+        currentZobristKey = 0L;
+
+        for (int piece = 0; piece < 12; piece += 1) {
+            long bitboard = bitboards[piece];
+            while (bitboard != 0L) {
+                int square = Long.numberOfTrailingZeros(bitboard);
+                currentZobristKey ^= Zobrist.PIECES[piece][square];
+                bitboard ^= (1L << square);
+            }
+        }
+
+        if (turn == Piece.BLACK) {
+            currentZobristKey ^= Zobrist.TURN;
+        }
+
+        currentZobristKey ^= Zobrist.CASTLING_RIGHTS[castlingRights];
+
+        if (enPassantSquareBitboard != 0L) {
+            int epFile = Long.numberOfTrailingZeros(enPassantSquareBitboard) & 7;
+            currentZobristKey ^= Zobrist.EN_PASSANT_FILE[epFile];
+        }
+    }
+
+
+    // Coordinates every job at the start of the game
+    public void loadInitialPosition(String fen) {
+        FenParser.loadFen(fen, this);
+        calculateInitialZobristKey();
+    }
 
 
     // Adds a piece to the board at the start of the game
@@ -94,6 +142,16 @@ public class Board {
         bitboards[pieceColor * 6 + pieceType] |= addMask;
         otherBitboards[pieceColor] |= addMask;
         otherBitboards[2] |= addMask;
+    }
+
+
+    // Removes a piece whenever a capture happens
+    public void removePiece(int pieceColor, int pieceType, int squareIndex) {
+        long removeMask = ~(1L << squareIndex);
+
+        bitboards[pieceColor * 6 + pieceType] &= removeMask;
+        otherBitboards[pieceColor] &= removeMask;
+        otherBitboards[2] &= removeMask;
     }
 
 
@@ -113,55 +171,83 @@ public class Board {
     }
 
 
-    // Removes a piece whenever a capture happens
-    public void removePiece(int pieceColor, int pieceType, int squareIndex) {
-        long removeMask = ~(1L << squareIndex);
-
-        bitboards[pieceColor * 6 + pieceType] &= removeMask;
-        otherBitboards[pieceColor] &= removeMask;
-        otherBitboards[2] &= removeMask;
-    }
-
-
     // Coordinates every job of a move cycle and returns an Undo int object in order to, if needed, unmake the move later in
     // the search algorithm
     public int makeMove(int move) {
+        // Before the move is made, add the Zobrist key of the position to its history array
+        zobristHistory[zobristHistoryIndex] = currentZobristKey;
+        zobristHistoryIndex += 1;
+
+        // The mathematical formula for updating a Zobrist key is: New hash = Old hash ^ (Old hash with the old state
+        // removed) ^ (Old hash with the new state added). For that reason, before the move is made, the old irreversible
+        // data has to be XORed out from the key
+        currentZobristKey ^= Zobrist.TURN; // Turns on/off the TURN random long
+
+        if (enPassantSquareBitboard != 0L) {
+            int epFile = Long.numberOfTrailingZeros(enPassantSquareBitboard) & 7;
+            currentZobristKey ^= Zobrist.EN_PASSANT_FILE[epFile];
+        }
+
+        currentZobristKey ^= Zobrist.CASTLING_RIGHTS[castlingRights];
+
         int startingSquare = Move.getStartingSquare(move);
         int endingSquare = Move.getEndingSquare(move);
         int moveFlag = Move.getFlag(move);
-        int pieceColor = this.turn;
-        int pieceType = this.getPieceTypeAtSquare(startingSquare);
+        int pieceColor = turn;
+        int pieceType = getPieceTypeAtSquare(startingSquare);
         int enemyColor = pieceColor ^ 1;
 
         // Snapshots the irreversible data that's about to be overwritten, defaults capturedPieceType to NONE_PIECE_TYPE but
         // the capture/promotion capture cases below overwrite it if needed
         int capturedPieceType = Undo.NONE_PIECE_TYPE;
-        long previousEnPassantSquareBitboard = this.enPassantSquareBitboard;
-        int previousCastlingRights = this.castlingRights;
-        int previousHalfMoveClock = this.halfMoveClock;
+        long previousEnPassantSquareBitboard = enPassantSquareBitboard;
+        int previousCastlingRights = castlingRights;
+        int previousHalfMoveClock = halfMoveClock;
 
         // Resets the en passant bitboard after each move
-        this.enPassantSquareBitboard = 0L;
+        enPassantSquareBitboard = 0L;
 
-        // Handles all cases of the move flag
+        // Handles all cases of the move flag. For each one, update the Zobrist key by XORing out the random longs that represent
+        // pieces on the starting and potential capture squares, and XORing in the random long that represents the piece on the
+        // ending square
         switch (moveFlag) {
             // If there is no special move flag, just move the piece
             case Move.FLAG_QUIET:
-                this.movePiece(startingSquare, endingSquare, pieceColor, pieceType);
+                movePiece(startingSquare, endingSquare, pieceColor, pieceType);
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][startingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][endingSquare];
                 break;
 
             // If it's a double pawn push, move the pawn and make the square down of the pawn an en passant target, don't
             // worry about the bitwise operation
             case Move.FLAG_DOUBLE_PAWN_PUSH:
-                this.movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
-                this.enPassantSquareBitboard = 1L << (endingSquare ^ 8);
+                movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
+
+                // Gets the squares that are left/right adjacent to the ending square, if the ending square isn't in the a/h file
+                long adjacentSquaresMask = 0L;
+                if (endingSquare % 8 != 0) adjacentSquaresMask |= 1L << (endingSquare - 1);
+                if (endingSquare % 8 != 7) adjacentSquaresMask |= 1L << (endingSquare + 1);
+
+                // Only sets the enPassantSquareBitboard if an enemy pawn is adjacent to the ending square. This is done for
+                // Zobrist hashing in order to avoid 2 identical positions being unique just because in one of them a pawn pushed
+                // 2 squares in the last move. If there are no adjacent enemy pawns, the enPassantSquareBitboard shouldn't get
+                // a value
+                if ((adjacentSquaresMask & bitboards[enemyColor * 6 + Piece.PAWN]) != 0) {
+                    enPassantSquareBitboard = 1L << (endingSquare ^ 8);
+                }
+
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][startingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][endingSquare];
                 break;
 
             // If it's a normal capture, remove the captured piece from the ending square and move the piece
             case Move.FLAG_CAPTURE:
-                capturedPieceType = this.getPieceTypeAtSquare(endingSquare);
-                this.removePiece(enemyColor, capturedPieceType, endingSquare);
-                this.movePiece(startingSquare, endingSquare, pieceColor, pieceType);
+                capturedPieceType = getPieceTypeAtSquare(endingSquare);
+                removePiece(enemyColor, capturedPieceType, endingSquare);
+                movePiece(startingSquare, endingSquare, pieceColor, pieceType);
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][startingSquare];
+                currentZobristKey ^= Zobrist.PIECES[enemyColor * 6 + capturedPieceType][endingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][endingSquare];
                 break;
 
             // If it's an en passant capture, for white, remove the captured piece from the square that is a rank below the
@@ -169,38 +255,41 @@ public class Board {
             case Move.FLAG_EN_PASSANT_CAPTURE:
                 capturedPieceType = Piece.PAWN;
                 int capturedPawnSquare = endingSquare + (pieceColor * 16) - 8;
-                this.removePiece(enemyColor, Piece.PAWN, capturedPawnSquare);
-                this.movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
+                removePiece(enemyColor, Piece.PAWN, capturedPawnSquare);
+                movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.PAWN][startingSquare];
+                currentZobristKey ^= Zobrist.PIECES[enemyColor * 6 + Piece.PAWN][capturedPawnSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.PAWN][endingSquare];
                 break;
 
             // Kingside castling for the white/black king
             case Move.FLAG_KING_CASTLE:
-                this.movePiece(startingSquare, endingSquare, pieceColor, pieceType); // King move
+                movePiece(startingSquare, endingSquare, pieceColor, pieceType); // King move
 
                 // Rook move
-                if (pieceColor == Piece.WHITE) {
-                    this.movePiece(7, 5, Piece.WHITE, Piece.ROOK);
-                }
+                int kingRookStartingSquare = (pieceColor == Piece.WHITE) ? 7 : 63;
+                int kingRookEndingSquare = (pieceColor == Piece.WHITE) ? 5 : 61;
+                movePiece(kingRookStartingSquare, kingRookEndingSquare, pieceColor, Piece.ROOK);
 
-                else {
-                    this.movePiece(63, 61, Piece.BLACK, Piece.ROOK);
-                }
-
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.KING][startingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.KING][endingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.ROOK][kingRookStartingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.ROOK][kingRookEndingSquare];
                 break;
 
             // Queenside castling for the white/black king
             case Move.FLAG_QUEEN_CASTLE:
-                this.movePiece(startingSquare, endingSquare, pieceColor, pieceType); // King move
+                movePiece(startingSquare, endingSquare, pieceColor, pieceType); // King move
 
                 // Rook move
-                if (pieceColor == Piece.WHITE) {
-                    this.movePiece(0, 3, Piece.WHITE, Piece.ROOK);
-                }
+                int queenRookStartingSquare = (pieceColor == Piece.WHITE) ? 0 : 56;
+                int queenRookEndingSquare = (pieceColor == Piece.WHITE) ? 3 : 59;
+                movePiece(queenRookStartingSquare, queenRookEndingSquare, pieceColor, Piece.ROOK);
 
-                else {
-                    this.movePiece(56, 59, Piece.BLACK, Piece.ROOK);
-                }
-
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.KING][startingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.KING][endingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.ROOK][queenRookStartingSquare];
+                currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.ROOK][queenRookEndingSquare];
                 break;
 
             // If it's none of the above, it must be a promotion
@@ -211,15 +300,18 @@ public class Board {
                     // All promotion capture move flags are after the knight promotion capture move flag, removes the enemy piece
                     // if it's a promotion capture
                     if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION_CAPTURE) {
-                        capturedPieceType = this.getPieceTypeAtSquare(endingSquare);
-                        this.removePiece(enemyColor, capturedPieceType, endingSquare);
+                        capturedPieceType = getPieceTypeAtSquare(endingSquare);
+                        removePiece(enemyColor, capturedPieceType, endingSquare);
+                        currentZobristKey ^= Zobrist.PIECES[enemyColor * 6 + capturedPieceType][endingSquare];
                     }
 
                     // Removes the pawn from the second to last rank, derive the promoted piece from the 1st and 2nd special bits
                     // of move flag, add the promoted piece to the last rank
-                    this.removePiece(pieceColor, Piece.PAWN, startingSquare);
+                    removePiece(pieceColor, Piece.PAWN, startingSquare);
                     int promotedPiece = (moveFlag & 3) + 1;
-                    this.addPiece(pieceColor, promotedPiece, endingSquare);
+                    addPiece(pieceColor, promotedPiece, endingSquare);
+                    currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.PAWN][startingSquare];
+                    currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + promotedPiece][endingSquare];
                 }
 
                 break;
@@ -227,88 +319,99 @@ public class Board {
 
         // Updates castling rights as described above, the starting square mask is about rook/king moves, the ending square
         // mask is about rooks getting captured
-        this.castlingRights &= CASTLING_MASKS[startingSquare] & CASTLING_MASKS[endingSquare];
+        castlingRights &= CASTLING_MASKS[startingSquare] & CASTLING_MASKS[endingSquare];
+
+        // XORs in the new irreversible data to the Zobrist key
+        currentZobristKey ^= Zobrist.CASTLING_RIGHTS[castlingRights];
+
+        if (enPassantSquareBitboard != 0L) {
+            int epFile = Long.numberOfTrailingZeros(enPassantSquareBitboard) & 7;
+            currentZobristKey ^= Zobrist.EN_PASSANT_FILE[epFile];
+        }
 
         // Resets the half move clock if a capture or a pawn push happened, otherwise it's incremented
         if (pieceType == Piece.PAWN || moveFlag == Move.FLAG_CAPTURE || moveFlag == Move.FLAG_EN_PASSANT_CAPTURE) {
-            this.halfMoveClock = 0;
+            halfMoveClock = 0;
         }
 
         else {
-            this.halfMoveClock += 1;
+            halfMoveClock += 1;
         }
 
-        this.turn ^= 1;
+        turn ^= 1;
         return createUndo(capturedPieceType, previousEnPassantSquareBitboard, previousCastlingRights, previousHalfMoveClock);
     }
 
 
     // Reverses a move made by makeMove
     public void unmakeMove(int move, int undo) {
+        zobristHistoryIndex -= 1;
+        currentZobristKey = zobristHistory[zobristHistoryIndex];
+
         int startingSquare = Move.getStartingSquare(move);
         int endingSquare = Move.getEndingSquare(move);
         int moveFlag = Move.getFlag(move);
-        int pieceType = this.getPieceTypeAtSquare(endingSquare);
+        int pieceType = getPieceTypeAtSquare(endingSquare);
 
         // Flips the turn back in order to reference whoever made the move being undone
-        this.turn ^= 1;
-        int pieceColor = this.turn;
+        turn ^= 1;
+        int pieceColor = turn;
         int enemyColor = pieceColor ^ 1;
 
         // Restores the irreversible data from before the move was made
         int capturedPieceType = undoCapturedPieceType(undo);
-        this.castlingRights = undoCastlingRights(undo);
-        this.enPassantSquareBitboard = undoEnPassantSquareBitboard(undo);
-        this.halfMoveClock = undoHalfMoveClock(undo);
+        castlingRights = undoCastlingRights(undo);
+        enPassantSquareBitboard = undoEnPassantSquareBitboard(undo);
+        halfMoveClock = undoHalfMoveClock(undo);
 
         switch (moveFlag) {
             // Since the en passant square bitboard is gonna get recovered from the Undo int object, quiet moves and double pawn
             // pushes are undone by just moving the piece back
             case Move.FLAG_QUIET:
             case Move.FLAG_DOUBLE_PAWN_PUSH:
-                this.movePiece(endingSquare, startingSquare, pieceColor, pieceType);
+                movePiece(endingSquare, startingSquare, pieceColor, pieceType);
                 break;
 
             // Moves the piece back and restores the captured piece onto the now empty ending square
             case Move.FLAG_CAPTURE:
-                this.movePiece(endingSquare, startingSquare, pieceColor, pieceType);
-                this.addPiece(enemyColor, capturedPieceType, endingSquare);
+                movePiece(endingSquare, startingSquare, pieceColor, pieceType);
+                addPiece(enemyColor, capturedPieceType, endingSquare);
                 break;
 
             // Moves the friendly en passant pawn back and restores the captured en passant pawn to the square it was, a rank
             // away from the ending square
             case Move.FLAG_EN_PASSANT_CAPTURE:
                 int capturedPawnSquare = endingSquare + (pieceColor * 16) - 8;
-                this.movePiece(endingSquare, startingSquare, pieceColor, Piece.PAWN);
-                this.addPiece(enemyColor, Piece.PAWN, capturedPawnSquare);
+                movePiece(endingSquare, startingSquare, pieceColor, Piece.PAWN);
+                addPiece(enemyColor, Piece.PAWN, capturedPawnSquare);
                 break;
 
             case Move.FLAG_KING_CASTLE:
                 // Moves the king back
-                this.movePiece(endingSquare, startingSquare, pieceColor, Piece.KING);
+                movePiece(endingSquare, startingSquare, pieceColor, Piece.KING);
 
                 // Moves the rook back
                 if (pieceColor == Piece.WHITE) {
-                    this.movePiece(5, 7, Piece.WHITE, Piece.ROOK);
+                    movePiece(5, 7, Piece.WHITE, Piece.ROOK);
                 }
 
                 else {
-                    this.movePiece(61, 63, Piece.BLACK, Piece.ROOK);
+                    movePiece(61, 63, Piece.BLACK, Piece.ROOK);
                 }
 
                 break;
 
             case Move.FLAG_QUEEN_CASTLE:
                 // Moves the king back
-                this.movePiece(endingSquare, startingSquare, pieceColor, Piece.KING);
+                movePiece(endingSquare, startingSquare, pieceColor, Piece.KING);
 
                 // Moves the rook back
                 if (pieceColor == Piece.WHITE) {
-                    this.movePiece(3, 0, Piece.WHITE, Piece.ROOK);
+                    movePiece(3, 0, Piece.WHITE, Piece.ROOK);
                 }
 
                 else {
-                    this.movePiece(59, 56, Piece.BLACK, Piece.ROOK);
+                    movePiece(59, 56, Piece.BLACK, Piece.ROOK);
                 }
 
                 break;
@@ -317,14 +420,14 @@ public class Board {
                 if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION) {
                     // Derives the promoted piece from the 1st and 2nd special bits of move flag and removes it from the last rank
                     int promotedPiece = (moveFlag & 3) + 1;
-                    this.removePiece(pieceColor, promotedPiece, endingSquare);
+                    removePiece(pieceColor, promotedPiece, endingSquare);
 
                     // Puts the pawn back on the second to last rank
-                    this.addPiece(pieceColor, Piece.PAWN, startingSquare);
+                    addPiece(pieceColor, Piece.PAWN, startingSquare);
 
                     // If it was a promotion capture, restore the captured piece onto the now empty ending square
                     if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION_CAPTURE) {
-                        this.addPiece(enemyColor, capturedPieceType, endingSquare);
+                        addPiece(enemyColor, capturedPieceType, endingSquare);
                     }
                 }
 

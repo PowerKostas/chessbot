@@ -74,7 +74,9 @@ public class GameManager {
 
 
     private boolean getGameResult() {
-        return ResultDetector.isCheckmate(moveList, inCheck) || ResultDetector.isStalemate(moveList, inCheck) || ResultDetector.isFiftyMoveRule(board) || ResultDetector.isInsufficientMaterial(board);
+        return ResultDetector.isCheckmate(moveList, inCheck) || ResultDetector.isStalemate(moveList, inCheck) ||
+               ResultDetector.isFiftyMoveRule(board) || ResultDetector.isInsufficientMaterial(board) ||
+               ResultDetector.isThreefoldRepetition(board);
     }
 
 

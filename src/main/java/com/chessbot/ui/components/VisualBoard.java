@@ -12,8 +12,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
 
-import static com.chessbot.engine.utils.FenParser.loadFen;
-
 public class VisualBoard extends StackPane {
     // VisualBoard extends StackPane in order to center the promotion dialog inside the board, the actual board grid is just
     // a child inside the StackPane
@@ -72,9 +70,9 @@ public class VisualBoard extends StackPane {
 
         this.getChildren().add(boardGrid);
 
-        // Sets pieces on the engine and visual board
-        loadFen(fen, board);
-        this.sync(null); // Passing null because legal moves haven't been generated yet
+        // Loads the initial position on the engine and visual boards
+        board.loadInitialPosition(fen);
+        sync(null); // Passing null because legal moves haven't been generated yet
 
         // Listens for clicks inside the board, on a left click, reset the right-clicked squares
         this.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
@@ -101,8 +99,9 @@ public class VisualBoard extends StackPane {
     public void setIsBoardLocked(boolean isBoardLocked) { this.isBoardLocked = isBoardLocked; }
 
 
-    // Makes every square draggable/clickable, more info on the specific classes. The reason it's a function and not inside the
-    // constructor is because MoveHandler's constructor needs a callback and VisualBoard shouldn't know about that
+    // Makes every square draggable/clickable, more info on the specific classes. The reason this is an external function, and
+    // it's not inside the constructor is because MoveHandler's constructor needs a callback and VisualBoard shouldn't know
+    // about that
     public void attachMoveHandler(MoveHandler moveHandler) {
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {

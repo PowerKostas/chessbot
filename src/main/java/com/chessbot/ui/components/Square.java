@@ -27,7 +27,7 @@ public class Square extends StackPane {
         this.row = row;
         this.col = col;
 
-        this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+        setSquareStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
 
         // If the player is white, put the numbers at the left column, if the player is black (board will be reversed)
         // put the numbers in the right column
@@ -146,12 +146,12 @@ public class Square extends StackPane {
 
     public void setIsSelected(boolean isSelected) {
         this.isSelected = isSelected;
-        this.updateColor();
+        updateColor();
     }
 
     public void setIsPreviousMove(boolean isPreviousMove) {
         this.isPreviousMove = isPreviousMove;
-        this.updateColor();
+        updateColor();
     }
 
     public Boolean getIsRightClicked() {
@@ -160,13 +160,13 @@ public class Square extends StackPane {
 
     public void setIsRightClicked(boolean isRightClicked) {
         this.isRightClicked = isRightClicked;
-        this.updateColor();
+        updateColor();
     }
 
 
     // Sets the style of the square
-    public void setStyle(String lightSquareStyle, String darkSquareStyle) {
-        if ((this.row + this.col) % 2 == 0) { // If light square
+    public void setSquareStyle(String lightSquareStyle, String darkSquareStyle) {
+        if ((row + col) % 2 == 0) { // If light square
             this.setStyle(lightSquareStyle);
         }
 
@@ -180,26 +180,26 @@ public class Square extends StackPane {
     public void updateColor() {
         // If the square is right-clicked
         if (isRightClicked) {
-            this.setStyle("-fx-background-color: #eb7d6a", "-fx-background-color: #d36c50");
+            setSquareStyle("-fx-background-color: #eb7d6a", "-fx-background-color: #d36c50");
         }
 
         // If the square is selected or if a move affected this square
         else if (isSelected || isPreviousMove) {
-            this.setStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+            setSquareStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
         }
 
         // If a move was made, and it doesn't affect this square (used to reset the color of a hovered square or old previous
         // move squares). Or if a left/right click happened on the board (a left click resets the right-clicked and selected
         // squares colors and a right click resets the selected square color)
         else {
-            this.setStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            setSquareStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
         }
     }
 
 
     // Updates the legal move/capture hint visibility in the square
     public void updateLegalHint(boolean isLegalMove, boolean isLegalCapture) {
-        this.legalMoveHint.setVisible(isLegalMove);
-        this.legalCaptureHint.setVisible(isLegalCapture);
+        legalMoveHint.setVisible(isLegalMove);
+        legalCaptureHint.setVisible(isLegalCapture);
     }
 }
