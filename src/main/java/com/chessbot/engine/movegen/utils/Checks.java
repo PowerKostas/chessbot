@@ -1,4 +1,4 @@
-package com.chessbot.engine.movegen;
+package com.chessbot.engine.movegen.utils;
 
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Piece;

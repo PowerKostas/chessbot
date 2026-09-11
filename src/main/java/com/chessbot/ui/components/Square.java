@@ -11,10 +11,11 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-// The children of this class are number coordinates, letter coordinates and a VisualPiece
 public class Square extends StackPane {
     private final int row;
     private final int col;
+    private Label numberCoordinates;
+    private Label letterCoordinates;
     private final Circle legalMoveHint;
     private final Region legalCaptureHint;
     private VisualPiece currentPiece;
@@ -23,75 +24,12 @@ public class Square extends StackPane {
     private boolean isRightClicked = false;
 
 
-    public Square(int row, int col, VisualBoard board) {
+    public Square(int row, int col, VisualBoard visualBoard) {
         this.row = row;
         this.col = col;
 
-        setSquareStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
-
-        // If the player is white, put the numbers at the left column, if the player is black (board will be reversed)
-        // put the numbers in the right column
-        if ((board.getBoardPerspective() == Piece.WHITE && col == 0) || (board.getBoardPerspective() == Piece.BLACK && col == 7)) {
-            Label number = new Label();
-
-            if ((row + col) % 2 == 0) {
-                number.setTextFill(Color.web("#739552"));
-            }
-
-            else {
-                number.setTextFill(Color.web("#ebecd0"));
-            }
-
-            number.setText(Integer.toString(8 - row));
-            number.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
-            StackPane.setAlignment(number, Pos.TOP_LEFT);
-            StackPane.setMargin(number, new Insets(0, 0, 0, 4));
-
-            // If the player is black, reverse the numbers
-            if (board.getBoardPerspective() == Piece.BLACK) {
-                number.setRotate(180);
-                StackPane.setAlignment(number, Pos.BOTTOM_RIGHT);
-                StackPane.setMargin(number, new Insets(0, 4, 0, 0));
-            }
-
-            else {
-                StackPane.setAlignment(number, Pos.TOP_LEFT);
-                StackPane.setMargin(number, new Insets(0, 0, 0, 4));
-            }
-
-            this.getChildren().add(number);
-        }
-
-        // If the player is white, put the letters at the bottom row, if the player is black (board will be reversed)
-        // put the letters in the top row
-        if ((board.getBoardPerspective() == Piece.WHITE && row == 7) || (board.getBoardPerspective() == Piece.BLACK && row == 0)) {
-            Label letter = new Label();
-
-            if ((row + col) % 2 == 0) {
-                letter.setTextFill(Color.web("#739552"));
-            }
-
-            else {
-                letter.setTextFill(Color.web("#ebecd0"));
-            }
-
-            letter.setText(String.valueOf((char) ('a' + col)));
-            letter.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
-
-            // If the player is black, reverse the letters
-            if (board.getBoardPerspective() == Piece.BLACK) {
-                letter.setRotate(180);
-                StackPane.setAlignment(letter, Pos.TOP_LEFT);
-                StackPane.setMargin(letter, new Insets(0, 0, 0, 4));
-            }
-
-            else {
-                StackPane.setAlignment(letter, Pos.BOTTOM_RIGHT);
-                StackPane.setMargin(letter, new Insets(0, 4, 0, 0));
-            }
-
-            this.getChildren().add(letter);
-        }
+        applySquareStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+        updateCoordinateLabels(visualBoard.getBoardPerspective());
 
         // Adds a circle that indicates a legal move and makes it invisible
         legalMoveHint = new Circle(14, Color.web("#000000", 0.2));
@@ -164,8 +102,7 @@ public class Square extends StackPane {
     }
 
 
-    // Sets the style of the square
-    public void setSquareStyle(String lightSquareStyle, String darkSquareStyle) {
+    public void applySquareStyle(String lightSquareStyle, String darkSquareStyle) {
         if ((row + col) % 2 == 0) { // If light square
             this.setStyle(lightSquareStyle);
         }
@@ -176,29 +113,90 @@ public class Square extends StackPane {
     }
 
 
-    // Updates the color of the square
     public void updateColor() {
         // If the square is right-clicked
         if (isRightClicked) {
-            setSquareStyle("-fx-background-color: #eb7d6a", "-fx-background-color: #d36c50");
+            applySquareStyle("-fx-background-color: #eb7d6a", "-fx-background-color: #d36c50");
         }
 
         // If the square is selected or if a move affected this square
         else if (isSelected || isPreviousMove) {
-            setSquareStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
+            applySquareStyle("-fx-background-color: #f5f682", "-fx-background-color: #b9ca43");
         }
 
         // If a move was made, and it doesn't affect this square (used to reset the color of a hovered square or old previous
         // move squares). Or if a left/right click happened on the board (a left click resets the right-clicked and selected
         // squares colors and a right click resets the selected square color)
         else {
-            setSquareStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
+            applySquareStyle("-fx-background-color: #ebecd0", "-fx-background-color: #739552");
         }
     }
 
 
-    // Updates the legal move/capture hint visibility in the square
-    public void updateLegalHint(boolean isLegalMove, boolean isLegalCapture) {
+    // The coordinate labels need to be updated every time the board is flipped
+    public void updateCoordinateLabels(int boardPerspective) {
+        // Clears the old coordinates if needed
+        if (numberCoordinates != null) {
+            this.getChildren().remove(numberCoordinates);
+            numberCoordinates = null;
+        }
+
+        if (letterCoordinates != null) {
+            this.getChildren().remove(letterCoordinates);
+            letterCoordinates = null;
+        }
+
+        // If the player is white, put the numbers at the left column, if the player is black (board will be reversed) put the
+        // numbers in the right column
+        if ((boardPerspective == Piece.WHITE && col == 0) || (boardPerspective == Piece.BLACK && col == 7)) {
+            numberCoordinates = new Label();
+            numberCoordinates.setTextFill((row + col) % 2 == 0 ? Color.web("#739552") : Color.web("#ebecd0"));
+            numberCoordinates.setText(Integer.toString(8 - row));
+            numberCoordinates.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
+
+            // If the player is black also reverse the numbers
+            if (boardPerspective == Piece.BLACK) {
+                numberCoordinates.setRotate(180);
+                StackPane.setAlignment(numberCoordinates, Pos.BOTTOM_RIGHT);
+                StackPane.setMargin(numberCoordinates, new Insets(0, 4, 0, 0));
+            }
+
+            else {
+                numberCoordinates.setRotate(0);
+                StackPane.setAlignment(numberCoordinates, Pos.TOP_LEFT);
+                StackPane.setMargin(numberCoordinates, new Insets(0, 0, 0, 4));
+            }
+
+            this.getChildren().add(numberCoordinates);
+        }
+
+        // If the player is white, put the letters at the bottom row, if the player is black (board will be reversed) put the
+        // letters in the top row
+        if ((boardPerspective == Piece.WHITE && row == 7) || (boardPerspective == Piece.BLACK && row == 0)) {
+            letterCoordinates = new Label();
+            letterCoordinates.setTextFill((row + col) % 2 == 0 ? Color.web("#739552") : Color.web("#ebecd0"));
+            letterCoordinates.setText(String.valueOf((char) ('a' + col)));
+            letterCoordinates.setStyle("-fx-font-size: 16; -fx-font-weight: bold");
+
+            // If the player is black also reverse the letters
+            if (boardPerspective == Piece.BLACK) {
+                letterCoordinates.setRotate(180);
+                StackPane.setAlignment(letterCoordinates, Pos.TOP_LEFT);
+                StackPane.setMargin(letterCoordinates, new Insets(0, 0, 0, 4));
+            }
+
+            else {
+                letterCoordinates.setRotate(0);
+                StackPane.setAlignment(letterCoordinates, Pos.BOTTOM_RIGHT);
+                StackPane.setMargin(letterCoordinates, new Insets(0, 4, 0, 0));
+            }
+
+            this.getChildren().add(letterCoordinates);
+        }
+    }
+
+
+    public void toggleLegalHint(boolean isLegalMove, boolean isLegalCapture) {
         legalMoveHint.setVisible(isLegalMove);
         legalCaptureHint.setVisible(isLegalCapture);
     }

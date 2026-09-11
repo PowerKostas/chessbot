@@ -29,19 +29,19 @@ public final class Zobrist {
         // Zobrist keys, useful for debugging
         SplittableRandom random = new SplittableRandom(42);
 
-        for (int pieceType = 0; pieceType < 12; pieceType++) {
-            for (int square = 0; square < 64; square++) {
+        for (int pieceType = 0; pieceType < 12; pieceType += 1) {
+            for (int square = 0; square < 64; square += 1) {
                 PIECES[pieceType][square] = random.nextLong();
             }
         }
 
         TURN = random.nextLong();
 
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 16; i += 1) {
             CASTLING_RIGHTS[i] = random.nextLong();
         }
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 8; i += 1) {
             EN_PASSANT_FILE[i] = random.nextLong();
         }
     }

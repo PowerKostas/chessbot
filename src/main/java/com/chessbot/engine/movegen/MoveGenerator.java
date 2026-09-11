@@ -4,6 +4,10 @@ import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Move;
 import com.chessbot.engine.core.Piece;
 import com.chessbot.engine.core.Pieces.*;
+import com.chessbot.engine.movegen.utils.Attacks;
+import com.chessbot.engine.movegen.utils.Checks;
+import com.chessbot.engine.movegen.utils.Pins;
+import com.chessbot.engine.movegen.utils.Rays;
 
 public final class MoveGenerator {
     private MoveGenerator() {}
@@ -48,8 +52,8 @@ public final class MoveGenerator {
 
     // Filters pseudo legal moves into legal moves and adds them in the given MoveList
     public static void generate(Board board, MoveList moveList) {
-        // Clears the move list because the same object is reused either per search depth or persistently by the GameManager in
-        // order to avoid new memory allocations
+        // Clears the move list because the same object is reused either per search depth or persistently by
+        // GameManager, MatchRunner, ... in order to avoid new memory allocations
         moveList.clear();
 
         int friendlyColor = board.getTurn();

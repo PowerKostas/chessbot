@@ -13,32 +13,31 @@ import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
 
 public class VisualBoard extends StackPane {
+    private Board board;
+
     // VisualBoard extends StackPane in order to center the promotion dialog inside the board, the actual board grid is just
     // a child inside the StackPane
     private final GridPane boardGrid;
 
-    // 0 = White's pieces first, 1 = Black's pieces first. In the engine board the first square is a1, in the visual board the
-    // first square is h8, if the player is black the first squares remain the same, but the visual board is flipped
-    private final int boardPerspective;
+    // 0 = White's pieces first, 1 = Black's pieces first
+    private int boardPerspective;
+
+    // Flag to determine if this board is gonna show debug visuals
+    private final boolean isDebugBoard;
 
     // The squares that will be highlighted when a move is made
     private Square previousStartingSquare;
     private Square previousEndingSquare;
 
-    // Flag to determine if this board is gonna show debug visuals
-    private final boolean isDebugBoard;
-
     // Flag to not allow human moves when the AI is thinking
     private boolean isBoardLocked = false;
 
-    private final Board board;
 
-
-    public VisualBoard(int boardPerspective, String fen, boolean isDebugBoard) {
+    public VisualBoard(int boardPerspective, boolean isDebugBoard, String fen) {
+        this.board = new Board();
         this.boardGrid = new GridPane();
         this.boardPerspective = boardPerspective;
         this.isDebugBoard = isDebugBoard;
-        this.board = new Board();
 
         // Reverse the board, if the player is black
         if (boardPerspective == Piece.BLACK) {
@@ -48,13 +47,13 @@ public class VisualBoard extends StackPane {
         // Creates the 8x8 grid
         this.setPrefSize(700, 700);
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 8; i += 1) {
             ColumnConstraints colConstraint = new ColumnConstraints();
             colConstraint.setPercentWidth(12.5);
             boardGrid.getColumnConstraints().add(colConstraint);
         }
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 8; i += 1) {
             RowConstraints rowConstraint = new RowConstraints();
             rowConstraint.setPercentHeight(12.5);
             boardGrid.getRowConstraints().add(rowConstraint);
@@ -70,15 +69,15 @@ public class VisualBoard extends StackPane {
 
         this.getChildren().add(boardGrid);
 
-        // Loads the initial position on the engine and visual boards
+        // Loads the initial position on the engine board and on the visual board
         board.loadInitialPosition(fen);
         sync(null); // Passing null because legal moves haven't been generated yet
 
         // Listens for clicks inside the board, on a left click, reset the right-clicked squares
         this.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                for (int row = 0; row < 8; row++) {
-                    for (int col = 0; col < 8; col++) {
+                for (int row = 0; row < 8; row += 1) {
+                    for (int col = 0; col < 8; col += 1) {
                         Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
                         if (square.getIsRightClicked()) {
                             square.setIsRightClicked(false);
@@ -90,7 +89,12 @@ public class VisualBoard extends StackPane {
     }
 
 
-    public Board getBoard() { return board; }
+    // Gets a Square object from the GridPane using a bitboard index
+    public Square getSquare(int squareIndex) {
+        int targetRow = 7 - (squareIndex / 8);
+        int targetCol = squareIndex % 8;
+        return (Square) boardGrid.getChildren().get(targetRow * 8 + targetCol);
+    }
 
     public int getBoardPerspective() { return boardPerspective; }
 
@@ -98,13 +102,17 @@ public class VisualBoard extends StackPane {
 
     public void setIsBoardLocked(boolean isBoardLocked) { this.isBoardLocked = isBoardLocked; }
 
+    public Board getBoard() { return board; }
+
+    public void setBoard(Board board) { this.board = board; }
+
 
     // Makes every square draggable/clickable, more info on the specific classes. The reason this is an external function, and
     // it's not inside the constructor is because MoveHandler's constructor needs a callback and VisualBoard shouldn't know
     // about that
     public void attachMoveHandler(MoveHandler moveHandler) {
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
+        for (int row = 0; row < 8; row += 1) {
+            for (int col = 0; col < 8; col += 1) {
                 Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
 
                 square.setOnDragDetected(moveHandler::dragDetected);
@@ -126,31 +134,85 @@ public class VisualBoard extends StackPane {
     }
 
 
-    // Retrieves a Square object from the GridPane using a bitboard index
-    public Square getSquare(int squareIndex) {
-        int targetRow = 7 - (squareIndex / 8);
-        int targetCol = squareIndex % 8;
-        return (Square) boardGrid.getChildren().get(targetRow * 8 + targetCol);
+    // In the engine board the first square is a1, in the visual board the first square is h8. If the player is black the first
+    // squares remain the same, but the visual board, the square coordinate labels and the visual pieces are flipped
+    public void flip(int boardPerspective) {
+        this.boardPerspective = boardPerspective;
+
+        if (this.boardPerspective == Piece.BLACK) {
+            this.setRotate(180);
+        }
+
+        else {
+            this.setRotate(0);
+        }
+
+        for (int i = 0; i < 64; i += 1) {
+            Square square = (Square) boardGrid.getChildren().get(i);
+            square.updateCoordinateLabels(boardPerspective);
+
+            VisualPiece piece = square.getCurrentPiece();
+            if (piece != null) {
+                piece.setRotate(this.boardPerspective == Piece.BLACK ? 180 : 0);
+            }
+        }
     }
 
 
-    // Works in a similar way to Board.searchLegalMove, but this function is for the UI only because it's used to find the
-    // legal move that promotes the pawn to the piece that the user has selected
-    public int searchPromotionLegalMove(MoveList moveList, int startingSquare, int endingSquare, int chosenPiece) {
-        for (int i = 0; i < moveList.count; i += 1) {
-            int legalMove = moveList.moves[i];
-            if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
-                int moveFlag = Move.getFlag(legalMove);
+    public void highlightPreviousMove(int startingSquareIndex, int endingSquareIndex) {
+        // Resets the colors of the previous move squares
+        if (previousStartingSquare != null && previousEndingSquare != null) {
+            previousStartingSquare.setIsPreviousMove(false);
+            previousEndingSquare.setIsPreviousMove(false);
+        }
 
-                // Verifies that it's a promotion or a promotion capture move flag and that the move flag special bits match
-                // the piece that the user has selected to promote to
-                if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION && ((moveFlag & 3) + 1) == chosenPiece) {
-                    return legalMove;
+        // Sets new previous move squares and highlights them
+        previousStartingSquare = getSquare(startingSquareIndex);
+        previousEndingSquare = getSquare(endingSquareIndex);
+
+        if (previousStartingSquare != null && previousEndingSquare != null) {
+            previousStartingSquare.setIsPreviousMove(true);
+            previousEndingSquare.setIsPreviousMove(true);
+        }
+    }
+
+
+    public void unhighlightPreviousMove() {
+        previousStartingSquare.setIsPreviousMove(false);
+        previousEndingSquare.setIsPreviousMove(false);
+        previousStartingSquare = null;
+        previousEndingSquare = null;
+    }
+
+
+    // Translates the piece's legal moves bitboard into UI legal move/capture hints
+    public void showLegalHints(long pieceLegalMovesBitboard) {
+        for (int row = 0; row < 8; row += 1) {
+            for (int col = 0; col < 8; col += 1) {
+                int squareIndex = (7 - row) * 8 + col;
+
+                // If the pieceLegalMovesBitboard bit is 1 at this square index
+                boolean isLegal = (pieceLegalMovesBitboard & (1L << squareIndex)) != 0;
+
+                // Updates the square's legal hint if there is a legal move/capture there. If there is not a piece, it's a
+                // normal move, if there is, it's a capture
+                if (isLegal) {
+                    Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
+                    boolean hasPiece = this.board.getPieceColorAtSquare(squareIndex) != -1;
+                    square.toggleLegalHint(!hasPiece, hasPiece);
                 }
             }
         }
+    }
 
-        return -1;
+
+    public void clearLegalHints() {
+        for (int row = 0; row < 8; row += 1) {
+            for (int col = 0; col < 8; col += 1) {
+                Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
+                square.toggleLegalHint(false, false);
+            }
+        }
     }
 
 
@@ -204,55 +266,6 @@ public class VisualBoard extends StackPane {
     }
 
 
-    public void highlightPreviousMove(int startingSquareIndex, int endingSquareIndex) {
-        // Resets the colors of the previous move squares
-        if (previousStartingSquare != null && previousEndingSquare != null) {
-            previousStartingSquare.setIsPreviousMove(false);
-            previousEndingSquare.setIsPreviousMove(false);
-        }
-
-        // Sets new previous move squares and highlights them
-        previousStartingSquare = getSquare(startingSquareIndex);
-        previousEndingSquare = getSquare(endingSquareIndex);
-
-        if (previousStartingSquare != null && previousEndingSquare != null) {
-            previousStartingSquare.setIsPreviousMove(true);
-            previousEndingSquare.setIsPreviousMove(true);
-        }
-    }
-
-
-    // Translates the piece's legal moves bitboard into UI legal move/capture hints
-    public void showLegalHints(long pieceLegalMovesBitboard) {
-        for (int row = 0; row < 8; row += 1) {
-            for (int col = 0; col < 8; col += 1) {
-                int squareIndex = (7 - row) * 8 + col;
-
-                // If the pieceLegalMovesBitboard bit is 1 at this square index
-                boolean isLegal = (pieceLegalMovesBitboard & (1L << squareIndex)) != 0;
-
-                // Updates the square's legal hint if there is a legal move/capture there. If there is not a piece, it's a
-                // normal move, if there is, it's a capture
-                if (isLegal) {
-                    Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
-                    boolean hasPiece = this.board.getPieceColorAtSquare(squareIndex) != -1;
-                    square.updateLegalHint(!hasPiece, hasPiece);
-                }
-            }
-        }
-    }
-
-
-    public void clearLegalHints() {
-        for (int row = 0; row < 8; row += 1) {
-            for (int col = 0; col < 8; col += 1) {
-                Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
-                square.updateLegalHint(false, false);
-            }
-        }
-    }
-
-
     // Iterates through each bit of the bitboard that was given, if the bit equals 1, the corresponding square gets painted
     // red, all other squares get the default colors
     public void bitboardVisualization(long bitboard) {
@@ -277,5 +290,25 @@ public class VisualBoard extends StackPane {
                 }
             }
         }
+    }
+
+
+    // Works in a similar way to Board.searchLegalMove, but this function is for the UI only because it's used to find the
+    // legal move that promotes the pawn to the piece that the user has selected
+    public int searchPromotionLegalMove(MoveList moveList, int startingSquare, int endingSquare, int chosenPiece) {
+        for (int i = 0; i < moveList.count; i += 1) {
+            int legalMove = moveList.moves[i];
+            if (Move.getStartingSquare(legalMove) == startingSquare && Move.getEndingSquare(legalMove) == endingSquare) {
+                int moveFlag = Move.getFlag(legalMove);
+
+                // Verifies that it's a promotion or a promotion capture move flag and that the move flag special bits match
+                // the piece that the user has selected to promote to
+                if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION && ((moveFlag & 3) + 1) == chosenPiece) {
+                    return legalMove;
+                }
+            }
+        }
+
+        return -1;
     }
 }

@@ -1,6 +1,7 @@
 package com.chessbot.ui.controllers;
 
-import com.chessbot.application.GameManager;
+import com.chessbot.application.ApplicationConfig;
+import com.chessbot.application.UIGameManager;
 import com.chessbot.application.PlayerType;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Piece;
@@ -15,21 +16,19 @@ public class MainController {
     @FXML
     private HBox mainContainer;
 
-    int whitePlayerType = PlayerType.HUMAN;
-    int blackPlayerType = PlayerType.HUMAN;
-
 
     public void initialize() {
         // If there is only one human player, and they are black, set the board's perspective to black pieces first
-        int boardPerspective = Piece.WHITE;
-        if (whitePlayerType != blackPlayerType && blackPlayerType == PlayerType.HUMAN) boardPerspective = Piece.BLACK;
+        int whitePlayerType = ApplicationConfig.WHITE_PLAYER_TYPE;
+        int blackPlayerType = ApplicationConfig.BLACK_PLAYER_TYPE;
+        int boardPerspective = (whitePlayerType != blackPlayerType && blackPlayerType == PlayerType.HUMAN) ? Piece.BLACK : Piece.WHITE;
 
-        VisualBoard visualBoardOne = new VisualBoard(boardPerspective, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", false);
+        VisualBoard visualBoardOne = new VisualBoard(boardPerspective, false, ApplicationConfig.UI_GAME_FEN);
         mainContainer.getChildren().addAll(visualBoardOne);
         Board boardOne = visualBoardOne.getBoard();
-        GameManager gameManager = new GameManager(boardOne, visualBoardOne);
-        MoveHandler moveHandler = new MoveHandler(visualBoardOne, gameManager);
+        UIGameManager uiGameManager = new UIGameManager(boardOne, visualBoardOne, true);
+        MoveHandler moveHandler = new MoveHandler(visualBoardOne, uiGameManager);
         visualBoardOne.attachMoveHandler(moveHandler);
-        gameManager.startGame(whitePlayerType, blackPlayerType);
+        uiGameManager.startGame(whitePlayerType, blackPlayerType);
     }
 }

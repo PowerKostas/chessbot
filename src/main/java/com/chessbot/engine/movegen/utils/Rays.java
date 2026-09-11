@@ -1,4 +1,4 @@
-package com.chessbot.engine.movegen;
+package com.chessbot.engine.movegen.utils;
 
 public class Rays {
     // A bitboard of an orthogonal (rook attacks) or diagonal (bishop attacks) line passing through 2 squares for every single
@@ -14,7 +14,7 @@ public class Rays {
     // Precomputes the LINE and BETWEEN constants
     static {
         for (int square1 = 0; square1 < 64; square1 += 1) {
-            for (int square2 = 0; square2 < 64; square2++) {
+            for (int square2 = 0; square2 < 64; square2 += 1) {
                 // If it's a combination of the same square, bitboard value remains 0
                 if (square1 == square2) {
                     continue;

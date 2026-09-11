@@ -62,8 +62,8 @@ public final class PromotionDialog {
             scaleDown.setToX(0.9);
             scaleDown.setToY(0.9);
 
-            pieceWrapper.setOnMouseEntered(e -> scaleUp.playFromStart());
-            pieceWrapper.setOnMouseExited(e -> scaleDown.playFromStart());
+            pieceWrapper.setOnMouseEntered(_ -> scaleUp.playFromStart());
+            pieceWrapper.setOnMouseExited(_ -> scaleDown.playFromStart());
 
             // Closes the popup on piece choice click
             pieceWrapper.setOnMouseClicked(e -> {
@@ -85,8 +85,8 @@ public final class PromotionDialog {
         String defaultStyle = "-fx-background-color: transparent; -fx-text-fill: #739552; -fx-font-weight: bold; -fx-font-size: 32px; -fx-cursor: hand;";
         String hoverStyle = "-fx-background-color: transparent; -fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 32px; -fx-cursor: hand;";
         cancelButton.setStyle(defaultStyle);
-        cancelButton.setOnMouseEntered(e -> cancelButton.setStyle(hoverStyle));
-        cancelButton.setOnMouseExited(e -> cancelButton.setStyle(defaultStyle));
+        cancelButton.setOnMouseEntered(_ -> cancelButton.setStyle(hoverStyle));
+        cancelButton.setOnMouseExited(_ -> cancelButton.setStyle(defaultStyle));
 
         cancelButton.setOnAction(e -> {
             visualBoard.getChildren().remove(overlay);

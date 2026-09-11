@@ -8,6 +8,6 @@ public class Main {
         //BishopMagicBitboards bishopMagicBitboards = new BishopMagicBitboards();
         //bishopMagicBitboards.findBestMagicNumbers();
 
-        ChessApplication.main(args);
+        ChessbotApplication.main(args);
     }
 }

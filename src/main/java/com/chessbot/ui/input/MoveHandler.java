@@ -1,6 +1,6 @@
 package com.chessbot.ui.input;
 
-import com.chessbot.application.GameManager;
+import com.chessbot.application.UIGameManager;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Piece;
 import com.chessbot.ui.components.PromotionDialog;
@@ -21,7 +21,7 @@ import javafx.scene.transform.Scale;
 public class MoveHandler {
     private final VisualBoard visualBoard;
     private final Board board;
-    private final GameManager gameManager;
+    private final UIGameManager uiGameManager;
     private Square startingSquare;
     private int startingSquareIndex; // The starting square index is used multiple times, a class variable is utilized for efficiency
 
@@ -31,10 +31,10 @@ public class MoveHandler {
 
 
     // Initializes the references in order for the listeners to access their methods
-    public MoveHandler(VisualBoard visualBoard, GameManager gameManager) {
+    public MoveHandler(VisualBoard visualBoard, UIGameManager uiGameManager) {
         this.visualBoard = visualBoard;
         board = visualBoard.getBoard();
-        this.gameManager = gameManager;
+        this.uiGameManager = uiGameManager;
     }
 
 
@@ -43,7 +43,7 @@ public class MoveHandler {
         startingSquare = square;
         startingSquareIndex = squareIndex;
         startingSquare.setIsSelected(true);
-        long pieceLegalMovesBitboard = gameManager.getMoveList().searchPieceLegalMoves(startingSquareIndex);
+        long pieceLegalMovesBitboard = uiGameManager.getMoveList().searchPieceLegalMoves(startingSquareIndex);
         visualBoard.showLegalHints(pieceLegalMovesBitboard);
     }
 
@@ -65,8 +65,8 @@ public class MoveHandler {
         PromotionDialog.display(visualBoard, pieceColor, visualBoard.getBoardPerspective() == Piece.BLACK, chosenPiece -> {
             // If the user didn't click the 'x' button, execute the promotion legal move
             if (chosenPiece != -1) {
-                int legalMove = visualBoard.searchPromotionLegalMove(gameManager.getMoveList(), startingSquareIndex, promotionSquareIndex, chosenPiece);
-                gameManager.playMove(legalMove);
+                int legalMove = visualBoard.searchPromotionLegalMove(uiGameManager.getMoveList(), startingSquareIndex, promotionSquareIndex, chosenPiece);
+                uiGameManager.playMove(legalMove);
                 cancelSelection();
             }
 
@@ -158,7 +158,7 @@ public class MoveHandler {
             Square hoveredSquare = (Square) event.getSource();
             int hoveredSquareIndex = (7 - hoveredSquare.getRow()) * 8 + hoveredSquare.getCol();
 
-            if (gameManager.getMoveList().searchLegalMove(startingSquareIndex, hoveredSquareIndex) != -1) {
+            if (uiGameManager.getMoveList().searchLegalMove(startingSquareIndex, hoveredSquareIndex) != -1) {
                 event.acceptTransferModes(TransferMode.MOVE);
             }
         }
@@ -171,7 +171,7 @@ public class MoveHandler {
     public void dragEntered(DragEvent event) {
         // Adds a border effect to the square
         Square hoveredSquare = (Square) event.getSource();
-        hoveredSquare.setSquareStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
+        hoveredSquare.applySquareStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
 
         // Ending square needs the square that the piece is currently hovering in order to play, if needed, the illegal sound, in
         // dragDone. The code will never go to dragDropped when playing an illegal move which is where endingSquare normally
@@ -221,8 +221,8 @@ public class MoveHandler {
 
             // Executes normal legal moves
             else {
-                int legalMove = gameManager.getMoveList().searchLegalMove(startingSquareIndex, endingSquareIndex);
-                gameManager.playMove(legalMove);
+                int legalMove = uiGameManager.getMoveList().searchLegalMove(startingSquareIndex, endingSquareIndex);
+                uiGameManager.playMove(legalMove);
                 cancelSelection();
             }
         }
@@ -271,7 +271,7 @@ public class MoveHandler {
                 // do is legal, it's a promotion and handled separately
                 if (pieceType == Piece.PAWN &&
                     (clickedSquareIndex <= 7 || clickedSquareIndex >= 56) &&
-                        gameManager.getMoveList().searchLegalMove(startingSquareIndex, clickedSquareIndex) != -1)
+                        uiGameManager.getMoveList().searchLegalMove(startingSquareIndex, clickedSquareIndex) != -1)
                 {
                     // Hides the pawn while the promotion dialog is open
                     startingSquare.getCurrentPiece().setVisible(false);
@@ -282,11 +282,11 @@ public class MoveHandler {
 
                 // Executes normal legal moves
                 else {
-                    int legalMove = gameManager.getMoveList().searchLegalMove(startingSquareIndex, clickedSquareIndex);
+                    int legalMove = uiGameManager.getMoveList().searchLegalMove(startingSquareIndex, clickedSquareIndex);
 
                     // If the click is a legal move
                     if (legalMove != -1) {
-                        gameManager.playMove(legalMove);
+                        uiGameManager.playMove(legalMove);
                         cancelSelection();
                     }
 

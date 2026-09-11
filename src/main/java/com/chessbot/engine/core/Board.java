@@ -2,12 +2,9 @@ package com.chessbot.engine.core;
 
 import com.chessbot.engine.utils.FenParser;
 import com.chessbot.engine.utils.Zobrist;
-
 import java.util.Arrays;
 
-import static com.chessbot.engine.core.Undo.*;
-
-// The board class should only hold information about the game state, specifically all the data contained in a FEN string
+// The board class should only hold information about one specific game state, this includes all the data contained in a FEN string
 public class Board {
     // 12 64 bit variables, one for each piece. The first 6 bitboards are for the white pieces (pawn, knight, bishop, rook,
     // queen, king), the other 6 are for the black pieces. Each bit indicates a square on the board, if the bit equals 0, there
@@ -55,8 +52,9 @@ public class Board {
     // Counter of half moves since the last capture or pawn push, used in the 50-move rule
     private int halfMoveClock;
 
-    // A history array containing every past Zobrist key created in this game. An array is used for detecting threefold repetitions
-    // and easily unmaking moves. The currentZobristKey variable is used for easily referencing the key of the current position
+    // A history array containing every past Zobrist key created in this game is needed. The array is used for detecting threefold
+    // repetitions and easily unmaking moves. The currentZobristKey variable is used for easily referencing the key of the
+    // current position
     private int zobristHistoryIndex = 0;
     private final long[] zobristHistory = new long[Constants.MAX_GAME_MOVES];
     private long currentZobristKey = 0L;
@@ -339,7 +337,7 @@ public class Board {
         }
 
         turn ^= 1;
-        return createUndo(capturedPieceType, previousEnPassantSquareBitboard, previousCastlingRights, previousHalfMoveClock);
+        return Undo.createUndo(capturedPieceType, previousEnPassantSquareBitboard, previousCastlingRights, previousHalfMoveClock);
     }
 
 
@@ -359,10 +357,10 @@ public class Board {
         int enemyColor = pieceColor ^ 1;
 
         // Restores the irreversible data from before the move was made
-        int capturedPieceType = undoCapturedPieceType(undo);
-        castlingRights = undoCastlingRights(undo);
-        enPassantSquareBitboard = undoEnPassantSquareBitboard(undo);
-        halfMoveClock = undoHalfMoveClock(undo);
+        int capturedPieceType = Undo.undoCapturedPieceType(undo);
+        castlingRights = Undo.undoCastlingRights(undo);
+        enPassantSquareBitboard = Undo.undoEnPassantSquareBitboard(undo);
+        halfMoveClock = Undo.undoHalfMoveClock(undo);
 
         switch (moveFlag) {
             // Since the en passant square bitboard is gonna get recovered from the Undo int object, quiet moves and double pawn
@@ -444,7 +442,7 @@ public class Board {
             return Piece.WHITE;
         }
 
-        if ((otherBitboards[Piece.BLACK] & squareMask) != 0) {
+        else if ((otherBitboards[Piece.BLACK] & squareMask) != 0) {
             return Piece.BLACK;
         }
 

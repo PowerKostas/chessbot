@@ -8,6 +8,7 @@ module com.chessbot {
     exports com.chessbot.ui.components;
     exports com.chessbot.ui.controllers;
     exports com.chessbot.ui.input;
+    exports com.chessbot.engine.ai;
     exports com.chessbot.engine.core;
     exports com.chessbot.engine.movegen;
 
@@ -17,4 +18,5 @@ module com.chessbot {
     opens com.chessbot.ui.input to javafx.fxml;
     opens com.chessbot.ui.utils to javafx.fxml;
     opens com.chessbot.Views to javafx.fxml;
+    exports com.chessbot.engine.movegen.utils;
 }

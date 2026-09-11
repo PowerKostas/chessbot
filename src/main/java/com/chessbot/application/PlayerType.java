@@ -5,5 +5,5 @@ public final class PlayerType {
 
 
     public static final int HUMAN = 0;
-    public static final int AI = 1;
+    public static final int ENGINE = 1;
 }

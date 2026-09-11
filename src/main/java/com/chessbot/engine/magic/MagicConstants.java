@@ -62,13 +62,13 @@ public final class MagicConstants {
     static {
         // Calculates offsets based on bestBits
         int currentOffset = 0;
-        for (int i = 0; i < 64; i++) {
+        for (int i = 0; i < 64; i += 1) {
             rookOffsets[i] = currentOffset;
             currentOffset += (1 << ROOK_BEST_BITS[i]);
         }
 
         currentOffset = 0;
-        for (int i = 0; i < 64; i++) {
+        for (int i = 0; i < 64; i += 1) {
             bishopOffsets[i] = currentOffset;
             currentOffset += (1 << BISHOP_BEST_BITS[i]);
         }
