@@ -1,6 +1,6 @@
 package com.chessbot.engine.movegen.utils;
 
-public class Rays {
+public final class Rays {
     // A bitboard of an orthogonal (rook attacks) or diagonal (bishop attacks) line passing through 2 squares for every single
     // combination of 2 squares in the board. For example, if the indexes c3 and f6 are given, the line includes the squares a1, b2,
     // c3, d4, e5, f6, g7 and h8. Being given c3 and f6 is the same as being given f6 and c3, but it's better to not compress the
@@ -9,6 +9,8 @@ public class Rays {
 
     // Works in the same way as LINE, but it's a bitboard of the squares strictly between the 2 given squares
     public static final long[] BETWEEN = new long[4096];
+
+    private Rays() {}
 
 
     // Precomputes the LINE and BETWEEN constants
@@ -20,10 +22,10 @@ public class Rays {
                     continue;
                 }
 
-                int rankSquare1 = square1 / 8;
-                int fileSquare1 = square1 % 8;
-                int rankSquare2 = square2 / 8;
-                int fileSquare2 = square2 % 8;
+                int rankSquare1 = square1 >> 3;
+                int fileSquare1 = square1 & 7;
+                int rankSquare2 = square2 >> 3;
+                int fileSquare2 = square2 & 7;
 
                 int deltaRank = rankSquare2 - rankSquare1;
                 int deltaFile = fileSquare2 - fileSquare1;
@@ -45,7 +47,7 @@ public class Rays {
                     int currentRank = rankSquare1;
                     int currentFile = fileSquare1;
                     while (currentRank >= 0 && currentRank < 8 && currentFile >= 0 && currentFile < 8) {
-                        lineBitboard |= (1L << (currentRank * 8 + currentFile));
+                        lineBitboard |= (1L << ((currentRank << 3) + currentFile));
                         currentRank += stepRank;
                         currentFile += stepFile;
                     }
@@ -55,7 +57,7 @@ public class Rays {
                     currentRank = rankSquare1 - stepRank;
                     currentFile = fileSquare1 - stepFile;
                     while (currentRank >= 0 && currentRank < 8 && currentFile >= 0 && currentFile < 8) {
-                        lineBitboard |= (1L << (currentRank * 8 + currentFile));
+                        lineBitboard |= (1L << ((currentRank << 3) + currentFile));
                         currentRank -= stepRank;
                         currentFile -= stepFile;
                     }
@@ -71,7 +73,7 @@ public class Rays {
                     currentRank = rankSquare1 + stepRank;
                     currentFile = fileSquare1 + stepFile;
                     while (currentRank != rankSquare2 || currentFile != fileSquare2) {
-                        betweenBitboard |= (1L << (currentRank * 8 + currentFile));
+                        betweenBitboard |= (1L << ((currentRank << 3) + currentFile));
                         currentRank += stepRank;
                         currentFile += stepFile;
                     }

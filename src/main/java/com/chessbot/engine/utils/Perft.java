@@ -50,10 +50,9 @@ public class Perft {
         Board board = new Board();
         FenParser.loadFen(ApplicationConfig.PERFT_FEN, board);
         Perft perft = new Perft(board);
-        int depth = 5;
 
         long startTime = System.nanoTime();
-        long nodesCount = perft.calculate(depth);
+        long nodesCount = perft.calculate(ApplicationConfig.PERFT_SEARCH_DEPTH);
         long endTime = System.nanoTime();
 
         double durationInSeconds = (endTime - startTime) / 1_000_000_000.0;

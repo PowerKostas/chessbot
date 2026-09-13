@@ -16,7 +16,7 @@ public class MatchRunner {
         Chessbot initialBlackBot = ApplicationConfig.INITIAL_BLACK_BOT;
         Chessbot initialWhiteBot = ApplicationConfig.INITIAL_WHITE_BOT;
 
-        int gamesToPlay = 100;
+        int gamesToPlay = 1000;
         int currentVersionBotWins = 0, previousVersionBotWins = 0, draws = 0;
 
         System.out.printf("%d-game match | %s vs %s%n%n", gamesToPlay, initialBlackBot.name(), initialWhiteBot.name());
@@ -63,7 +63,7 @@ public class MatchRunner {
                 board.makeMove(activeBot.chooseMove(board));
             }
 
-            System.out.printf("Game %d/%d done | %s: %d Wins | Draws: %d | %s: %d Wins%n",
+            System.out.printf("Game %d/%d done | %s: %d | Draws: %d | %s: %d%n",
                               game, gamesToPlay, initialBlackBot.name(), previousVersionBotWins, draws,
                               initialWhiteBot.name(), currentVersionBotWins);
         }

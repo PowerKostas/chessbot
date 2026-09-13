@@ -19,8 +19,8 @@ public final class Bishop {
 
 
     public static long allAttacks(int square) {
-        int rank = square / 8;
-        int file = square % 8;
+        int rank = square >> 3;
+        int file = square & 7;
 
         long diagonal = DIAGONAL_MASKS[rank - file + 7] & 0x007E7E7E7E7E7E00L;
         long antiDiagonal = ANTI_DIAGONAL_MASKS[rank + file] & 0x007E7E7E7E7E7E00L;
@@ -39,11 +39,11 @@ public final class Bishop {
             int tempSquare = square;
 
             while (true) {
-                if ((dir == 7 || dir == - 9) && (tempSquare % 8 == 0)) { // If trying to go left and on the A file
+                if ((dir == 7 || dir == - 9) && ((tempSquare & 7) == 0)) { // If trying to go left and on the A file
                     break;
                 }
 
-                else if ((dir == 9 || dir == -7) && (tempSquare % 8 == 7)) { // If trying to go right and on the H file
+                else if ((dir == 9 || dir == -7) && ((tempSquare & 7) == 7)) { // If trying to go right and on the H file
                     break;
                 }
 

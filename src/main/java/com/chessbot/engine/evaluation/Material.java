@@ -1,4 +1,4 @@
-package com.chessbot.engine.evaluation.utils;
+package com.chessbot.engine.evaluation;
 
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Piece;

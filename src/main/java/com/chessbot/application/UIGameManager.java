@@ -60,7 +60,14 @@ public class UIGameManager {
             System.out.printf("White: %s | Black: %s%n%n", whiteBot.name(), blackBot.name());
         }
 
-        checkTurn();
+        // Have to check if the loaded FEN is an already completed game
+        if (getGameResult()) {
+            triggerGameOverSequence();
+        }
+
+        else {
+            checkTurn();
+        }
     }
 
 

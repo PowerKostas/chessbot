@@ -221,10 +221,10 @@ public class Board {
             case Move.FLAG_DOUBLE_PAWN_PUSH:
                 movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
 
-                // Gets the squares that are left/right adjacent to the ending square, if the ending square isn't in the a/h file
+                // If the ending square isn't on the a/h file, get the squares that are left/right adjacent to the ending square
                 long adjacentSquaresMask = 0L;
-                if (endingSquare % 8 != 0) adjacentSquaresMask |= 1L << (endingSquare - 1);
-                if (endingSquare % 8 != 7) adjacentSquaresMask |= 1L << (endingSquare + 1);
+                if ((endingSquare & 7) != 0) adjacentSquaresMask |= 1L << (endingSquare - 1);
+                if ((endingSquare & 7) != 7) adjacentSquaresMask |= 1L << (endingSquare + 1);
 
                 // Only sets the enPassantSquareBitboard if an enemy pawn is adjacent to the ending square. This is done for
                 // Zobrist hashing in order to avoid 2 identical positions being unique just because in one of them a pawn pushed

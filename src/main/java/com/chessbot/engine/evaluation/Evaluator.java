@@ -2,7 +2,6 @@ package com.chessbot.engine.evaluation;
 
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Piece;
-import com.chessbot.engine.evaluation.utils.Material;
 
 // All evaluation values are measured in centipawns
 public final class Evaluator {

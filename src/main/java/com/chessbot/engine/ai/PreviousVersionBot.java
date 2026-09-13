@@ -8,6 +8,6 @@ public record PreviousVersionBot(String name) implements Chessbot {
     @Override
     public int chooseMove(Board board) {
         Searcher searcher = new Searcher(board, false);
-        return searcher.searchRoot(ApplicationConfig.TARGET_SEARCH_DEPTH);
+        return searcher.searchRoot(ApplicationConfig.AI_TARGET_SEARCH_DEPTH);
     }
 }

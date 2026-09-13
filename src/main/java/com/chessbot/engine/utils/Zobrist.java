@@ -8,8 +8,6 @@ import java.util.SplittableRandom;
 // needed. This way a unique random key can be generated for any position. For 64-bit keys, 2 keys might collide once every 4
 // billion positions, but that is acceptable. This class precomputes all the random longs for each needed piece of data
 public final class Zobrist {
-    private Zobrist() {}
-
     // 12 piece types * 64 squares
     public static final long[][] PIECES = new long[12][64];
 
@@ -22,6 +20,8 @@ public final class Zobrist {
     // 8 possible files for an en passant square. The specific square is not needed because a unique position can be identified
     // with just the file in combination with the turn
     public static final long[] EN_PASSANT_FILE = new long[8];
+
+    private Zobrist() {}
 
 
     static {

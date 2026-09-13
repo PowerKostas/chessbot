@@ -17,8 +17,8 @@ public final class Rook {
     // rank/file except of the edge square. We use these attacks for blocking patterns and a piece on the edge of the board doesn't
     // block anything (we treat all pieces as enemy pieces, for now). Also doesn't return the square that the rook is in
     public static long allAttacks(int square) {
-        int rank = square / 8;
-        int file = square % 8;
+        int rank = square >> 3;
+        int file = square & 7;
 
         long rankAttacks = RANK_MASKS[rank] & 0x7E7E7E7E7E7E7E7EL;
         long fileAttacks = FILE_MASKS[file] & 0x00FFFFFFFFFFFF00L;
@@ -36,11 +36,11 @@ public final class Rook {
             int tempSquare = square;
 
             while (true) {
-                if (dir == -1 && (tempSquare % 8 == 0)) { // If trying to go left and on the A file
+                if (dir == -1 && ((tempSquare & 7) == 0)) { // If trying to go left and on the A file
                     break;
                 }
 
-                else if (dir == 1 && (tempSquare % 8 == 7)) { // If trying to go right and on the H file
+                else if (dir == 1 && ((tempSquare & 7) == 7)) { // If trying to go right and on the H file
                     break;
                 }
 

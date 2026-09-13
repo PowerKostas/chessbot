@@ -98,7 +98,7 @@ public class MoveHandler {
 
         // Have to reverse back the bitboard square indexes because the JavaFX bitboard is reversed (starts from the top
         // left, instead of the bottom left)
-        startingSquareIndex = (7 - dragSource.getRow()) * 8 + dragSource.getCol();
+        startingSquareIndex = ((7 - dragSource.getRow()) << 3) + dragSource.getCol();
         selectPiece(dragSource, startingSquareIndex);
 
         // Initializes the square that the piece will get dropped on
@@ -156,7 +156,7 @@ public class MoveHandler {
         // Allows the piece to be dropped on any hovered square that contains a legal move for that piece
         if (event.getDragboard().hasString()) {
             Square hoveredSquare = (Square) event.getSource();
-            int hoveredSquareIndex = (7 - hoveredSquare.getRow()) * 8 + hoveredSquare.getCol();
+            int hoveredSquareIndex = ((7 - hoveredSquare.getRow()) << 3) + hoveredSquare.getCol();
 
             if (uiGameManager.getMoveList().searchLegalMove(startingSquareIndex, hoveredSquareIndex) != -1) {
                 event.acceptTransferModes(TransferMode.MOVE);
@@ -211,7 +211,7 @@ public class MoveHandler {
         if (event.getTransferMode() == TransferMode.MOVE) {
             dragSource.setCursor(Cursor.DEFAULT);
 
-            int endingSquareIndex = (7 - endingSquare.getRow()) * 8 + endingSquare.getCol();
+            int endingSquareIndex = ((7 - endingSquare.getRow()) << 3) + endingSquare.getCol();
             int pieceType = board.getPieceTypeAtSquare(startingSquareIndex);
 
             // If the dragged piece is a pawn and its ending square is in the final rank, it's a promotion and handled separately
@@ -249,7 +249,7 @@ public class MoveHandler {
         if (visualBoard.getIsBoardLocked()) return;
 
         Square clickedSquare = (Square) event.getSource();
-        int clickedSquareIndex = (7 - clickedSquare.getRow()) * 8 + clickedSquare.getCol();
+        int clickedSquareIndex = ((7 - clickedSquare.getRow()) << 3) + clickedSquare.getCol();
 
         // If no piece is currently selected (user just clicked a square) and the square has a piece, select the piece
         if (startingSquare == null && clickedSquare.getCurrentPiece() != null) {
@@ -270,7 +270,7 @@ public class MoveHandler {
                 // If the clicked piece is a pawn, its ending square is in the final rank and the move the user is trying to
                 // do is legal, it's a promotion and handled separately
                 if (pieceType == Piece.PAWN &&
-                    (clickedSquareIndex <= 7 || clickedSquareIndex >= 56) &&
+                        (clickedSquareIndex <= 7 || clickedSquareIndex >= 56) &&
                         uiGameManager.getMoveList().searchLegalMove(startingSquareIndex, clickedSquareIndex) != -1)
                 {
                     // Hides the pawn while the promotion dialog is open

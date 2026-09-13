@@ -3,11 +3,13 @@ package com.chessbot.engine.core;
 // Creates one of the int objects that occupy Board.legalMoves. The first 6 bits (2 ^ 6 = 64) of the int object are reserved for
 // the starting square, the next 6 for the ending square and the next 4 for the moveFlag (quiet, double pawn push, ...). In the
 // 4 bits that represent moveFlag, the 4th bit indicates a promotion, the 3rd bit indicates a capture and the 2nd and 1st bits
-// are special bits
+// are special bits. The other 16 bits are reserved for the score given to the move by the search function in move ordering. The
+// score will probably never need the full 16 bits, but the rest of the bits are not needed anywhere else
 public final class Move {
     private static final int STARTING_SQUARE_MASK = 0b111111;
     private static final int ENDING_SQUARE_MASK = 0b111111 << 6;
     private static final int FLAG_MASK = 0b1111 << 12;
+    private static final int SCORE_MASK = 0b1111111111111111 << 16;
 
     public static final int FLAG_QUIET = 0;
     public static final int FLAG_DOUBLE_PAWN_PUSH = 1;
@@ -27,6 +29,7 @@ public final class Move {
     private Move() {}
 
 
+    // The score is not included because it will just get added later on
     public static int createMove(int startingSquare, int endingSquare, int moveFlag) {
         return startingSquare | (endingSquare << 6) | (moveFlag << 12);
     }
@@ -39,4 +42,6 @@ public final class Move {
     }
 
     public static int getFlag(int move) { return (move & FLAG_MASK) >>> 12; }
+
+    public static int getScore(int move) { return (move & SCORE_MASK) >>> 16; }
 }

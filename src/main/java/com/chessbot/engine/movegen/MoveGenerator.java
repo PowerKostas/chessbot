@@ -177,7 +177,7 @@ public final class MoveGenerator {
                 boolean epPinned = false;
 
                 // If the king is on the same rank as the en passant pawns
-                if (kingSquare / 8 == startingSquare / 8) {
+                if (kingSquare >> 3 == startingSquare >> 3) {
                     // Creates a temporary all pieces bitboard without the 2 en passant pawns. Gets the rook attacks from the
                     // king, one of them is in the now en passant pawn empty rank. If an enemy rook or queen is found there, enable
                     // the flag that disallows en passant captures

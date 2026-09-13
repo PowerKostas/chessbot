@@ -38,7 +38,7 @@ public final class FenParser {
             if (Character.isLetter(letter)) {
                 int color = Character.isUpperCase(letter) ? Piece.WHITE : Piece.BLACK;
                 int pieceType = getPieceTypeFromLetter(letter);
-                board.addPiece(color, pieceType, row * 8 + col);
+                board.addPiece(color, pieceType, (row << 3) + col);
 
                 col += 1;
             }
@@ -86,7 +86,7 @@ public final class FenParser {
         if (parts.length > 3 && !parts[3].equals("-")) {
             int epCol = parts[3].charAt(0) - 'a';
             int epRow = parts[3].charAt(1) - '1';
-            board.setEnPassantSquareBitboard(1L << (epRow * 8 + epCol));
+            board.setEnPassantSquareBitboard(1L << ((epRow << 3) + epCol));
         }
 
         else {

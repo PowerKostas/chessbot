@@ -78,7 +78,7 @@ public class VisualBoard extends StackPane {
             if (event.getButton() == MouseButton.PRIMARY) {
                 for (int row = 0; row < 8; row += 1) {
                     for (int col = 0; col < 8; col += 1) {
-                        Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
+                        Square square = (Square) boardGrid.getChildren().get((row << 3) + col);
                         if (square.getIsRightClicked()) {
                             square.setIsRightClicked(false);
                         }
@@ -91,9 +91,9 @@ public class VisualBoard extends StackPane {
 
     // Gets a Square object from the GridPane using a bitboard index
     public Square getSquare(int squareIndex) {
-        int targetRow = 7 - (squareIndex / 8);
-        int targetCol = squareIndex % 8;
-        return (Square) boardGrid.getChildren().get(targetRow * 8 + targetCol);
+        int targetRow = 7 - (squareIndex >> 3);
+        int targetCol = squareIndex & 7;
+        return (Square) boardGrid.getChildren().get((targetRow << 3) + targetCol);
     }
 
     public int getBoardPerspective() { return boardPerspective; }
@@ -113,7 +113,7 @@ public class VisualBoard extends StackPane {
     public void attachMoveHandler(MoveHandler moveHandler) {
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
-                Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
+                Square square = (Square) boardGrid.getChildren().get((row << 3) + col);
 
                 square.setOnDragDetected(moveHandler::dragDetected);
                 square.setOnDragOver(moveHandler::dragOver);
@@ -160,7 +160,8 @@ public class VisualBoard extends StackPane {
 
 
     public void highlightPreviousMove(int startingSquareIndex, int endingSquareIndex) {
-        // Resets the colors of the previous move squares
+        // Resets the colors of the previous move squares. In the first turn the previous starting/ending squares are null, have
+        // to check against that
         if (previousStartingSquare != null && previousEndingSquare != null) {
             previousStartingSquare.setIsPreviousMove(false);
             previousEndingSquare.setIsPreviousMove(false);
@@ -178,10 +179,13 @@ public class VisualBoard extends StackPane {
 
 
     public void unhighlightPreviousMove() {
-        previousStartingSquare.setIsPreviousMove(false);
-        previousEndingSquare.setIsPreviousMove(false);
-        previousStartingSquare = null;
-        previousEndingSquare = null;
+        // If the loaded FEN is an already completed game, the previous starting/ending squares are null, have to check against that
+        if (previousStartingSquare != null && previousEndingSquare != null) {
+            previousStartingSquare.setIsPreviousMove(false);
+            previousEndingSquare.setIsPreviousMove(false);
+            previousStartingSquare = null;
+            previousEndingSquare = null;
+        }
     }
 
 
@@ -189,7 +193,7 @@ public class VisualBoard extends StackPane {
     public void showLegalHints(long pieceLegalMovesBitboard) {
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
-                int squareIndex = (7 - row) * 8 + col;
+                int squareIndex = ((7 - row) << 3) + col;
 
                 // If the pieceLegalMovesBitboard bit is 1 at this square index
                 boolean isLegal = (pieceLegalMovesBitboard & (1L << squareIndex)) != 0;
@@ -197,7 +201,7 @@ public class VisualBoard extends StackPane {
                 // Updates the square's legal hint if there is a legal move/capture there. If there is not a piece, it's a
                 // normal move, if there is, it's a capture
                 if (isLegal) {
-                    Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
+                    Square square = (Square) boardGrid.getChildren().get((row << 3) + col);
                     boolean hasPiece = this.board.getPieceColorAtSquare(squareIndex) != -1;
                     square.toggleLegalHint(!hasPiece, hasPiece);
                 }
@@ -209,7 +213,7 @@ public class VisualBoard extends StackPane {
     public void clearLegalHints() {
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
-                Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
+                Square square = (Square) boardGrid.getChildren().get((row << 3) + col);
                 square.toggleLegalHint(false, false);
             }
         }
@@ -221,10 +225,10 @@ public class VisualBoard extends StackPane {
         // For every square
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
-                int squareIndex = (7 - row) * 8 + col;
+                int squareIndex = ((7 - row) << 3) + col;
                 int pieceColor = board.getPieceColorAtSquare(squareIndex);
                 int pieceType = board.getPieceTypeAtSquare(squareIndex);
-                Square square = (Square) boardGrid.getChildren().get(row * 8 + col);
+                Square square = (Square) boardGrid.getChildren().get((row << 3) + col);
                 VisualPiece visualPiece = square.getCurrentPiece();
 
                 // If the engine square is empty and the visual square isn't, clear the visual square
