@@ -22,8 +22,8 @@ public final class PromotionDialog {
         // Clears the legal hints before showing the dialog
         visualBoard.clearLegalHints();
 
-        // Creates an overlay that spans across the whole board to capture outside clicks. It's the deepest layer, if the user
-        // clicks it, not the top-level dialog container, close the promotion dialog
+        // Creates an overlay that spans across the whole board to capture outside clicks. It's the deepest layer, if the
+        // user clicks it, not the top-level dialog container, close the promotion dialog
         StackPane overlay = new StackPane();
         overlay.setOnMousePressed(e -> {
             if (e.getTarget() == overlay) {

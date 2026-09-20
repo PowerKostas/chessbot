@@ -1,10 +1,10 @@
 package com.chessbot.engine.movegen.utils;
 
 public final class Rays {
-    // A bitboard of an orthogonal (rook attacks) or diagonal (bishop attacks) line passing through 2 squares for every single
-    // combination of 2 squares in the board. For example, if the indexes c3 and f6 are given, the line includes the squares a1, b2,
-    // c3, d4, e5, f6, g7 and h8. Being given c3 and f6 is the same as being given f6 and c3, but it's better to not compress the
-    // table in order to avoid an if check in the engine
+    // A bitboard of an orthogonal (rook attacks) or diagonal (bishop attacks) line passing through 2 squares for every
+    // single combination of 2 squares in the board. For example, if the indexes c3 and f6 are given, the line includes
+    // the squares a1, b2, c3, d4, e5, f6, g7 and h8. Being given c3 and f6 is the same as being given f6 and c3, but it's
+    // better to not compress the table in order to avoid an if check in the engine
     public static final long[] LINE = new long[4096]; // 64x64
 
     // Works in the same way as LINE, but it's a bitboard of the squares strictly between the 2 given squares
@@ -30,8 +30,8 @@ public final class Rays {
                 int deltaRank = rankSquare2 - rankSquare1;
                 int deltaFile = fileSquare2 - fileSquare1;
 
-                // Only orthogonal or diagonal combinations of squares are calculated. 2 squares are orthogonal if they are
-                // in the same rank or file and diagonal if the horizontal distance between them equals the vertical distance
+                // Only orthogonal or diagonal combinations of squares are calculated. 2 squares are orthogonal if they
+                // are in the same rank or file and diagonal if the horizontal distance between them equals the vertical distance
                 boolean isOrthogonal = (deltaRank == 0 || deltaFile == 0);
                 boolean isDiagonal = (Math.abs(deltaRank) == Math.abs(deltaFile));
                 if (isOrthogonal || isDiagonal) {
@@ -41,8 +41,8 @@ public final class Rays {
                     int stepRank = Integer.signum(deltaRank);
                     int stepFile = Integer.signum(deltaFile);
 
-                    // Calculates the LINE bitboard for this combination, starts from square1 and extends positively using stepRank
-                    // and stepFile
+                    // Calculates the LINE bitboard for this combination, starts from square1 and extends positively using
+                    // stepRank and stepFile
                     long lineBitboard = 0L;
                     int currentRank = rankSquare1;
                     int currentFile = fileSquare1;
@@ -52,8 +52,8 @@ public final class Rays {
                         currentFile += stepFile;
                     }
 
-                    // Same as above, starts from the square before square1, because square1 has already been included, and extends
-                    // negatively
+                    // Same as above, starts from the square before square1, because square1 has already been included,
+                    // and extends negatively
                     currentRank = rankSquare1 - stepRank;
                     currentFile = fileSquare1 - stepFile;
                     while (currentRank >= 0 && currentRank < 8 && currentFile >= 0 && currentFile < 8) {
@@ -62,13 +62,13 @@ public final class Rays {
                         currentFile -= stepFile;
                     }
 
-                    // Adds the lineBitboard to the array for this combination. The LINE array is flattened for efficiency, an index
-                    // is used to access it, (square1 << 6) | square2 is the same as (square1 * 64) + square2
+                    // Adds the lineBitboard to the array for this combination. The LINE array is flattened for efficiency,
+                    // an index is used to access it, (square1 << 6) | square2 is the same as (square1 * 64) + square2
                     int index = (square1 << 6) | square2;
                     LINE[index] = lineBitboard;
 
-                    // Calculates the BETWEEN bitboard for this combination, starts from the square after square1 and extends to
-                    // the square before square2
+                    // Calculates the BETWEEN bitboard for this combination, starts from the square after square1 and extends
+                    // to the square before square2
                     long betweenBitboard = 0L;
                     currentRank = rankSquare1 + stepRank;
                     currentFile = fileSquare1 + stepFile;

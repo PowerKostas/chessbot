@@ -51,8 +51,10 @@ public final class Pawn {
         long epAttackWest, epAttackEast;
 
         if (isWhite) {
-            // 1. If the piece is not on the A file and there is an en passant target up and left 1 square, it can move there
-            // 2. If the piece is not on the H file and there is an en passant target up and right 1 square, it can move there
+            // 1. If the piece is not on the A file and there is an en passant target up and left 1 square, it can move
+            // there
+            // 2. If the piece is not on the H file and there is an en passant target up and right 1 square, it can move
+            // there
             epAttackWest = ((pieceBitboard & ~0x0101010101010101L) << 7) & enPassantSquareBitboard;
             epAttackEast = ((pieceBitboard & ~0x8080808080808080L) << 9) & enPassantSquareBitboard;
 
@@ -60,8 +62,10 @@ public final class Pawn {
         }
 
         else {
-            // 1. If the piece is not on the H file and there is an en passant target up and left 1 square, it can move there
-            // 2. If the piece is not on the A file and there is an en passant target up and right 1 square, it can move there
+            // 1. If the piece is not on the H file and there is an en passant target up and left 1 square, it can move
+            // there
+            // 2. If the piece is not on the A file and there is an en passant target up and right 1 square, it can move
+            // there
             epAttackWest = ((pieceBitboard & ~0x0101010101010101L) >>> 9) & enPassantSquareBitboard;
             epAttackEast = ((pieceBitboard & ~0x8080808080808080L) >>> 7) & enPassantSquareBitboard;
         }

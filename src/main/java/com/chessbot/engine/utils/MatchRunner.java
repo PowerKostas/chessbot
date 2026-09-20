@@ -8,8 +8,8 @@ import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.engine.movegen.MoveList;
 import com.chessbot.engine.movegen.utils.Checks;
 
-// Runs a set amount of games between 2 versions of the engine in order to check if a change in the evaluation/search function had
-// positive or negative impact
+// Runs a set amount of games between 2 versions of the engine in order to check if a change in the evaluation/search function
+// had positive or negative impact
 public class MatchRunner {
     static void main() {
         MoveList moveList = new MoveList();
@@ -37,8 +37,8 @@ public class MatchRunner {
                 boolean inCheck = Checks.calculateSquares(board, board.getTurn()) != 0L;
 
                 if (ResultDetector.isCheckmate(moveList, inCheck)) {
-                    // Because the turn changes after every move, if there is checkmate, and it's black's turn, it means that
-                    // white is the one that delivered the checkmate
+                    // Because the turn changes after every move, if there is checkmate, and it's black's turn, it means
+                    // that white is the one that delivered the checkmate
                     boolean whiteWon = (board.getTurn() == Piece.BLACK);
 
                     if (whiteWon == isEvenGame) {

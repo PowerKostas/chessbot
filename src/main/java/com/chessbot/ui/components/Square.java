@@ -37,11 +37,11 @@ public class Square extends StackPane {
         legalMoveHint.setVisible(false);
         this.getChildren().add(legalMoveHint);
 
-        // Creates a legal capture indication. Start with a transparent circle, and because the circle's corners and edges are
-        // further away than the circle's radius, it fills them with the appropriate color. center 50% 50% = Puts the circle in
-        // the middle of the square, radius 45% = The radius of the circle, transparent 98% = Makes the gradient transparent
-        // until 98% of the gradient's radius, #00000033 100% = Makes the outer edger of the gradient's radius #000000 with 0.2
-        // transparency, just like legalMoveHint. It's invisible to start with
+        // Creates a legal capture indication. Start with a transparent circle, and because the circle's corners and edges
+        // are further away than the circle's radius, it fills them with the appropriate color. center 50% 50% = Puts the
+        // circle in the middle of the square, radius 45% = The radius of the circle, transparent 98% = Makes the gradient
+        // transparent until 98% of the gradient's radius, #00000033 100% = Makes the outer edger of the gradient's radius
+        // #000000 with 0.2 transparency, just like legalMoveHint. It's invisible to start with
         legalCaptureHint = new Region();
         legalCaptureHint.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 45%, transparent 98%, #00000033 100%);");
         legalCaptureHint.setMouseTransparent(true);
@@ -146,8 +146,8 @@ public class Square extends StackPane {
             letterCoordinates = null;
         }
 
-        // If the player is white, put the numbers at the left column, if the player is black (board will be reversed) put the
-        // numbers in the right column
+        // If the player is white, put the numbers at the left column, if the player is black (board will be reversed) put
+        // the numbers in the right column
         if ((boardPerspective == Piece.WHITE && col == 0) || (boardPerspective == Piece.BLACK && col == 7)) {
             numberCoordinates = new Label();
             numberCoordinates.setTextFill((row + col) % 2 == 0 ? Color.web("#739552") : Color.web("#ebecd0"));
@@ -170,8 +170,8 @@ public class Square extends StackPane {
             this.getChildren().add(numberCoordinates);
         }
 
-        // If the player is white, put the letters at the bottom row, if the player is black (board will be reversed) put the
-        // letters in the top row
+        // If the player is white, put the letters at the bottom row, if the player is black (board will be reversed) put
+        // the letters in the top row
         if ((boardPerspective == Piece.WHITE && row == 7) || (boardPerspective == Piece.BLACK && row == 0)) {
             letterCoordinates = new Label();
             letterCoordinates.setTextFill((row + col) % 2 == 0 ? Color.web("#739552") : Color.web("#ebecd0"));

@@ -34,7 +34,8 @@ public final class Pins {
                 // Gets a bitboard of all the squares between the king and the checker
                 long rayBitboard = Rays.BETWEEN[(kingSquare << 6) | sliderSquare];
 
-                // If exactly one piece is in the ray, and it's a friendly piece, it's pinned. Add the pinned piece to the bitboard
+                // If exactly one piece is in the ray, and it's a friendly piece, it's pinned. Add the pinned piece to the
+                // bitboard
                 long blockers = rayBitboard & allPiecesBitboard;
                 if (Long.bitCount(blockers) == 1) {
                     if ((blockers & friendlyPiecesBitboard) != 0) {
@@ -46,7 +47,8 @@ public final class Pins {
             enemyRooksQueens ^= (1L << sliderSquare);
         }
 
-        // Finds all the pieces pinned by enemy bishops and queens (just the bishop attacks), same process as the rooks and queens
+        // Finds all the pieces pinned by enemy bishops and queens (just the bishop attacks), same process as the rooks
+        // and queens
         while (enemyBishopsQueens != 0L) {
             int sliderSquare = Long.numberOfTrailingZeros(enemyBishopsQueens);
 

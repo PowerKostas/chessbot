@@ -9,7 +9,6 @@ import com.chessbot.ui.components.VisualBoard;
 import com.chessbot.ui.components.VisualPiece;
 import com.chessbot.ui.utils.SoundManager;
 import javafx.geometry.Bounds;
-import javafx.scene.Cursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
@@ -70,7 +69,8 @@ public class MoveHandler {
                 cancelSelection();
             }
 
-            // Else, make the dragged/clicked piece visible again, cancel the selection and remove the target square's selected color
+            // Else, make the dragged/clicked piece visible again, cancel the selection and remove the target square's selected
+            // color
             else {
                 draggedPiece.setVisible(true);
                 cancelSelection();
@@ -83,6 +83,9 @@ public class MoveHandler {
     // Drag Move
     // Triggers when a drag operation starts
     public void dragDetected(MouseEvent event) {
+        // Only left drags are accepted
+        if (event.getButton() != MouseButton.PRIMARY) return;
+
         // Blocks human input if it's the AI's turn
         if (visualBoard.getIsBoardLocked()) return;
 
@@ -173,9 +176,9 @@ public class MoveHandler {
         Square hoveredSquare = (Square) event.getSource();
         hoveredSquare.applySquareStyle(hoveredSquare.getStyle() + "; -fx-border-color: #f8f8ef; -fx-border-width: 4; -fx-padding: -4;", hoveredSquare.getStyle() + "; -fx-border-color: #cedac3; -fx-border-width: 4; -fx-padding: -4;");
 
-        // Ending square needs the square that the piece is currently hovering in order to play, if needed, the illegal sound, in
-        // dragDone. The code will never go to dragDropped when playing an illegal move which is where endingSquare normally
-        // gets its value
+        // Ending square needs the square that the piece is currently hovering in order to play, if needed, the illegal
+        // sound, in dragDone. The code will never go to dragDropped when playing an illegal move which is where endingSquare
+        // normally gets its value
         endingSquare = hoveredSquare;
 
         event.consume();
@@ -209,8 +212,6 @@ public class MoveHandler {
 
         // If the drag was successful
         if (event.getTransferMode() == TransferMode.MOVE) {
-            dragSource.setCursor(Cursor.DEFAULT);
-
             int endingSquareIndex = ((7 - endingSquare.getRow()) << 3) + endingSquare.getCol();
             int pieceType = board.getPieceTypeAtSquare(startingSquareIndex);
 
@@ -245,7 +246,9 @@ public class MoveHandler {
     // Click Move
     // Triggers when a square is clicked
     public void mouseReleased(MouseEvent event) {
-        if (event.getButton() != MouseButton.PRIMARY) return; // Only left clicks are accepted
+        // Only left clicks are accepted
+        if (event.getButton() != MouseButton.PRIMARY) return;
+
         if (visualBoard.getIsBoardLocked()) return;
 
         Square clickedSquare = (Square) event.getSource();
@@ -267,12 +270,12 @@ public class MoveHandler {
             else {
                 int pieceType = board.getPieceTypeAtSquare(startingSquareIndex);
 
-                // If the clicked piece is a pawn, its ending square is in the final rank and the move the user is trying to
-                // do is legal, it's a promotion and handled separately
+                // If the clicked piece is a pawn, its ending square is in the final rank and the move the user is trying
+                // to do is legal, it's a promotion and handled separately
                 if (pieceType == Piece.PAWN &&
-                        (clickedSquareIndex <= 7 || clickedSquareIndex >= 56) &&
-                        uiGameManager.getMoveList().searchLegalMove(startingSquareIndex, clickedSquareIndex) != -1)
-                {
+                    (clickedSquareIndex <= 7 || clickedSquareIndex >= 56) &&
+                    uiGameManager.getMoveList().searchLegalMove(startingSquareIndex, clickedSquareIndex) != -1
+                ) {
                     // Hides the pawn while the promotion dialog is open
                     startingSquare.getCurrentPiece().setVisible(false);
 
@@ -291,8 +294,8 @@ public class MoveHandler {
                     }
 
                     else {
-                        // If the user clicked a square with a piece on it, cancel the current selection and switch the selection
-                        // to the new clicked piece
+                        // If the user clicked a square with a piece on it, cancel the current selection and switch the
+                        // selection to the new clicked piece
                         if (clickedSquare.getCurrentPiece() != null) {
                             cancelSelection();
                             selectPiece(clickedSquare, clickedSquareIndex);

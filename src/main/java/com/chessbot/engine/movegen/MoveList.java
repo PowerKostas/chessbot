@@ -2,12 +2,12 @@ package com.chessbot.engine.movegen;
 
 import com.chessbot.engine.core.Move;
 
-// A container of legal moves for a specific board state. A global array of legal moves would get overwritten at every new node
-// in a tree search. To avoid this and ensure zero object allocations, instances of MoveList are pre-allocated per search
-// depth (or held persistently by GameManager, MatchRunner, ...)
+// A container of legal moves for a specific board state. A global array of legal moves would get overwritten at every new
+// node in a tree search. To avoid this and ensure zero object allocations, instances of MoveList are pre-allocated per
+// search depth (or held persistently by GameManager, MatchRunner, ...)
 public class MoveList {
-    // Holds the legal moves for the current object. 256 is a safe max limit (the highest number of possible legal moves in any
-    // position is 218). The int objects hold info about the legal moves, more information in the Move class
+    // Holds the legal moves for the current object. 256 is a safe max limit (the highest number of possible legal moves
+    // in any position is 218). The int objects hold info about the legal moves, more information in the Move class
     public final int[] moves = new int[256];
 
     // Keeps track of how many legal moves are in the array
@@ -26,8 +26,8 @@ public class MoveList {
     }
 
 
-    // Loops through all the legal moves to find a move whose starting and ending squares match the given starting and
-    // ending squares
+    // Loops through all the legal moves to find a move whose starting and ending squares match the given starting and ending
+    // squares
     public int searchLegalMove(int startingSquare, int endingSquare) {
         for (int i = 0; i < count; i += 1) {
             int legalMove = moves[i];
@@ -40,8 +40,8 @@ public class MoveList {
     }
 
 
-    // Loops through all the legal moves to find moves whose starting square matches the given starting square, used to find
-    // all the piece's legal moves
+    // Loops through all the legal moves to find moves whose starting square matches the given starting square, used to
+    // find all the piece's legal moves
     public long searchPieceLegalMoves(int startingSquare) {
         long pieceLegalMovesBitboard = 0L;
 

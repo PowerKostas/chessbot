@@ -15,8 +15,8 @@ import javafx.scene.layout.StackPane;
 public class VisualBoard extends StackPane {
     private Board board;
 
-    // VisualBoard extends StackPane in order to center the promotion dialog inside the board, the actual board grid is just
-    // a child inside the StackPane
+    // VisualBoard extends StackPane in order to center the promotion dialog inside the board, the actual board grid is
+    // just a child inside the StackPane
     private final GridPane boardGrid;
 
     // 0 = White's pieces first, 1 = Black's pieces first
@@ -107,9 +107,9 @@ public class VisualBoard extends StackPane {
     public void setBoard(Board board) { this.board = board; }
 
 
-    // Makes every square draggable/clickable, more info on the specific classes. The reason this is an external function, and
-    // it's not inside the constructor is because MoveHandler's constructor needs a callback and VisualBoard shouldn't know
-    // about that
+    // Makes every square draggable/clickable, more info on the specific classes. The reason this is an external function,
+    // and it's not inside the constructor is because MoveHandler's constructor needs a callback and VisualBoard shouldn't
+    // know about that
     public void attachMoveHandler(MoveHandler moveHandler) {
         for (int row = 0; row < 8; row += 1) {
             for (int col = 0; col < 8; col += 1) {
@@ -134,8 +134,8 @@ public class VisualBoard extends StackPane {
     }
 
 
-    // In the engine board the first square is a1, in the visual board the first square is h8. If the player is black the first
-    // squares remain the same, but the visual board, the square coordinate labels and the visual pieces are flipped
+    // In the engine board the first square is a1, in the visual board the first square is h8. If the player is black the
+    // first squares remain the same, but the visual board, the square coordinate labels and the visual pieces are flipped
     public void flip(int boardPerspective) {
         this.boardPerspective = boardPerspective;
 
@@ -160,8 +160,8 @@ public class VisualBoard extends StackPane {
 
 
     public void highlightPreviousMove(int startingSquareIndex, int endingSquareIndex) {
-        // Resets the colors of the previous move squares. In the first turn the previous starting/ending squares are null, have
-        // to check against that
+        // Resets the colors of the previous move squares. In the first turn the previous starting/ending squares are null,
+        // have to check against that
         if (previousStartingSquare != null && previousEndingSquare != null) {
             previousStartingSquare.setIsPreviousMove(false);
             previousEndingSquare.setIsPreviousMove(false);
@@ -179,7 +179,8 @@ public class VisualBoard extends StackPane {
 
 
     public void unhighlightPreviousMove() {
-        // If the loaded FEN is an already completed game, the previous starting/ending squares are null, have to check against that
+        // If the loaded FEN is an already completed game, the previous starting/ending squares are null, have to check
+        // against that
         if (previousStartingSquare != null && previousEndingSquare != null) {
             previousStartingSquare.setIsPreviousMove(false);
             previousEndingSquare.setIsPreviousMove(false);
@@ -198,8 +199,8 @@ public class VisualBoard extends StackPane {
                 // If the pieceLegalMovesBitboard bit is 1 at this square index
                 boolean isLegal = (pieceLegalMovesBitboard & (1L << squareIndex)) != 0;
 
-                // Updates the square's legal hint if there is a legal move/capture there. If there is not a piece, it's a
-                // normal move, if there is, it's a capture
+                // Updates the square's legal hint if there is a legal move/capture there. If there is not a piece, it's
+                // a normal move, if there is, it's a capture
                 if (isLegal) {
                     Square square = (Square) boardGrid.getChildren().get((row << 3) + col);
                     boolean hasPiece = this.board.getPieceColorAtSquare(squareIndex) != -1;
@@ -239,8 +240,8 @@ public class VisualBoard extends StackPane {
                     }
                 }
 
-                // If the engine square isn't empty and the visual square is or has different data, set the piece from the engine
-                // to the visual square
+                // If the engine square isn't empty and the visual square is or has different data, set the piece from the
+                // engine to the visual square
                 else {
                     boolean needsUpdate = visualPiece == null || visualPiece.getColor() != pieceColor || visualPiece.getType() != pieceType;
                     if (needsUpdate) {

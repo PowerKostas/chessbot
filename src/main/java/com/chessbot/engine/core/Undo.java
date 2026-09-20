@@ -1,10 +1,10 @@
 package com.chessbot.engine.core;
 
-// Creates an int object that holds the data that can't be found again after a move has been made. It's used in the search algorithm
-// in order to unmake moves. Bits 0-2 = Captured piece type (pawn, bishop, knight, rook, queen, king, none). Bits 3-9 = En passant
-// square index, holds values up to 127, 0-63 are the squares of a board and the 64th bit is for when there is no en passant
-// square. Bits 10-13 = Castling rights, more information in Board. Bits 14-20 = Half move clock, the maximum number of half
-// moves allowed is 100, this holds values up to 127
+// Creates an int object that holds the data that can't be found again after a move has been made. It's used in the search
+// algorithm in order to unmake moves. Bits 0-2 = Captured piece type (pawn, bishop, knight, rook, queen, king, none). Bits
+// 3-9 = En passant square index, holds values up to 127, 0-63 are the squares of a board and the 64th bit is for when there
+// is no en passant square. Bits 10-13 = Castling rights, more information in Board. Bits 14-20 = Half move clock, the maximum
+// number of half moves allowed is 100, this holds values up to 127
 public final class Undo {
     private static final int CAPTURED_PIECE_TYPE_MASK = 0b111;
     private static final int EN_PASSANT_SQUARE_INDEX_MASK = 0b1111111 << 3;

@@ -11,9 +11,9 @@ public final class Checks {
     private Checks() {}
 
 
-    // Calculates all the squares with enemy checking pieces. It starts from the friendly king and finds the squares that a
-    // pawn, for example, would attack from there. If an enemy pawn is actually there, it adds it to the checkers variable. King
-    // calculations are not included because a king can't put another king in check
+    // Calculates all the squares with enemy checking pieces. It starts from the friendly king and finds the squares that
+    // a pawn, for example, would attack from there. If an enemy pawn is actually there, it adds it to the checkers variable.
+    // King calculations are not included because a king can't put another king in check
     public static long calculateSquares(Board board, int friendlyColor) {
         long checkers = 0L;
         int enemyColor = friendlyColor ^ 1;
@@ -32,14 +32,14 @@ public final class Checks {
     }
 
 
-    // Other than moving the king away, rook, bishop and queen checks can be stopped by blocking and capturing, pawn and knight
-    // checks can only be stopped by capturing. This function calculates all the squares that stop the check
+    // Other than moving the king away, rook, bishop and queen checks can be stopped by blocking and capturing, pawn and
+    // knight checks can only be stopped by capturing. This function calculates all the squares that stop the check
     public static long generateEvadeMask(Board board, int friendlyColor, int checkerSquare) {
         long kingBitboard = board.getBitboard(friendlyColor, Piece.KING);
         int kingSquare = Long.numberOfTrailingZeros(kingBitboard);
 
-        // Returns a bitboard of all the squares between the king and the checker. The checker's square is also part of the
-        // evadeMask because you can always just capture it
+        // Returns a bitboard of all the squares between the king and the checker. The checker's square is also part of
+        // the evadeMask because you can always just capture it
         return (1L << checkerSquare) | Rays.BETWEEN[(kingSquare << 6) | checkerSquare];
     }
 }

@@ -39,19 +39,23 @@ public final class Bishop {
             int tempSquare = square;
 
             while (true) {
-                if ((dir == 7 || dir == - 9) && ((tempSquare & 7) == 0)) { // If trying to go left and on the A file
+                // If trying to go left and on the A file
+                if ((dir == 7 || dir == - 9) && ((tempSquare & 7) == 0)) {
                     break;
                 }
 
-                else if ((dir == 9 || dir == -7) && ((tempSquare & 7) == 7)) { // If trying to go right and on the H file
+                // If trying to go right and on the H file
+                else if ((dir == 9 || dir == -7) && ((tempSquare & 7) == 7)) {
                     break;
                 }
 
-                else if ((dir == -7 || dir == -9) && tempSquare <= 7) { // If trying to go down and on the 1st rank
+                // If trying to go down and on the 1st rank
+                else if ((dir == -7 || dir == -9) && tempSquare <= 7) {
                     break;
                 }
 
-                else if ((dir == 7 || dir == 9) && tempSquare >= 56) { // If trying to go up and on the 8th rank
+                // If trying to go up and on the 8th rank
+                else if ((dir == 7 || dir == 9) && tempSquare >= 56) {
                     break;
                 }
 

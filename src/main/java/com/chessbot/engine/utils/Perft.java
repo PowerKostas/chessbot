@@ -22,9 +22,9 @@ public class Perft {
     }
 
 
-    // Perft debug function with bulk-counting. Walks the move generation tree, without generating moves for leaf nodes or caring
-    // about draws by the 50-move rule, insufficient material or threefold repetition. The point is to count the number of nodes
-    // in a given position in order to test the speed and accuracy of the move generation function
+    // Perft debug function with bulk-counting. Walks the move generation tree, without generating moves for leaf nodes
+    // or caring about draws by the 50-move rule, insufficient material or threefold repetition. The point is to count the
+    // number of nodes in a given position in order to test the speed and accuracy of the move generation function
     public long calculate(int depth) {
         long nodesCount = 0;
 

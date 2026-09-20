@@ -15,8 +15,8 @@ import javafx.application.Platform;
 import javafx.util.Duration;
 
 // This class exists to centralize the move execution logic for UI-based games. It ensures that all the necessary game actions
-// are performed here regardless of if the input is coming from the UI, the engine or anything else. This way there is no need to
-// write extra code on any specific input class
+// are performed here regardless of if the input is coming from the UI, the engine or anything else. This way there is no
+// need to write extra code on any specific input class
 public class UIGameManager {
     private Board board;
     private final VisualBoard visualBoard;
@@ -71,8 +71,8 @@ public class UIGameManager {
     }
 
 
-    // If it's the engine's turn, lock the board so humans can't move pieces and then play the chosen move of the engine. If it's the
-    // human's turn, unlock the board for input
+    // If it's the engine's turn, lock the board so humans can't move pieces and then play the chosen move of the engine.
+    // If it's the human's turn, unlock the board for input
     private void checkTurn() {
         int currentTurn = board.getTurn();
         int currentPlayerType = (currentTurn == Piece.WHITE) ? whitePlayerType : blackPlayerType;
@@ -81,8 +81,8 @@ public class UIGameManager {
             visualBoard.setIsBoardLocked(true);
             Chessbot currentBot = (currentTurn == Piece.WHITE) ? whiteBot : blackBot;
 
-            // Adds a small delay before the engine moves to make the game seem natural. Runs the search on a background thread
-            // in order for the window to not freeze when the engine is thinking
+            // Adds a small delay before the engine moves to make the game seem natural. Runs the search on a background
+            // thread in order for the window to not freeze when the engine is thinking
             PauseTransition pause = new PauseTransition(Duration.millis(600));
 
             pause.setOnFinished(_ ->
@@ -115,8 +115,8 @@ public class UIGameManager {
         int endingSquare = Move.getEndingSquare(legalMove);
         visualBoard.highlightPreviousMove(startingSquare, endingSquare);
 
-        // Checks if the game has ended in any way, if yes perform the necessary actions, else just play the appropriate move
-        // sound and decide what to do in the next turn
+        // Checks if the game has ended in any way, if yes perform the necessary actions, else just play the appropriate
+        // move sound and decide what to do in the next turn
         if (getGameResult()) {
             triggerGameOverSequence();
         }

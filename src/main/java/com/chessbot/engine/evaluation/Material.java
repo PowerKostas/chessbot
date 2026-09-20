@@ -4,14 +4,19 @@ import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Piece;
 
 public final class Material {
-    private static final int PAWN_VALUE = 100;
-    private static final int KNIGHT_VALUE = 320;
-    private static final int BISHOP_VALUE = 330;
-    private static final int ROOK_VALUE = 500;
-    private static final int QUEEN_VALUE = 900;
-    private static final int KING_VALUE = 20000;
+    public static final int PAWN_VALUE = 100;
+    public static final int KNIGHT_VALUE = 320;
+    public static final int BISHOP_VALUE = 330;
+    public static final int ROOK_VALUE = 500;
+    public static final int QUEEN_VALUE = 900;
+    public static final int KING_VALUE = 20000;
+    private static final int[] PIECE_VALUES = {100, 320, 330, 500, 900, 20000};
 
     private Material() {}
+
+
+    // Uses a getter for array elements because they are mutable even if the array is final
+    public static int getPieceValue(int pieceType) { return PIECE_VALUES[pieceType]; }
 
 
     // Counts the total material value of the given player

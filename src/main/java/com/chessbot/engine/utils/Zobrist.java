@@ -2,11 +2,12 @@ package com.chessbot.engine.utils;
 
 import java.util.SplittableRandom;
 
-// Zobrist hashing is used to compress an entire chess position in a 64-bit hash key. The position can't be uncompressed, that's
-// why the key is used only for checking if 2 positions are identical. The key is created by XORing random longs that represent
-// the needed data. The data is every piece currently on the board, the turn, the castling rights and the en passant file if
-// needed. This way a unique random key can be generated for any position. For 64-bit keys, 2 keys might collide once every 4
-// billion positions, but that is acceptable. This class precomputes all the random longs for each needed piece of data
+// Zobrist hashing is used to compress an entire chess position in a 64-bit hash key. The position can't be uncompressed,
+// that's why the key is used only for checking if 2 positions are identical. The key is created by XORing random longs
+// that represent the needed data. The data is every piece currently on the board, the turn, the castling rights and the
+// en passant file if needed. This way a unique random key can be generated for any position. For 64-bit keys, 2 keys might
+// collide once every 4 billion positions, but that is acceptable. This class precomputes all the random longs for each
+// needed piece of data
 public final class Zobrist {
     // 12 piece types * 64 squares
     public static final long[][] PIECES = new long[12][64];
@@ -25,8 +26,8 @@ public final class Zobrist {
 
 
     static {
-        // SplittableRandom is used for better quality random numbers. A fixed seed allows the engine to always generate the same
-        // Zobrist keys, useful for debugging
+        // SplittableRandom is used for better quality random numbers. A fixed seed allows the engine to always generate
+        // the same Zobrist keys, useful for debugging
         SplittableRandom random = new SplittableRandom(42);
 
         for (int pieceType = 0; pieceType < 12; pieceType += 1) {
