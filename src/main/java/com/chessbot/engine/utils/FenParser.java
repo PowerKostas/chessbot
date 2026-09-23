@@ -97,7 +97,7 @@ public final class FenParser {
             }
         }
 
-        // Fifth part of the FEN string indicates the number of half moves made, if the string doesn't include that information,
+        // Fifth part of the FEN string indicates the number of plies made, if the string doesn't include that information,
         // the number is set to 0
         if (parts.length > 4) {
             board.setHalfMoveClock(Integer.parseInt(parts[4]));

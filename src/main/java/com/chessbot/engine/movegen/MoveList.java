@@ -7,7 +7,7 @@ import com.chessbot.engine.core.Move;
 // search depth (or held persistently by GameManager, MatchRunner, ...)
 public class MoveList {
     // Holds the legal moves for the current object. 256 is a safe max limit (the highest number of possible legal moves
-    // in any position is 218). The int objects hold info about the legal moves, more information in the Move class
+    // in any position is 218). The Move ints hold info about the legal moves, more information in the Move class
     public final int[] moves = new int[256];
 
     // Keeps track of how many legal moves are in the array

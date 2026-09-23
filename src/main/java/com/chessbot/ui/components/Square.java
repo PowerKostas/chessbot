@@ -37,7 +37,7 @@ public class Square extends StackPane {
         legalMoveHint.setVisible(false);
         this.getChildren().add(legalMoveHint);
 
-        // Creates a legal capture indication. Start with a transparent circle, and because the circle's corners and edges
+        // Creates a legal capture indication. Start with a transparent circle and because the circle's corners and edges
         // are further away than the circle's radius, it fills them with the appropriate color. center 50% 50% = Puts the
         // circle in the middle of the square, radius 45% = The radius of the circle, transparent 98% = Makes the gradient
         // transparent until 98% of the gradient's radius, #00000033 100% = Makes the outer edger of the gradient's radius

@@ -37,7 +37,7 @@ public class MoveHandler {
     }
 
 
-    // Colors a square, and shows the legal moves hints for any piece in that square
+    // Colors a square and shows the legal moves hints for any piece in that square
     private void selectPiece(Square square, int squareIndex) {
         startingSquare = square;
         startingSquareIndex = squareIndex;

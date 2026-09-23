@@ -8,7 +8,7 @@ public final class Constants {
     // I went with about double of that
     public static final int MAX_GAME_MOVES = 1024;
 
-    // Safe evaluation score values that allow the search function operations to work without overflows
+    // Safe evaluation values that allow the search function operations to work without overflows
     public static final int INFINITY_SCORE = 10000000;
     public static final int CHECKMATE_SCORE = 1000000;
 

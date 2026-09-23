@@ -52,8 +52,8 @@ public final class Rays {
                         currentFile += stepFile;
                     }
 
-                    // Same as above, starts from the square before square1, because square1 has already been included,
-                    // and extends negatively
+                    // Same as above, starts from the square before square1 because square1 has already been included and
+                    // extends negatively
                     currentRank = rankSquare1 - stepRank;
                     currentFile = fileSquare1 - stepFile;
                     while (currentRank >= 0 && currentRank < 8 && currentFile >= 0 && currentFile < 8) {

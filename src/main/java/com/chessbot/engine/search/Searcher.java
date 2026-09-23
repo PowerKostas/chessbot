@@ -55,23 +55,23 @@ public class Searcher {
         / | \    / | \    / | \
        4 -6  0  -8 7 -9  4  2  6   | Black
 
-    2. Alpha-Beta Pruning: In a Negamax context, alpha represents the best evaluation score the current player has already
-       guaranteed elsewhere in the search. Beta represents the best evaluation score the current opponent has already guaranteed
-       elsewhere in the search. In other words, for every child score of the current player, alpha is the floor and beta
-       is the ceiling. If a score is below the floor, it's ignored, if it's at or above the ceiling, the branch is pruned
-       because the opponent would never choose to go down this path. Alpha and beta values are swapped and negated at every
-       depth to accurately portray the shifting perspectives. In the Negamax example diagram, when the 0 node is reached,
-       alpha = 6 and beta = inf for white. When the -8 node is reached, alpha = -inf and beta = 6 for white, that's why
-       the remaining 7 and -9 nodes will be pruned. A fail-soft implementation is used. If a move scores 300 but beta is
-       100, the search will return 300 to the parent node. The returned score should mean one of three things:
+    2. Alpha-Beta Pruning: In a Negamax context, alpha represents the best evaluation the current player has already guaranteed
+       elsewhere in the search. Beta represents the best evaluation the current opponent has already guaranteed elsewhere
+       in the search. In other words, for every child score of the current player, alpha is the floor and beta is the ceiling.
+       If a score is below the floor, it's ignored, if it's at or above the ceiling, the branch is pruned because the opponent
+       would never choose to go down this path. Alpha and beta values are swapped and negated at every depth to accurately
+       portray the shifting perspectives. In the Negamax example diagram, when the 0 node is reached, alpha = 6 and beta
+       = inf for white. When the -8 node is reached, alpha = -inf and beta = 6 for white, that's why the remaining 7 and
+       -9 nodes will be pruned. A fail-soft implementation is used. If a move scores 300 but beta is 100, the search will
+       return 300 to the parent node. The returned score should mean one of three things:
 
-       1. In Fail-Low scenarios (score <= alpha): An upper bound value should be returned because the position is worth
-       at most this much. No move that the current player tried was better than alpha, so the true value can't be higher
-       than the score
+       1. In a Fail-Low node (score <= alpha): An upper bound value should be returned because the position is worth at
+       most this much. No move that the current player tried was better than alpha, so the true value can't be higher than
+       the score
 
-       2. In Fail-High scenarios (score >= beta): A lower bound value should be returned because the position is worth at
-       least this much. A move was good enough to cause a beta-cutoff and the remaining moves were never looked at, so the
-       true value could be even higher
+       2. In a Fail-High node (score >= beta): A lower bound value should be returned because the position is worth at least
+       this much. A move was good enough to cause a beta-cutoff and the remaining moves were never looked at, so the true
+       value could be even higher
 
        3. In between alpha and beta scenarios: The score is exact
 
@@ -142,8 +142,7 @@ public class Searcher {
         return bestMove;
     }
 
-     // Recursive function for every depth below the root. Returns an evaluation score. The pliesFromRoot variable counts
-     // the number of half moves from the root position
+     // Recursive function for every depth below the root, returns an evaluation
     private int search(int depth, int pliesFromRoot, int alpha, int beta) {
         //nodesSearched += 1;
 
@@ -154,9 +153,9 @@ public class Searcher {
         MoveList moveList = moveListPool[pliesFromRoot];
         MoveGenerator.generate(board, moveList);
 
-        // If this move results in checkmate, return a terrible evaluation score adjusted by the plies from root number.
-        // This ensures that the engine favors the current player getting mated in 5 over getting mated in 1. If this move
-        // results in a draw, return an evaluation score of 0
+        // If this move results in checkmate, return a terrible evaluation. The terrible evaluation is adjusted by the plies
+        // from root number, this ensures that the engine favors the current player getting mated in 5 over getting mated
+        // in 1. If this move results in a draw, return an evaluation of 0
         if (moveList.count == 0) {
             boolean inCheck = Checks.calculateSquares(board, board.getTurn()) != 0L;
             return inCheck ? -Constants.CHECKMATE_SCORE + pliesFromRoot : 0;
@@ -190,13 +189,13 @@ public class Searcher {
     private int quiescenceSearch(int pliesFromRoot, int alpha, int beta) {
         //nodesSearched += 1;
 
-        // Initializes a stand-pat value. Stand-pat is the evaluation score of the board after the opponent has made their
-        // move and before the current player makes theirs. In other words the baseline score
+        // Initializes a stand-pat value. Stand-pat is the evaluation of the board after the opponent has made their move
+        // and before the current player makes theirs. In other words the baseline score
         int standPat = Evaluator.evaluate(board, experimentalVersion);
 
         // If in check using stand-pat is not allowed. There are 2 reasons for that. Firstly, we are not sure that there
         // is a move that can match alpha, in many positions a check can mean a serious threat that cannot be resolved.
-        // Secondly, stand-pat assumes that even if we finish searching all moves, and none of them increase alpha, one
+        // Secondly, stand-pat assumes that even if we finish searching all moves and none of them increase alpha, one
         // of the quiet moves can most likely increase alpha. But because instead of a limited square, a full search is
         // executed when in check, the above can't be valid
         boolean inCheck = Checks.calculateSquares(board, board.getTurn()) != 0L;
@@ -207,13 +206,13 @@ public class Searcher {
                 return standPat;
             }
 
-            // Checks if ANY move can improve alpha. Big delta represents the best theoretical move which is a queen capture
-            // plus a safety margin (200 centipawns is standard) plus a potential promotion. If not even that move can save
-            // the position, it's a truly hopeless node, and it's pruned early. In MoveOrdering.MVV-LVA, a queen capture
-            // with a pawn gets a score of 40, in MoveOrdering.Promotions, a queen promotion gets a score of 35. That scale
-            // is used to calculate the increment to big delta when a pawn can promote. This method doesn't seem to have
-            // a noticeable impact on performance, but it doesn't hurt it either
-            int BIG_DELTA = Material.QUEEN_VALUE + 200;
+            // Checks if ANY move can improve alpha. Big delta represents the best theoretical move which is a max value
+            // queen capture plus a safety margin (200 centipawns is standard) plus a potential queen promotion. If not
+            // even that move can save the position, it's a truly hopeless node, and it's pruned early. In MoveOrdering.MVV-LVA,
+            // a queen capture with a pawn gets a score of 40, in MoveOrdering.Promotions, a queen promotion gets a score
+            // of 35. That scale is used to calculate the increment to big delta when a pawn can promote. This method doesn't
+            // seem to have a noticeable impact on performance, but it doesn't hurt it either
+            int BIG_DELTA = Material.getMaxPieceValue(Piece.QUEEN) + 200;
 
             boolean canPromote;
             if (board.getTurn() == Piece.WHITE) {
@@ -227,7 +226,7 @@ public class Searcher {
             }
 
             if (canPromote) {
-                BIG_DELTA += (Material.QUEEN_VALUE * 35) / 40;
+                BIG_DELTA += (Material.getMaxPieceValue(Piece.QUEEN) * 35) / 40;
             }
 
             if (standPat + BIG_DELTA <= alpha) {
@@ -240,8 +239,8 @@ public class Searcher {
             }
         }
 
-        // Because a quiescence search can theoretically follow a long chain of moves, return the static evaluation score
-        // if the search exceeds the given max search depth
+        // Because a quiescence search can theoretically follow a long chain of moves, return the static evaluation if the
+        // search exceeds the given max search depth
         if (pliesFromRoot >= Constants.MAX_SEARCH_DEPTH) {
             return standPat;
         }
@@ -278,9 +277,11 @@ public class Searcher {
                 // Delta Pruning. Before a capture is made, test if the captured piece value plus a safety margin (200 centipawns
                 // is standard) are enough to raise alpha. If they are not, the capture is unlikely to improve the position
                 // and it's pruned. Should be switched off in the late endgame, since otherwise the search would be blind
-                // to insufficient material issues and transitions into won endgames made at the expense of some material
+                // to insufficient material issues and transitions into won endgames made at the expense of some material.
+                // Delta Pruning is technically a Fail-Low filter because it prunes captures if they are less than or equal
+                // to alpha. For that reason, the score uses the upper bound/maximum piece value
                 if (flag == Move.FLAG_CAPTURE) {
-                    int capturedPieceValue = Material.getPieceValue(board.getPieceTypeAtSquare(Move.getEndingSquare(move)));
+                    int capturedPieceValue = Material.getMaxPieceValue(board.getPieceTypeAtSquare(Move.getEndingSquare(move)));
                     if (standPat + capturedPieceValue + 200 <= alpha) {
                         continue;
                     }

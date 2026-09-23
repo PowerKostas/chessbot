@@ -1,34 +1,26 @@
 package com.chessbot.engine.evaluation;
 
-import com.chessbot.engine.core.Board;
-import com.chessbot.engine.core.Piece;
-
 public final class Material {
-    public static final int PAWN_VALUE = 100;
-    public static final int KNIGHT_VALUE = 320;
-    public static final int BISHOP_VALUE = 330;
-    public static final int ROOK_VALUE = 500;
-    public static final int QUEEN_VALUE = 900;
-    public static final int KING_VALUE = 20000;
-    private static final int[] PIECE_VALUES = {100, 320, 330, 500, 900, 20000};
+    // The values that the pawn, knight, bishop, rook, queen and king have in the middlegame and endgame
+    private static final int[] MG_PIECE_VALUES = {82, 337, 365, 477, 1025, 0};
+    private static final int[] EG_PIECE_VALUES = {94, 281, 297, 512,  936, 0};
+    private static final int[] MAX_PIECE_VALUES = {94, 337, 365, 512, 1025, 0};
+
+    // Standard values that indicate how much a pawn, knight, bishop, rook, queen or king affects endgame detection. Pawns
+    // get a value of 0 because a pawns and king position is always an endgame, no matter the number of pawns. The original
+    // values were {0, 1, 1, 2, 4, 0} but they got scaled up in order for their starting material based sum to equal exactly
+    // 256 which is a power of 2. This enables faster calculations in the Evaluator class
+    private static final int[] PHASE_WEIGHTS = {0, 11, 11, 21, 42, 0};
 
     private Material() {}
 
 
-    // Uses a getter for array elements because they are mutable even if the array is final
-    public static int getPieceValue(int pieceType) { return PIECE_VALUES[pieceType]; }
+    // Getters are used instead of making the fields public because array values are mutable despite the array being final
+    public static int getMgPieceValue(int pieceType) { return MG_PIECE_VALUES[pieceType]; }
 
+    public static int getEgPieceValue(int pieceType) { return EG_PIECE_VALUES[pieceType]; }
 
-    // Counts the total material value of the given player
-    public static int count(Board board, int color) {
-        int material = 0;
+    public static int getMaxPieceValue(int pieceType) { return MAX_PIECE_VALUES[pieceType]; }
 
-        material += Long.bitCount(board.getBitboard(color, Piece.PAWN)) * PAWN_VALUE;
-        material += Long.bitCount(board.getBitboard(color, Piece.KNIGHT)) * KNIGHT_VALUE;
-        material += Long.bitCount(board.getBitboard(color, Piece.BISHOP)) * BISHOP_VALUE;
-        material += Long.bitCount(board.getBitboard(color, Piece.ROOK)) * ROOK_VALUE;
-        material += Long.bitCount(board.getBitboard(color, Piece.QUEEN)) * QUEEN_VALUE;
-
-        return material;
-    }
+    public static int getPhaseWeight(int pieceType) { return PHASE_WEIGHTS[pieceType]; }
 }

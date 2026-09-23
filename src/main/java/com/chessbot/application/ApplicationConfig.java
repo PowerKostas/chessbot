@@ -9,12 +9,12 @@ public final class ApplicationConfig {
 
 
     public static final int WHITE_PLAYER_TYPE = PlayerType.HUMAN;
-    public static final int BLACK_PLAYER_TYPE = PlayerType.ENGINE;
+    public static final int BLACK_PLAYER_TYPE = PlayerType.HUMAN;
 
     // If white or black is an engine player type, they will use these versions of the engine. They are named initial because
     // they can swap sides after each game
-    public static final Chessbot INITIAL_WHITE_BOT = new CurrentVersionBot("v4.4 - Futility Pruning");
-    public static final Chessbot INITIAL_BLACK_BOT = new PreviousVersionBot("v4.3 - Delta Pruning");
+    public static final Chessbot INITIAL_WHITE_BOT = new CurrentVersionBot("v5 - Tapered Evaluation");
+    public static final Chessbot INITIAL_BLACK_BOT = new PreviousVersionBot("v4.4 - Futility Pruning");
 
     public static final int PERFT_SEARCH_DEPTH = 6;
 

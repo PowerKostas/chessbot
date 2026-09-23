@@ -1,5 +1,6 @@
 package com.chessbot.engine.core;
 
+import com.chessbot.engine.evaluation.Material;
 import com.chessbot.engine.utils.FenParser;
 import com.chessbot.engine.utils.Zobrist;
 import java.util.Arrays;
@@ -49,15 +50,30 @@ public class Board {
     // 1 for the square that an en passant capture can happen, 0 for everything else
     private long enPassantSquareBitboard = 0L;
 
-    // Counter of half moves since the last capture or pawn push, used in the 50-move rule
+    // Counter of plies since the last capture or pawn push, used in the 50-move rule
     private int halfMoveClock;
+
+    // Counter of plies since the start of the game, used as an index in all the history arrays
+    private int plyIndex = 0;
 
     // A history array containing every past Zobrist key created in this game is needed. The array is used for detecting
     // threefold repetitions and easily unmaking moves. The currentZobristKey variable is used for easily referencing the
     // key of the current position
-    private int zobristHistoryIndex = 0;
-    private final long[] zobristHistory = new long[Constants.MAX_GAME_MOVES];
+    private final long[] zobristKeyHistory = new long[Constants.MAX_GAME_MOVES];
     private long currentZobristKey = 0L;
+
+    // History arrays containing all the past Material and Piece-Square Tables scores. These scores assume that we are in
+    // a middlegame/endgame. The scores are positive/negative when white/black is winning. They are placed here because
+    // incrementally updating them on make/unmake move avoids recalculations in the evaluation function. The mgScore and
+    // egScore variables are used for easily referencing the scores of the current position
+    private final int[] mgScoreHistory = new int[Constants.MAX_GAME_MOVES];
+    private final int[] egScoreHistory = new int[Constants.MAX_GAME_MOVES];
+    private int currentMgScore = 0;
+    private int currentEgScore = 0;
+
+    // The phase weights sum, used to calculate the current game phase and determine how close we are to the endgame. More
+    // information in the Material class. A history array is not needed because this data is easily recoverable in unmakeMove()
+    private int phase = 0;
 
     public Board() {}
 
@@ -93,11 +109,17 @@ public class Board {
 
     public void setHalfMoveClock(int halfMoveClock) { this.halfMoveClock = halfMoveClock; }
 
-    public int getZobristHistoryIndex() { return zobristHistoryIndex; }
+    public int getPlyIndex() { return plyIndex; }
 
-    public long[] getZobristHistory() { return zobristHistory; }
+    public long[] getZobristKeyHistory() { return zobristKeyHistory; }
 
     public long getCurrentZobristKey() { return currentZobristKey; }
+
+    public int getCurrentMgScore() { return currentMgScore; }
+
+    public int getCurrentEgScore() { return currentEgScore; }
+
+    public int getPhase() { return phase; }
 
 
     // Uses the precomputed random longs to calculate the Zobrist hash key that represents the initial position
@@ -126,10 +148,24 @@ public class Board {
     }
 
 
+    public void calculateInitialScores() {
+        for (int pieceColor = 0; pieceColor < 2; pieceColor += 1) {
+            int sign = (pieceColor == Piece.WHITE) ? 1 : -1;
+            for (int pieceType = 0; pieceType < 6; pieceType += 1) {
+                int count = Long.bitCount(bitboards[pieceColor * 6 + pieceType]);
+                currentMgScore += count * Material.getMgPieceValue(pieceType) * sign;
+                currentEgScore += count * Material.getEgPieceValue(pieceType) * sign;
+                phase += count * Material.getPhaseWeight(pieceType);
+            }
+        }
+    }
+
+
     // Coordinates every job at the start of the game
     public void loadInitialPosition(String fen) {
         FenParser.loadFen(fen, this);
         calculateInitialZobristKey();
+        calculateInitialScores();
     }
 
 
@@ -169,12 +205,14 @@ public class Board {
     }
 
 
-    // Coordinates every job of a move cycle and returns an Undo int object in order to, if needed, unmake the move later
-    // in the search algorithm
+    // Coordinates every job of a move cycle and returns an Undo long object in order to, if needed, unmake the move in the
+    // search algorithm
     public int makeMove(int move) {
-        // Before the move is made, add the Zobrist key of the position to its history array
-        zobristHistory[zobristHistoryIndex] = currentZobristKey;
-        zobristHistoryIndex += 1;
+        // Before the move is made, save the reversible state to the history arrays
+        zobristKeyHistory[plyIndex] = currentZobristKey;
+        mgScoreHistory[plyIndex] = currentMgScore;
+        egScoreHistory[plyIndex] = currentEgScore;
+        plyIndex += 1;
 
         // The mathematical formula for updating a Zobrist key is: New hash = Old hash ^ (Old hash with the old state removed)
         // ^ (Old hash with the new state added). For that reason, before the move is made, the old irreversible data has
@@ -195,7 +233,7 @@ public class Board {
         int pieceType = getPieceTypeAtSquare(startingSquare);
         int enemyColor = pieceColor ^ 1;
 
-        // Snapshots the irreversible data that's about to be overwritten, defaults capturedPieceType to NONE_PIECE_TYPE
+        // Snapshots the irreversible data that's about to be overwritten, defaults capturedPieceType to NONE_PIECE_TYPE,
         // but the capture/promotion capture cases below overwrite it if needed
         int capturedPieceType = Undo.NONE_PIECE_TYPE;
         long previousEnPassantSquareBitboard = enPassantSquareBitboard;
@@ -206,8 +244,9 @@ public class Board {
         enPassantSquareBitboard = 0L;
 
         // Handles all cases of the move flag. For each one, update the Zobrist key by XORing out the random longs that
-        // represent pieces on the starting and potential capture squares, and XORing in the random long that represents
-        // the piece on the ending square
+        // represent pieces on the starting and potential capture squares and XORing in the random long that represents
+        // the piece on the ending square. The middlegame/endgame score and phase is updated in captures/promotions because
+        // the material difference between the 2 players changed
         switch (moveFlag) {
             // If there is no special move flag, just move the piece
             case Move.FLAG_QUIET:
@@ -247,6 +286,12 @@ public class Board {
                 currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][startingSquare];
                 currentZobristKey ^= Zobrist.PIECES[enemyColor * 6 + capturedPieceType][endingSquare];
                 currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][endingSquare];
+
+                int captureSign = (enemyColor == Piece.WHITE) ? 1 : -1;
+                currentMgScore -= Material.getMgPieceValue(capturedPieceType) * captureSign;
+                currentEgScore -= Material.getEgPieceValue(capturedPieceType) * captureSign;
+                phase -= Material.getPhaseWeight(capturedPieceType);
+
                 break;
 
             // If it's an en passant capture, for white, remove the captured piece from the square that is a rank below
@@ -259,6 +304,12 @@ public class Board {
                 currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.PAWN][startingSquare];
                 currentZobristKey ^= Zobrist.PIECES[enemyColor * 6 + Piece.PAWN][capturedPawnSquare];
                 currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.PAWN][endingSquare];
+
+                int epSign = (enemyColor == Piece.WHITE) ? 1 : -1;
+                currentMgScore -= Material.getMgPieceValue(Piece.PAWN) * epSign;
+                currentEgScore -= Material.getEgPieceValue(Piece.PAWN) * epSign;
+                phase -= Material.getPhaseWeight(Piece.PAWN);
+
                 break;
 
             // Kingside castling for the white/black king
@@ -302,6 +353,11 @@ public class Board {
                         capturedPieceType = getPieceTypeAtSquare(endingSquare);
                         removePiece(enemyColor, capturedPieceType, endingSquare);
                         currentZobristKey ^= Zobrist.PIECES[enemyColor * 6 + capturedPieceType][endingSquare];
+
+                        int promotionCaptureSign = (enemyColor == Piece.WHITE) ? 1 : -1;
+                        currentMgScore -= Material.getMgPieceValue(capturedPieceType) * promotionCaptureSign;
+                        currentEgScore -= Material.getEgPieceValue(capturedPieceType) * promotionCaptureSign;
+                        phase -= Material.getPhaseWeight(capturedPieceType);
                     }
 
                     // Removes the pawn from the second to last rank, derive the promoted piece from the 1st and 2nd special
@@ -311,6 +367,14 @@ public class Board {
                     addPiece(pieceColor, promotedPiece, endingSquare);
                     currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + Piece.PAWN][startingSquare];
                     currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + promotedPiece][endingSquare];
+
+                    // Subtracts the pawn and adds the new piece
+                    int promotionSign = (pieceColor == Piece.WHITE) ? 1 : -1;
+                    currentMgScore -= Material.getMgPieceValue(Piece.PAWN) * promotionSign;
+                    currentEgScore -= Material.getEgPieceValue(Piece.PAWN) * promotionSign;
+                    currentMgScore += Material.getMgPieceValue(promotedPiece) * promotionSign;
+                    currentEgScore += Material.getEgPieceValue(promotedPiece) * promotionSign;
+                    phase += Material.getPhaseWeight(promotedPiece);
                 }
 
                 break;
@@ -338,14 +402,16 @@ public class Board {
         }
 
         turn ^= 1;
-        return Undo.createUndo(capturedPieceType, previousEnPassantSquareBitboard, previousCastlingRights, previousHalfMoveClock);
+        return Undo.packUndo(capturedPieceType, previousEnPassantSquareBitboard, previousCastlingRights, previousHalfMoveClock);
     }
 
 
     // Reverses a move made by makeMove
     public void unmakeMove(int move, int undo) {
-        zobristHistoryIndex -= 1;
-        currentZobristKey = zobristHistory[zobristHistoryIndex];
+        plyIndex -= 1;
+        currentZobristKey = zobristKeyHistory[plyIndex];
+        currentMgScore = mgScoreHistory[plyIndex];
+        currentEgScore = egScoreHistory[plyIndex];
 
         int startingSquare = Move.getStartingSquare(move);
         int endingSquare = Move.getEndingSquare(move);
@@ -358,13 +424,13 @@ public class Board {
         int enemyColor = pieceColor ^ 1;
 
         // Restores the irreversible data from before the move was made
-        int capturedPieceType = Undo.undoCapturedPieceType(undo);
-        castlingRights = Undo.undoCastlingRights(undo);
-        enPassantSquareBitboard = Undo.undoEnPassantSquareBitboard(undo);
-        halfMoveClock = Undo.undoHalfMoveClock(undo);
+        int capturedPieceType = Undo.unpackCapturedPieceType(undo);
+        castlingRights = Undo.unpackCastlingRights(undo);
+        enPassantSquareBitboard = Undo.unpackEnPassantSquareBitboard(undo);
+        halfMoveClock = Undo.unpackHalfMoveClock(undo);
 
         switch (moveFlag) {
-            // Since the en passant square bitboard is gonna get recovered from the Undo int object, quiet moves and double
+            // Since the en passant square bitboard is gonna get recovered from the Undo long object, quiet moves and double
             // pawn pushes are undone by just moving the piece back
             case Move.FLAG_QUIET:
             case Move.FLAG_DOUBLE_PAWN_PUSH:
@@ -375,6 +441,7 @@ public class Board {
             case Move.FLAG_CAPTURE:
                 movePiece(endingSquare, startingSquare, pieceColor, pieceType);
                 addPiece(enemyColor, capturedPieceType, endingSquare);
+                phase += Material.getPhaseWeight(capturedPieceType);
                 break;
 
             // Moves the friendly en passant pawn back and restores the captured en passant pawn to the square it was, a
@@ -383,6 +450,7 @@ public class Board {
                 int capturedPawnSquare = endingSquare + (pieceColor * 16) - 8;
                 movePiece(endingSquare, startingSquare, pieceColor, Piece.PAWN);
                 addPiece(enemyColor, Piece.PAWN, capturedPawnSquare);
+                phase += Material.getPhaseWeight(capturedPieceType);
                 break;
 
             case Move.FLAG_KING_CASTLE:
@@ -425,9 +493,12 @@ public class Board {
                     // Puts the pawn back on the second to last rank
                     addPiece(pieceColor, Piece.PAWN, startingSquare);
 
+                    phase -= Material.getPhaseWeight(promotedPiece);
+
                     // If it was a promotion capture, restore the captured piece onto the now empty ending square
                     if (moveFlag >= Move.FLAG_KNIGHT_PROMOTION_CAPTURE) {
                         addPiece(enemyColor, capturedPieceType, endingSquare);
+                        phase += Material.getPhaseWeight(capturedPieceType);
                     }
                 }
 

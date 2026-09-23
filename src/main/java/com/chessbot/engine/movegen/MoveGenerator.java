@@ -10,9 +10,9 @@ import com.chessbot.engine.movegen.utils.Pins;
 import com.chessbot.engine.movegen.utils.Rays;
 
 // Making some more specific move generation functions would be beneficial. For example, functions that generate only captures
-// and promotions, only check evasions, only quiet checks etc. In other parts of the code, using these functions instead
-// of generating all moves would be more efficient, but the difference is marginal. It's at least 400 lines of complex code
-// for a 15-30 elo increase
+// and promotions, only check evasions, only quiet checks etc. Using these functions, instead of the one that generates
+// all moves, would be more efficient in some parts of the code, but the difference is marginal. It's at least 400 lines
+// of complex code for a 15-30 elo increase
 public final class MoveGenerator {
     private MoveGenerator() {}
 

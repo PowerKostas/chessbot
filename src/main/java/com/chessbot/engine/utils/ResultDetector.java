@@ -44,18 +44,18 @@ public final class ResultDetector {
 
     public static boolean isThreefoldRepetition(Board board) {
         int halfMoveClock = board.getHalfMoveClock();
-        int zobristHistoryIndex = board.getZobristHistoryIndex();
-        long[] zobristHistory = board.getZobristHistory();
+        int plyIndex = board.getPlyIndex();
+        long[] zobristKeyHistory = board.getZobristKeyHistory();
         long currentZobristKey = board.getCurrentZobristKey();
 
         // The current position counts as 1 repetition
         int repetitions = 1;
 
-        // A repeated position can only start happening after 4 half moves. If a move that reset the half move clock happened,
+        // A repeated position can only start happening after 4 plies. If a move that reset the half move clock happened,
         // positions past that point cant be repetitions. That's why it searches backwards up to the half move clock limit
         // for repeated positions. Step by 2 because a repetition can only happen on the same player's turn
-        for (int i = zobristHistoryIndex - 4; i >= zobristHistoryIndex - halfMoveClock; i -= 2) {
-            if (zobristHistory[i] == currentZobristKey) {
+        for (int i = plyIndex - 4; i >= plyIndex - halfMoveClock; i -= 2) {
+            if (zobristKeyHistory[i] == currentZobristKey) {
                 repetitions += 1;
 
                 if (repetitions == 3) {
