@@ -18,20 +18,26 @@ public final class PromotionDialog {
     private PromotionDialog() {}
 
 
-    public static void display(VisualBoard visualBoard, int color, boolean reversed, Consumer<Integer> callback) {
+    public static void display(VisualBoard visualBoard, int color, Consumer<Integer> callback) {
         // Clears the legal hints before showing the dialog
         visualBoard.clearLegalHints();
 
         // Creates an overlay that spans across the whole board to capture outside clicks. It's the deepest layer, if the
         // user clicks it, not the top-level dialog container, close the promotion dialog
         StackPane overlay = new StackPane();
-        overlay.setOnMousePressed(e -> {
+
+        overlay.setOnMouseClicked(e -> {
             if (e.getTarget() == overlay) {
                 visualBoard.getChildren().remove(overlay);
                 callback.accept(-1);
                 e.consume();
             }
         });
+
+        // If the board is flipped, flip the overlay as well
+        if (visualBoard.getBoardPerspective() == Piece.BLACK) {
+            overlay.setRotate(180);
+        }
 
         // Builds the dialog's container
         HBox layout = new HBox();
@@ -43,7 +49,7 @@ public final class PromotionDialog {
         // Adds the 4 piece choices to the HBox, in the order of chess.com
         int[] pieceTypes = {Piece.QUEEN, Piece.KNIGHT, Piece.ROOK, Piece.BISHOP};
         for (int type : pieceTypes) {
-            VisualPiece piece = new VisualPiece(color, type, reversed);
+            VisualPiece piece = new VisualPiece(color, type, false);
             piece.setScaleX(0.9);
             piece.setScaleY(0.9);
 

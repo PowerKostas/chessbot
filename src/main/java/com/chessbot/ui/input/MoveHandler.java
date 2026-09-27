@@ -61,7 +61,7 @@ public class MoveHandler {
         int pieceColor = board.getPieceColorAtSquare(startingSquareIndex);
 
         // Opens the promotion dialog and waits for the user to select a piece
-        PromotionDialog.display(visualBoard, pieceColor, visualBoard.getBoardPerspective() == Piece.BLACK, chosenPiece -> {
+        PromotionDialog.display(visualBoard, pieceColor, chosenPiece -> {
             // If the user didn't click the 'x' button, execute the promotion legal move
             if (chosenPiece != -1) {
                 int legalMove = visualBoard.searchPromotionLegalMove(uiGameManager.getMoveList(), startingSquareIndex, promotionSquareIndex, chosenPiece);

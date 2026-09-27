@@ -9,6 +9,7 @@ import com.chessbot.engine.movegen.MoveList;
 import com.chessbot.engine.movegen.utils.Checks;
 import com.chessbot.engine.utils.ResultDetector;
 import com.chessbot.ui.components.VisualBoard;
+import com.chessbot.ui.input.MoveHandler;
 import com.chessbot.ui.utils.SoundManager;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -31,8 +32,8 @@ public class UIGameManager {
     private int blackPlayerType;
 
     // Pluggable bots of different engine versions for white and black
-    private Chessbot whiteBot = ApplicationConfig.INITIAL_WHITE_BOT;
-    private Chessbot blackBot = ApplicationConfig.INITIAL_BLACK_BOT;
+    private Chessbot whiteBot = ApplicationConfig.NEW_VERSION_BOT;
+    private Chessbot blackBot = ApplicationConfig.PREVIOUS_VERSION_BOT;
 
     // In endless mode when a game ends another one gets setup, instead of the window closing
     private final boolean isEndlessMode;
@@ -167,11 +168,16 @@ public class UIGameManager {
         board = new Board();
         board.loadInitialPosition(ApplicationConfig.ENDLESS_MODE_FEN);
 
-        // Resets the visual board, the board is flipped if there is only one human player and they are black
+        // Resets the visual board
         visualBoard.setDisable(false);
         visualBoard.setBoard(board);
+
+        // Flip the board if there is only one human player and they are black
         int boardPerspective = (whitePlayerType != blackPlayerType && blackPlayerType == PlayerType.HUMAN) ? Piece.BLACK : Piece.WHITE;
         visualBoard.flip(boardPerspective);
+
+        MoveHandler moveHandler = new MoveHandler(visualBoard, this);
+        visualBoard.attachMoveHandler(moveHandler);
         visualBoard.unhighlightPreviousMove();
         visualBoard.sync(null);
 

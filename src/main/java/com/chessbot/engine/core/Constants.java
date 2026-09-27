@@ -12,5 +12,16 @@ public final class Constants {
     public static final int INFINITY_SCORE = 10000000;
     public static final int CHECKMATE_SCORE = 1000000;
 
+    // Search function parameters, tuned with SPSA
+    public static final int[] PROMOTION_SCORES = {-45, -50, -50, 35};
+    public static final int SAFETY_MARGIN = 200;
+    public static final int LATE_ENDGAME_PHASE_THRESHOLD = 32;
+
+    // Evaluation function parameters, tuned with Texel's Tuning
+    public static final int[] MG_PIECE_VALUES = {82, 337, 365, 477, 1025, 0};
+    public static final int[] EG_PIECE_VALUES = {94, 281, 297, 512,  936, 0};
+    public static final int[] MAX_PIECE_VALUES = {94, 337, 365, 512, 1025, 0};
+    public static final int[] PHASE_WEIGHTS = {0, 11, 11, 21, 42, 0};
+
     private Constants() {}
 }

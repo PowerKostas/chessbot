@@ -125,8 +125,8 @@ public class VisualBoard extends StackPane {
             }
         }
 
-        // Listens for clicks inside the board, on a right click, cancel the selected square
-        this.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+        // Listens for clicks inside the board, on a right click, cancel the selection of the clicked square
+        this.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY) {
                 moveHandler.cancelSelection();
             }

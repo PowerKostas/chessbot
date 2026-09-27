@@ -4,7 +4,7 @@ import com.chessbot.application.ApplicationConfig;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.search.Searcher;
 
-public record CurrentVersionBot(String name) implements Chessbot {
+public record NewVersionBot(String name) implements Chessbot {
     @Override
     public int chooseMove(Board board) {
         Searcher searcher = new Searcher(board, true);

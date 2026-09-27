@@ -12,7 +12,7 @@ public final class Evaluator {
     public static int evaluate(Board board, boolean experimentalVersion) {
         // Tapered evaluation is used to make a smooth transition between the phases of the game. In the starting position
         // phase = 256, but that value can technically be exceeded with promotions, so phase is capped to 256 in order for
-        // the formula to work properly. Phase = 0 means it's a pure middlegame, phase = 256 means it's a pure endgame.
+        // the formula to work properly. Phase = 256 means it's a pure middlegame, phase = 0 means it's a pure endgame.
         // It gets the current material and Piece-Square Tables scores, first assuming we are in a middlegame and then assuming
         // we are in an endgame. The formula below is used to find the current evaluation, it will be between the pure middlegame
         // and pure endgame evaluations. Opening values are not included because the opening and middlegame are very similar

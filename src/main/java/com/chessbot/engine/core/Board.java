@@ -16,6 +16,11 @@ public class Board {
     // 0 = White's bitboard, 1 = Black's bitboard, 2 = All pieces bitboard
     private final long[] otherBitboards = new long[3];
 
+    // Each int of the array indicates a square. Empty squares get values of -1. Populated squares hold an encoded int which
+    // equals: (pieceColor << 3) | pieceType. A mailbox is used to avoid looping through all the bitboards to find what
+    // piece color or piece type occupies a square
+    private final int[] mailbox = new int[64];
+
     // 0 = White's turn, 1 = Black's turn
     private int turn;
 
@@ -75,7 +80,10 @@ public class Board {
     // information in the Material class. A history array is not needed because this data is easily recoverable in unmakeMove()
     private int phase = 0;
 
-    public Board() {}
+
+    public Board() {
+        Arrays.fill(mailbox, -1);
+    }
 
 
     public long getBitboard(int color, int pieceType) { return bitboards[(color * 6) + pieceType]; }
@@ -176,6 +184,7 @@ public class Board {
         bitboards[pieceColor * 6 + pieceType] |= addMask;
         otherBitboards[pieceColor] |= addMask;
         otherBitboards[2] |= addMask;
+        mailbox[squareIndex] = (pieceColor << 3) | pieceType;
     }
 
 
@@ -186,6 +195,7 @@ public class Board {
         bitboards[pieceColor * 6 + pieceType] &= removeMask;
         otherBitboards[pieceColor] &= removeMask;
         otherBitboards[2] &= removeMask;
+        mailbox[squareIndex] = -1;
     }
 
 
@@ -202,6 +212,9 @@ public class Board {
 
         otherBitboards[2] &= ~removeMask;
         otherBitboards[2] |= addMask;
+
+        mailbox[startingSquare] = -1;
+        mailbox[endingSquare] = (pieceColor << 3) | pieceType;
     }
 
 
@@ -509,31 +522,14 @@ public class Board {
 
     // Gets a piece's color at a specific square
     public int getPieceColorAtSquare(int squareIndex) {
-        long squareMask = 1L << squareIndex;
-
-        if ((otherBitboards[Piece.WHITE] & squareMask) != 0) {
-            return Piece.WHITE;
-        }
-
-        else if ((otherBitboards[Piece.BLACK] & squareMask) != 0) {
-            return Piece.BLACK;
-        }
-
-        return -1;
+        int piece = mailbox[squareIndex];
+        return (piece == -1) ? -1 : piece >>> 3;
     }
 
 
     // Gets a piece's type at a specific square
     public int getPieceTypeAtSquare(int squareIndex) {
-        long squareMask = 1L << squareIndex;
-
-        // Checks if either white or black has that piece type on that square
-        for (int pieceType = 0; pieceType < 6; pieceType += 1) {
-            if (((bitboards[pieceType] | bitboards[6 + pieceType]) & squareMask) != 0) {
-                return pieceType;
-            }
-        }
-
-        return -1;
+        int piece = mailbox[squareIndex];
+        return (piece == -1) ? -1 : piece & 7;
     }
 }

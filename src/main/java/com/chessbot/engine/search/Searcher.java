@@ -207,12 +207,12 @@ public class Searcher {
             }
 
             // Checks if ANY move can improve alpha. Big delta represents the best theoretical move which is a max value
-            // queen capture plus a safety margin (200 centipawns is standard) plus a potential queen promotion. If not
-            // even that move can save the position, it's a truly hopeless node, and it's pruned early. In MoveOrdering.MVV-LVA,
-            // a queen capture with a pawn gets a score of 40, in MoveOrdering.Promotions, a queen promotion gets a score
-            // of 35. That scale is used to calculate the increment to big delta when a pawn can promote. This method doesn't
-            // seem to have a noticeable impact on performance, but it doesn't hurt it either
-            int BIG_DELTA = Material.getMaxPieceValue(Piece.QUEEN) + 200;
+            // queen capture plus a safety margin plus a potential queen promotion. If not even that move can save the position,
+            // it's a truly hopeless node, and it's pruned early. In MoveOrdering.MVV-LVA, a queen capture with a pawn gets
+            // a score of 40, in MoveOrdering.Promotions, a queen promotion gets a slightly lower score. That scale is used
+            // to calculate the increment to big delta when a pawn can promote. This method doesn't seem to have a noticeable
+            // impact on performance, but it doesn't hurt it either
+            int BIG_DELTA = Material.getMaxPieceValue(Piece.QUEEN) + Constants.SAFETY_MARGIN;
 
             boolean canPromote;
             if (board.getTurn() == Piece.WHITE) {
@@ -226,7 +226,7 @@ public class Searcher {
             }
 
             if (canPromote) {
-                BIG_DELTA += (Material.getMaxPieceValue(Piece.QUEEN) * 35) / 40;
+                BIG_DELTA += (Material.getMaxPieceValue(Piece.QUEEN) * Constants.PROMOTION_SCORES[Piece.QUEEN - 1]) / 40;
             }
 
             if (standPat + BIG_DELTA <= alpha) {
@@ -274,22 +274,24 @@ public class Searcher {
                     continue;
                 }
 
-                // Delta Pruning. Before a capture is made, test if the captured piece value plus a safety margin (200 centipawns
-                // is standard) are enough to raise alpha. If they are not, the capture is unlikely to improve the position
-                // and it's pruned. Should be switched off in the late endgame, since otherwise the search would be blind
-                // to insufficient material issues and transitions into won endgames made at the expense of some material.
-                // Delta Pruning is technically a Fail-Low filter because it prunes captures if they are less than or equal
-                // to alpha. For that reason, the score uses the upper bound/maximum piece value
-                if (flag == Move.FLAG_CAPTURE) {
-                    int capturedPieceValue = Material.getMaxPieceValue(board.getPieceTypeAtSquare(Move.getEndingSquare(move)));
-                    if (standPat + capturedPieceValue + 200 <= alpha) {
-                        continue;
+                // Delta Pruning. Before a capture is made, test if the captured piece value plus a safety margin are enough
+                // to raise alpha. If they are not, the capture is unlikely to improve the position and it's pruned. Should
+                // be switched off in the late endgame, since otherwise the search would be blind to insufficient material
+                // issues and transitions into won endgames made at the expense of some material. Delta Pruning is technically
+                // a Fail-Low filter because it prunes captures if they are less than or equal to alpha. For that reason,
+                // the score uses the upper bound/maximum piece value
+                if (board.getPhase() > Constants.LATE_ENDGAME_PHASE_THRESHOLD) {
+                    if (flag == Move.FLAG_CAPTURE) {
+                        int capturedPieceValue = Material.getMaxPieceValue(board.getPieceTypeAtSquare(Move.getEndingSquare(move)));
+                        if (standPat + capturedPieceValue + Constants.SAFETY_MARGIN <= alpha) {
+                            continue;
+                        }
                     }
-                }
 
-                else if (flag == Move.FLAG_EN_PASSANT_CAPTURE) {
-                    if (standPat + 300 <= alpha) {
-                        continue;
+                    else if (flag == Move.FLAG_EN_PASSANT_CAPTURE) {
+                        if (standPat + Material.getMaxPieceValue(Piece.PAWN) + Constants.SAFETY_MARGIN <= alpha) {
+                            continue;
+                        }
                     }
                 }
             }

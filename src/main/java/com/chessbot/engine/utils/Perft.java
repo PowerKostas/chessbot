@@ -57,7 +57,7 @@ public class Perft {
 
         double durationInSeconds = (endTime - startTime) / 1_000_000_000.0;
         System.out.printf("Total Nodes: %,d%n", nodesCount);
-        System.out.printf("Time taken:  %.3f seconds%n", durationInSeconds);
+        System.out.printf("Time taken:  %.2f seconds%n", durationInSeconds);
         System.out.printf("Speed:       %,d nps%n", (long) (nodesCount / durationInSeconds));
     }
 }
