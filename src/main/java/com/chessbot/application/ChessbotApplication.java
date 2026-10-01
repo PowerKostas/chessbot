@@ -10,7 +10,7 @@ import java.io.IOException;
 public class ChessbotApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(ChessbotApplication.class.getResource("/com/chessbot/Views/view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(ChessbotApplication.class.getResource("/com/chessbot/views/view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
         stage.setTitle("chessbot");

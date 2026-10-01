@@ -18,7 +18,7 @@ public class VisualPiece extends ImageView {
         char[] colorNames = {'w', 'b'};
         char[] pieceNames = {'p', 'n', 'b', 'r', 'q', 'k'};
 
-        Image image = new Image(ChessbotApplication.class.getResourceAsStream("/com/chessbot/Images/" + colorNames[color] + pieceNames[type] + ".png"));
+        Image image = new Image(ChessbotApplication.class.getResourceAsStream("/com/chessbot/images/" + colorNames[color] + pieceNames[type] + ".png"));
         this.setImage(image);
         this.setFitWidth(75);
         this.setFitHeight(75);

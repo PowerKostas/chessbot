@@ -17,11 +17,39 @@ public final class Constants {
     public static final int SAFETY_MARGIN = 200;
     public static final int LATE_ENDGAME_PHASE_THRESHOLD = 32;
 
-    // Evaluation function parameters, tuned with Texel's Tuning
-    public static final int[] MG_PIECE_VALUES = {82, 337, 365, 477, 1025, 0};
-    public static final int[] EG_PIECE_VALUES = {94, 281, 297, 512,  936, 0};
+    // Evaluation function parameters, tuned with Texel's Tuning. They are placed in one big array for simplicity in TexelTuner
+    public static final int MG_PIECE_VALUES_START_INDEX = 0;
+    public static final int EG_PIECE_VALUES_START_INDEX = 6;
+    public static final int PHASE_WEIGHTS_START_INDEX = 12;
+    public static final int MG_TEMPO_BONUS_INDEX = 18;
+    public static final int EG_TEMPO_BONUS_INDEX = 19;
+
+    public static final int EVAL_PARAMS_COUNT = 20;
+    public static final int[] UNTUNABLE_EVAL_PARAM_INDICES = {5, 11, 12, 17};
+    public static final int[] EVAL_PARAMS = {
+        82, 337, 365, 477, 1025, 0,
+        94, 281, 297, 512, 936, 0,
+        0, 11, 11, 21, 42, 0,
+        15,
+        5
+    };
+
+    // Evaluation function parameters with values that are derived from other evaluation function parameters. These need
+    // to get updated every time the original parameters change
     public static final int[] MAX_PIECE_VALUES = {94, 337, 365, 512, 1025, 0};
-    public static final int[] PHASE_WEIGHTS = {0, 11, 11, 21, 42, 0};
+    public static int MAX_PHASE = 256;
 
     private Constants() {}
+
+
+    // In TexelTuner when the original evaluation function parameters change, the derived ones don't. Derived parameters
+    // are synced here. MAX_PIECE_VALUES is not included because it's only used in the search function
+    public static void syncDerivedEvalParams() {
+        MAX_PHASE = 16 * EVAL_PARAMS[PHASE_WEIGHTS_START_INDEX + Piece.PAWN] +
+                    4 * EVAL_PARAMS[PHASE_WEIGHTS_START_INDEX + Piece.KNIGHT] +
+                    4 * EVAL_PARAMS[PHASE_WEIGHTS_START_INDEX + Piece.BISHOP] +
+                    4 * EVAL_PARAMS[PHASE_WEIGHTS_START_INDEX + Piece.ROOK] +
+                    2 * EVAL_PARAMS[PHASE_WEIGHTS_START_INDEX + Piece.QUEEN];
+
+    }
 }

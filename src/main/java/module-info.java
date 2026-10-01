@@ -11,12 +11,12 @@ module com.chessbot {
     exports com.chessbot.engine.ai;
     exports com.chessbot.engine.core;
     exports com.chessbot.engine.movegen;
+    exports com.chessbot.engine.movegen.utils;
 
     opens com.chessbot.application to javafx.fxml;
     opens com.chessbot.ui.components to javafx.fxml;
     opens com.chessbot.ui.controllers to javafx.fxml;
     opens com.chessbot.ui.input to javafx.fxml;
     opens com.chessbot.ui.utils to javafx.fxml;
-    opens com.chessbot.Views to javafx.fxml;
-    exports com.chessbot.engine.movegen.utils;
+    opens com.chessbot.views to javafx.fxml;
 }

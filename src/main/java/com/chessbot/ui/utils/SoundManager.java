@@ -5,13 +5,13 @@ import com.chessbot.engine.core.Move;
 import javafx.scene.media.AudioClip;
 
 public final class SoundManager {
-    private static final AudioClip checkSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/Sounds/check.mp3").toString());
-    private static final AudioClip captureSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/Sounds/capture.mp3").toString());
-    private static final AudioClip castleSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/Sounds/castle.mp3").toString());
-    private static final AudioClip moveSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/Sounds/move.mp3").toString());
-    private static final AudioClip promoteSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/Sounds/promote.mp3").toString());
-    private static final AudioClip illegalSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/Sounds/illegal.mp3").toString());
-    private static final AudioClip endSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/Sounds/end.mp3").toString());
+    private static final AudioClip checkSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/sounds/check.mp3").toString());
+    private static final AudioClip captureSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/sounds/capture.mp3").toString());
+    private static final AudioClip castleSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/sounds/castle.mp3").toString());
+    private static final AudioClip moveSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/sounds/move.mp3").toString());
+    private static final AudioClip promoteSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/sounds/promote.mp3").toString());
+    private static final AudioClip illegalSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/sounds/illegal.mp3").toString());
+    private static final AudioClip endSound = new AudioClip(ChessbotApplication.class.getResource("/com/chessbot/sounds/end.mp3").toString());
 
     private SoundManager() {}
 

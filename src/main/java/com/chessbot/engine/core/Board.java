@@ -64,15 +64,15 @@ public class Board {
     // A history array containing every past Zobrist key created in this game is needed. The array is used for detecting
     // threefold repetitions and easily unmaking moves. The currentZobristKey variable is used for easily referencing the
     // key of the current position
-    private final long[] zobristKeyHistory = new long[Constants.MAX_GAME_MOVES];
+    private final long[] zobristKeyHistory;
     private long currentZobristKey = 0L;
 
     // History arrays containing all the past Material and Piece-Square Tables scores. These scores assume that we are in
     // a middlegame/endgame. The scores are positive/negative when white/black is winning. They are placed here because
     // incrementally updating them on make/unmake move avoids recalculations in the evaluation function. The mgScore and
     // egScore variables are used for easily referencing the scores of the current position
-    private final int[] mgScoreHistory = new int[Constants.MAX_GAME_MOVES];
-    private final int[] egScoreHistory = new int[Constants.MAX_GAME_MOVES];
+    private final int[] mgScoreHistory;
+    private final int[] egScoreHistory;
     private int currentMgScore = 0;
     private int currentEgScore = 0;
 
@@ -81,7 +81,17 @@ public class Board {
     private int phase = 0;
 
 
+    // Most classes call the empty constructor in order to use the default sized history arrays. When a lightweight version
+    // of a Board object is needed, for example in TexelTuner, a parameter is passed to the constructor to make the capacity
+    // of the history arrays zero
     public Board() {
+        this(Constants.MAX_GAME_MOVES);
+    }
+
+    public Board(int historyCapacity) {
+        zobristKeyHistory = new long[historyCapacity];
+        mgScoreHistory = new int[historyCapacity];
+        egScoreHistory = new int[historyCapacity];
         Arrays.fill(mailbox, -1);
     }
 
@@ -157,6 +167,11 @@ public class Board {
 
 
     public void calculateInitialScores() {
+        // Resetting the scores in case this function is called multiple times in a game, done in TexelTuner for example
+        currentMgScore = 0;
+        currentEgScore = 0;
+        phase = 0;
+
         for (int pieceColor = 0; pieceColor < 2; pieceColor += 1) {
             int sign = (pieceColor == Piece.WHITE) ? 1 : -1;
             for (int pieceType = 0; pieceType < 6; pieceType += 1) {

@@ -13,8 +13,8 @@ public final class ApplicationConfig {
 
     // If white or black is an engine player type, they will use these versions of the engine. They are named initial because
     // they can swap sides after each game
-    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v5.1 - Upper Bounds");
-    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v5.2 - Late Game Guard Delta Pruning");
+    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v6 - Tempo Bonus");
+    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v6.1 - Game Phases Tempo Bonus");
 
     // The search depth that the different bot versions target. The search can exceed this number
     public static final int AI_TARGET_SEARCH_DEPTH = 4;
