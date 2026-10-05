@@ -9,14 +9,17 @@ public final class ApplicationConfig {
 
 
     public static final int WHITE_PLAYER_TYPE = PlayerType.HUMAN;
-    public static final int BLACK_PLAYER_TYPE = PlayerType.HUMAN;
+    public static final int BLACK_PLAYER_TYPE = PlayerType.ENGINE;
 
-    // If white or black is an engine player type, they will use these versions of the engine. They are named initial because
-    // they can swap sides after each game
-    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v6 - Tempo Bonus");
-    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v6.1 - Game Phases Tempo Bonus");
+    // Configures the versions of the engine when it's a human vs engine game and when it's an engine vs engine game
+    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v6.1 - Game Phases Tempo Bonus");
+    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v7 - PSTs");
 
-    // The search depth that the different bot versions target. The search can exceed this number
+    public static final Chessbot HUMAN_OPPONENT_BOT = NEW_VERSION_BOT;
+    public static final Chessbot ENGINE_MATCH_WHITE_BOT = NEW_VERSION_BOT;
+    public static final Chessbot ENGINE_MATCH_BLACK_BOT = PREVIOUS_VERSION_BOT;
+
+    // The search depth that the different engine versions target. The search can exceed this number
     public static final int AI_TARGET_SEARCH_DEPTH = 4;
 
     // SPRT parameters

@@ -32,8 +32,8 @@ public class UIGameManager {
     private int blackPlayerType;
 
     // Pluggable bots of different engine versions for white and black
-    private Chessbot whiteBot = ApplicationConfig.NEW_VERSION_BOT;
-    private Chessbot blackBot = ApplicationConfig.PREVIOUS_VERSION_BOT;
+    private Chessbot whiteBot;
+    private Chessbot blackBot;
 
     // In endless mode when a game ends another one gets setup, instead of the window closing
     private final boolean isEndlessMode;
@@ -43,6 +43,18 @@ public class UIGameManager {
         this.board = board;
         this.visualBoard = visualBoard;
         this.isEndlessMode = isEndlessMode;
+
+        boolean isEngineVsEngine = (ApplicationConfig.WHITE_PLAYER_TYPE == PlayerType.ENGINE &&
+                                    ApplicationConfig.BLACK_PLAYER_TYPE == PlayerType.ENGINE);
+
+        // Assigns the according bot if white/black is an engine
+        if (ApplicationConfig.WHITE_PLAYER_TYPE == PlayerType.ENGINE) {
+            whiteBot = isEngineVsEngine ? ApplicationConfig.ENGINE_MATCH_WHITE_BOT : ApplicationConfig.HUMAN_OPPONENT_BOT;
+        }
+
+        if (ApplicationConfig.BLACK_PLAYER_TYPE == PlayerType.ENGINE) {
+            blackBot = isEngineVsEngine ? ApplicationConfig.ENGINE_MATCH_BLACK_BOT : ApplicationConfig.HUMAN_OPPONENT_BOT;
+        }
     }
 
 

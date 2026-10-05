@@ -212,7 +212,7 @@ public class Searcher {
             // a score of 40, in MoveOrdering.Promotions, a queen promotion gets a slightly lower score. That scale is used
             // to calculate the increment to big delta when a pawn can promote. This method doesn't seem to have a noticeable
             // impact on performance, but it doesn't hurt it either
-            int BIG_DELTA = Material.getMaxPieceValue(Piece.QUEEN) + Constants.SAFETY_MARGIN;
+            int BIG_DELTA = Constants.getEvalParam(Constants.MG_PIECE_VALUES_START_INDEX + Piece.QUEEN) + Constants.SAFETY_MARGIN;
 
             boolean canPromote;
             if (board.getTurn() == Piece.WHITE) {
@@ -226,7 +226,7 @@ public class Searcher {
             }
 
             if (canPromote) {
-                BIG_DELTA += (Material.getMaxPieceValue(Piece.QUEEN) * Constants.PROMOTION_SCORES[Piece.QUEEN - 1]) / 40;
+                BIG_DELTA += (Constants.getEvalParam(Constants.MG_PIECE_VALUES_START_INDEX + Piece.QUEEN) * Constants.PROMOTION_SCORES[Piece.QUEEN - 1]) / 40;
             }
 
             if (standPat + BIG_DELTA <= alpha) {
