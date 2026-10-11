@@ -56,10 +56,10 @@ public final class Material {
         // When a phase weight changes, update MAX_PHASE
         else if (index >= PHASE_WEIGHTS_START_INDEX && index < MG_TEMPO_BONUS_INDEX) {
             MAX_PHASE = 16 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.PAWN) +
-                        4 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.KNIGHT) +
-                        4 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.BISHOP) +
-                        4 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.ROOK) +
-                        2 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.QUEEN);
+                    4 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.KNIGHT) +
+                    4 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.BISHOP) +
+                    4 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.ROOK) +
+                    2 * getEvalParam(PHASE_WEIGHTS_START_INDEX + Piece.QUEEN);
         }
     }
 }

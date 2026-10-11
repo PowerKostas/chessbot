@@ -142,7 +142,7 @@ public class Searcher {
         return bestMove;
     }
 
-     // Recursive function for every depth below the root, returns an evaluation
+    // Recursive function for every depth below the root, returns an evaluation
     private int search(int depth, int pliesFromRoot, int alpha, int beta) {
         //nodesSearched += 1;
 
@@ -266,9 +266,9 @@ public class Searcher {
             if (!inCheck) {
                 // Only queen promotions are worth looking at a quiescence search
                 boolean isCaptureOrPromotion = flag == Move.FLAG_CAPTURE ||
-                                               flag == Move.FLAG_EN_PASSANT_CAPTURE ||
-                                               flag == Move.FLAG_QUEEN_PROMOTION ||
-                                               flag == Move.FLAG_QUEEN_PROMOTION_CAPTURE;
+                        flag == Move.FLAG_EN_PASSANT_CAPTURE ||
+                        flag == Move.FLAG_QUEEN_PROMOTION ||
+                        flag == Move.FLAG_QUEEN_PROMOTION_CAPTURE;
 
                 if (!isCaptureOrPromotion) {
                     continue;

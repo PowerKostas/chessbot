@@ -20,13 +20,18 @@ public final class ApplicationConfig {
     public static final Chessbot ENGINE_MATCH_BLACK_BOT = PREVIOUS_VERSION_BOT;
 
     // The search depth that the different engine versions target. The search can exceed this number
-    public static final int AI_TARGET_SEARCH_DEPTH = 4;
+    public static final int AI_TARGET_SEARCH_DEPTH = 6;
 
     // SPRT parameters
     public static final double ELO_0 = 0;
     public static final double ELO_1 = 10;
     public static final double ALPHA = 0.05;
     public static final double BETA = 0.05;
+
+    // Texel's Tuning parameters
+    public static final int STARTING_STEP_SIZE = 16;
+    public static final double MIN_IMPROVEMENT_PER_PARAMETER = 1e-10;
+    public static final double MIN_IMPROVEMENT_PER_PASS  = 1e-6;
 
     public static final int PERFT_SEARCH_DEPTH = 6;
 

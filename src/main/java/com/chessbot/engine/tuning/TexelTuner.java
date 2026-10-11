@@ -1,5 +1,6 @@
 package com.chessbot.engine.tuning;
 
+import com.chessbot.application.ApplicationConfig;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.core.Constants;
 import com.chessbot.engine.core.Piece;
@@ -22,12 +23,6 @@ public final class TexelTuner {
     private static double[] results; // 0.0 = Black win, 0.5 Draw, 1.0 White win
     private static final double SIGMOID_SCALE = Math.log(10.0) / 400.0;
 
-    // Don't need to put the starting step size and the tolerance values in ApplicationConfig because realistically I will
-    // never change them
-    private static final int STARTING_STEP_SIZE = 8;
-    private static final double MIN_IMPROVEMENT_PER_PARAMETER = 1e-10;
-    private static final double MIN_IMPROVEMENT_PER_PASS  = 1e-6;
-
     private TexelTuner() {}
 
 
@@ -36,15 +31,36 @@ public final class TexelTuner {
         List<Board> tempBoards = new ArrayList<>();
         List<Double> tempResults = new ArrayList<>();
 
-        try (Stream<String> lines = Files.lines(Path.of("src/main/resources/com/chessbot/datasets/E12.52-1M-D12-Resolved.book"))) {
+        try (Stream<String> lines = Files.lines(Path.of("src/main/resources/com/chessbot/datasets/quiet-labeled.epd"))) {
             lines.forEach(line -> {
-                // Splits by either '[' or ']'
-                String[] parts = line.split("[\\[\\]]");
+                String[] whitespaceSplit = line.split("\\s");
+                String fen = whitespaceSplit[0] + " " + whitespaceSplit[1] + " " + whitespaceSplit[2] + " " + whitespaceSplit[3];
+
+                String[] quotationSplit = line.split("\"");
+                String resultString = quotationSplit[1];
+
+                double result;
+                switch (resultString) {
+                    case "1-0":
+                        result = 1.0;
+                        break;
+
+                    case "0-1":
+                        result = 0.0;
+                        break;
+
+                    case "1/2-1/2":
+                        result = 0.5;
+                        break;
+
+                    default:
+                        return;
+                }
 
                 Board board = new Board(0);
-                board.loadInitialPosition(parts[0].strip());
+                board.loadInitialPosition(fen);
                 tempBoards.add(board);
-                tempResults.add(Double.parseDouble(parts[1]));
+                tempResults.add(result);
             });
         }
 
@@ -76,15 +92,15 @@ public final class TexelTuner {
     // here every time because if a Material or PieceSquareTables parameter changes, the scores are out of sync
     private static double computeMSE() {
         return IntStream.range(0, boards.length)
-            .parallel()
-            .mapToDouble(i -> {
-                Board board = boards[i];
-                board.calculateInitialScores();
-                double diff = results[i] - sigmoid(evaluate(board));
-                return diff * diff;
-            })
-            .average()
-            .orElse(0.0);
+                .parallel()
+                .mapToDouble(i -> {
+                    Board board = boards[i];
+                    board.calculateInitialScores();
+                    double diff = results[i] - sigmoid(evaluate(board));
+                    return diff * diff;
+                })
+                .average()
+                .orElse(0.0);
     }
 
 
@@ -99,7 +115,7 @@ public final class TexelTuner {
         // Dynamic step sizing (steps are centipawn increments). It executes bigger leaps first and when a pass yields zero
         // improvements to MSE, it narrows down
         double bestError = computeMSE();
-        for (int step = STARTING_STEP_SIZE; step >= 1; step /= 2) {
+        for (int step = ApplicationConfig.STARTING_STEP_SIZE; step >= 1; step /= 2) {
             boolean improved = true;
             int pass = 0;
 
@@ -120,7 +136,7 @@ public final class TexelTuner {
 
                     Constants.setEvalParam(i, originalEvalParam + step);
                     double errorUp = computeMSE();
-                    if (errorUp < bestError - MIN_IMPROVEMENT_PER_PARAMETER) {
+                    if (errorUp < bestError - ApplicationConfig.MIN_IMPROVEMENT_PER_PARAMETER) {
                         bestError = errorUp;
                         improved = true;
                         continue;
@@ -128,7 +144,7 @@ public final class TexelTuner {
 
                     Constants.setEvalParam(i, originalEvalParam - step);
                     double errorDown = computeMSE();
-                    if (errorDown < bestError - MIN_IMPROVEMENT_PER_PARAMETER) {
+                    if (errorDown < bestError - ApplicationConfig.MIN_IMPROVEMENT_PER_PARAMETER) {
                         bestError = errorDown;
                         improved = true;
                         continue;
@@ -138,7 +154,7 @@ public final class TexelTuner {
                     Constants.setEvalParam(i, originalEvalParam);
                 }
 
-                if (passStartError - bestError < MIN_IMPROVEMENT_PER_PASS) {
+                if (passStartError - bestError < ApplicationConfig.MIN_IMPROVEMENT_PER_PASS) {
                     improved = false;
                 }
             }
