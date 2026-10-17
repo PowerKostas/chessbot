@@ -18,7 +18,12 @@ public final class Constants {
     // Search function parameters, tuned with SPSA
     public static final int[] PROMOTION_SCORES = {-45, -50, -50, 35};
     public static final int SAFETY_MARGIN = 200;
-    public static final int LATE_ENDGAME_PHASE_THRESHOLD = 32;
+    public static final int LATE_ENDGAME_PHASE_THRESHOLD = 70;
+
+    // These are evaluation function parameters, but because they are used to win quickly before the search depth runs out,
+    // they are also tuned with SPSA
+    public static final int KING_PROXIMITY_MULTIPLIER = 10;
+    public static final int LOSING_KING_EDGE_MULTIPLIER = 10;
 
     // Evaluation function parameters, tuned with Texel's Tuning. They are placed in one big array for simplicity in TexelTuner
     public static final int MG_PIECE_VALUES_START_INDEX = 0;

@@ -12,7 +12,6 @@ public final class Promotions {
      * so it gets a slightly higher score. A queen promotion gives a material advantage of 8 while a pawn capturing a queen
      * gives a material advantage of 9. For that reason a queen promotion gets a slightly lower score than a pawn capturing
      * a queen in MVV-LVA (score of 40)
-     *
      * @see Constants#PROMOTION_SCORES
     */
 

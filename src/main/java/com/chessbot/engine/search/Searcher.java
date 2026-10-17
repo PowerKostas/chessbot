@@ -10,8 +10,7 @@ import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.engine.movegen.MoveList;
 import com.chessbot.engine.movegen.utils.Checks;
 import com.chessbot.engine.search.moveordering.MoveOrderer;
-
-import java.util.Random;
+import com.chessbot.engine.utils.ResultDetector;
 
 // Searcher is a standard class instead of a utility one in order to be able to create multiple instances if needed
 public class Searcher {
@@ -102,9 +101,6 @@ public class Searcher {
         MoveGenerator.generate(board, moveList);
         MoveOrderer.prepareMoveScores(board, moveList);
 
-        Random random = new Random();
-        int ties = 0;
-
         int alpha = -Constants.INFINITY_SCORE;
         int beta = Constants.INFINITY_SCORE;
         int bestEvaluation = -Constants.INFINITY_SCORE;
@@ -123,15 +119,6 @@ public class Searcher {
             if (evaluation > bestEvaluation) {
                 bestEvaluation = evaluation;
                 bestMove = move;
-                ties = 1;
-            }
-
-            else if (evaluation == bestEvaluation) {
-                ties += 1;
-
-                if (random.nextInt(ties) == 0) {
-                    bestMove = move;
-                }
             }
 
             alpha = bestEvaluation - 1;
@@ -146,6 +133,11 @@ public class Searcher {
     private int search(int depth, int pliesFromRoot, int alpha, int beta) {
         //nodesSearched += 1;
 
+        // Draw and repetition detection, return an evaluation of 0
+        if (ResultDetector.isFiftyMoveRule(board) || ResultDetector.isInsufficientMaterial(board) || ResultDetector.isRepetition(board)) {
+            return 0;
+        }
+
         if (depth == 0) {
             return quiescenceSearch(pliesFromRoot, alpha, beta);
         }
@@ -155,7 +147,7 @@ public class Searcher {
 
         // If this move results in checkmate, return a terrible evaluation. The terrible evaluation is adjusted by the plies
         // from root number, this ensures that the engine favors the current player getting mated in 5 over getting mated
-        // in 1. If this move results in a draw, return an evaluation of 0
+        // in 1. If this move results in stalemate, return an evaluation of 0
         if (moveList.count == 0) {
             boolean inCheck = Checks.calculateSquares(board, board.getTurn()) != 0L;
             return inCheck ? -Constants.CHECKMATE_SCORE + pliesFromRoot : 0;
@@ -188,6 +180,10 @@ public class Searcher {
     // Since quiescence search has no depth limit, only pliesFromRoot is needed
     private int quiescenceSearch(int pliesFromRoot, int alpha, int beta) {
         //nodesSearched += 1;
+
+        if (ResultDetector.isFiftyMoveRule(board) || ResultDetector.isInsufficientMaterial(board) || ResultDetector.isRepetition(board)) {
+            return 0;
+        }
 
         // Initializes a stand-pat value. Stand-pat is the evaluation of the board after the opponent has made their move
         // and before the current player makes theirs. In other words the baseline score

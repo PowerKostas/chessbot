@@ -8,7 +8,6 @@ public final class PieceSquareTables {
     /**
      * Assigns middlegame and endgame values to specific pieces on specific squares. The first square on the middlegame
      * and endgame PST piece tables is a8
-     *
      * @see Constants#MG_PST_START_INDEX
      * @see Constants#EG_PST_START_INDEX
      */

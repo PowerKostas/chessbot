@@ -54,13 +54,32 @@ public final class ResultDetector {
         // A repeated position can only start happening after 4 plies. If a move that reset the half move clock happened,
         // positions past that point cant be repetitions. That's why it searches backwards up to the half move clock limit
         // for repeated positions. Step by 2 because a repetition can only happen on the same player's turn
-        for (int i = plyIndex - 4; i >= plyIndex - halfMoveClock; i -= 2) {
+        int limit = Math.max(0, plyIndex - halfMoveClock); // Math.max() prevents searching negative indices when a mid-game FEN is loaded
+        for (int i = plyIndex - 4; i >= limit; i -= 2) {
             if (zobristKeyHistory[i] == currentZobristKey) {
                 repetitions += 1;
 
                 if (repetitions == 3) {
                     return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    // Checks if the current position has occurred at least once before in the game. Used in the search function to prevent
+    // shuffling pieces
+    public static boolean isRepetition(Board board) {
+        int halfMoveClock = board.getHalfMoveClock();
+        int plyIndex = board.getPlyIndex();
+        long[] zobristKeyHistory = board.getZobristKeyHistory();
+        long currentZobristKey = board.getCurrentZobristKey();
+
+        int limit = Math.max(0, plyIndex - halfMoveClock);
+        for (int i = plyIndex - 4; i >= limit; i -= 2) {
+            if (zobristKeyHistory[i] == currentZobristKey) {
+                return true;
             }
         }
 

@@ -8,13 +8,11 @@ import static com.chessbot.engine.core.Constants.*;
 public final class Material {
     /**
      * The values that the pawn, knight, bishop, rook, queen and king have in the middlegame and endgame
-     *
      * @see Constants#MG_PIECE_VALUES_START_INDEX
      * @see Constants#EG_PIECE_VALUES_START_INDEX
      *
      * Weights that indicate how much a pawn, knight, bishop, rook, queen or king affects endgame detection. Pawns get a
      * value of 0 because a pawns and king position is always an endgame, no matter the number of pawns
-     *
      * @see Constants#PHASE_WEIGHTS_START_INDEX
      */
 
