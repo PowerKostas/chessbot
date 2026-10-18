@@ -15,6 +15,12 @@ public final class Constants {
     public static final int INFINITY_SCORE = 10000000;
     public static final int CHECKMATE_SCORE = 1000000;
 
+    // Any score above this threshold is a checkmate score
+    public static final int CHECKMATE_SCORE_THRESHOLD = CHECKMATE_SCORE - MAX_SEARCH_DEPTH;
+
+    // Move ordering score for the best move of the transposition table, must be higher than MVV-LVA + Promotions + ...
+    public static final int TT_BEST_MOVE_SCORE = 1000;
+
     // Search function parameters, tuned with SPSA
     public static final int[] PROMOTION_SCORES = {-45, -50, -50, 35};
     public static final int SAFETY_MARGIN = 200;

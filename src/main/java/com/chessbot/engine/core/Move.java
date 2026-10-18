@@ -45,4 +45,6 @@ public final class Move {
     public static int getFlag(int move) { return (move & FLAG_MASK) >>> 12; }
 
     public static int getScore(int move) { return (move & SCORE_MASK) >>> 16; }
+
+    public static int getMoveWithoutScore(int move) { return move & 0xFFFF; }
 }
