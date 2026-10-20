@@ -5,7 +5,7 @@ import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.engine.movegen.MoveList;
 import java.util.Random;
 
-public class RandomBot implements Chessbot {
+public final class RandomBot implements Chessbot {
     private final MoveList moveList = new MoveList();
     private final Random random = new Random();
 
@@ -14,7 +14,6 @@ public class RandomBot implements Chessbot {
     public String name() {
         return "v0.1 - Random Moves";
     }
-
 
     @Override
     public int chooseMove(Board board) {

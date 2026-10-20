@@ -19,6 +19,8 @@ public class Searcher {
     // Array to hold the pre-allocated move list objects, one object per depth level is needed
     private final MoveList[] moveListPool = new MoveList[Constants.MAX_SEARCH_DEPTH];
 
+    private final TranspositionTable tt;
+
     // Boolean to apply experimental features only to specific bot versions
     private final boolean experimentalVersion;
 
@@ -26,13 +28,14 @@ public class Searcher {
     //private int nodesSearched;
 
 
-    public Searcher(Board board, boolean experimentalVersion) {
+    public Searcher(Board board, TranspositionTable tt, boolean experimentalVersion) {
         this.board = board;
 
         for (int i = 0; i < Constants.MAX_SEARCH_DEPTH; i += 1) {
             this.moveListPool[i] = new MoveList();
         }
 
+        this.tt = tt;
         this.experimentalVersion = experimentalVersion;
     }
 
@@ -83,9 +86,10 @@ public class Searcher {
 
     4. Quiescence Search: Performs a more limited search at the end of the normal search. Without it the engine blunders
        all the time. The reason for that is that it doesn't know if the opponent can just capture its queen one move after
-       the searched depth, for example. If not in check, the limited search only includes captures and promotions, otherwise
-       all legal moves have to be searched in order to find check evasions. QS terminates when a quiet position is reached
-       (no captures, promotions or check evasions left), when a beta-cutoff occurs or when the maximum search depth is reached
+       the searched depth, for example. If not in check, the limited search only includes captures and queen promotions,
+       otherwise all legal moves have to be searched in order to find check evasions. QS terminates when a quiet position
+       is reached (no captures, promotions or check evasions left), when a beta-cutoff occurs or when the maximum search
+       depth is reached
     */
 
     // Entry function for the Searcher class. Called once per turn, responsible for searching the root and returning the
@@ -97,9 +101,11 @@ public class Searcher {
         //nodesSearched = 0;
         //nodesSearched += 1;
 
+        long zobristKey = board.getCurrentZobristKey();
+        int ttBestMove = tt.probeBestMove(zobristKey);
         MoveList moveList = moveListPool[0];
         MoveGenerator.generate(board, moveList);
-        MoveOrderer.prepareMoveScores(board, moveList);
+        MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
 
         int alpha = -Constants.INFINITY_SCORE;
         int beta = Constants.INFINITY_SCORE;
@@ -109,7 +115,7 @@ public class Searcher {
             MoveOrderer.selectNextMove(moveList, i);
 
             // Prints the root moves, useful for debugging move ordering
-            //System.out.printf("%s%s%n%n", CoordinatesConverter.indexToString(Move.getStartingSquare(moveList.moves[i])), CoordinatesConverter.indexToString(Move.getEndingSquare(moveList.moves[i])));
+            // System.out.printf("%s%s%n%n", CoordinatesConverter.indexToString(Move.getStartingSquare(moveList.moves[i])), CoordinatesConverter.indexToString(Move.getEndingSquare(moveList.moves[i])));
 
             int move = moveList.moves[i];
             int undo = board.makeMove(move);
@@ -117,14 +123,15 @@ public class Searcher {
             board.unmakeMove(move, undo);
 
             if (evaluation > bestEvaluation) {
+                alpha = evaluation;
                 bestEvaluation = evaluation;
                 bestMove = move;
             }
-
-            alpha = bestEvaluation - 1;
         }
 
-        //System.out.printf("Nodes Searched: %d%n", nodesSearched);
+        // System.out.printf("Nodes Searched: %d%n", nodesSearched);
+
+        tt.store(zobristKey, 0, bestEvaluation, Move.getMoveWithoutScore(bestMove), depth, TranspositionTable.EXACT_BOUND);
 
         return bestMove;
     }
@@ -142,6 +149,14 @@ public class Searcher {
             return quiescenceSearch(pliesFromRoot, alpha, beta);
         }
 
+        long zobristKey = board.getCurrentZobristKey();
+        int ttBestMove = tt.probeBestMove(zobristKey);
+        int ttScore = tt.probeScore(zobristKey, depth, pliesFromRoot, alpha, beta);
+
+        if (ttScore != TranspositionTable.NO_SCORE) {
+            return ttScore;
+        }
+
         MoveList moveList = moveListPool[pliesFromRoot];
         MoveGenerator.generate(board, moveList);
 
@@ -153,9 +168,11 @@ public class Searcher {
             return inCheck ? -Constants.CHECKMATE_SCORE + pliesFromRoot : 0;
         }
 
-        MoveOrderer.prepareMoveScores(board, moveList);
+        MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
 
         int bestEvaluation = -Constants.INFINITY_SCORE;
+        int bestMove = 0;
+        byte bound = TranspositionTable.UPPER_BOUND;
         for (int i = 0; i < moveList.count; i += 1) {
             MoveOrderer.selectNextMove(moveList, i);
             int move = moveList.moves[i];
@@ -165,19 +182,27 @@ public class Searcher {
 
             if (evaluation > bestEvaluation) {
                 bestEvaluation = evaluation;
-            }
 
-            if (bestEvaluation >= beta) {
-                return bestEvaluation;
-            }
+                if (evaluation > alpha) {
+                    alpha = evaluation;
+                    bestMove = Move.getMoveWithoutScore(move);
+                    bound = TranspositionTable.EXACT_BOUND;
 
-            alpha = Math.max(alpha, bestEvaluation);
+                    if (alpha >= beta) {
+                        tt.store(zobristKey, pliesFromRoot, bestEvaluation, bestMove, depth, TranspositionTable.LOWER_BOUND);
+                        return bestEvaluation;
+                    }
+                }
+            }
         }
+
+        tt.store(zobristKey, pliesFromRoot, bestEvaluation, bestMove, depth, bound);
 
         return bestEvaluation;
     }
 
-    // Since quiescence search has no depth limit, only pliesFromRoot is needed
+    // Since quiescence search has no depth limit, only pliesFromRoot is needed. Because, when not in check, QS only searches
+    // captures and queen promotions, it doesn't store entries in the transposition table
     private int quiescenceSearch(int pliesFromRoot, int alpha, int beta) {
         //nodesSearched += 1;
 
@@ -185,9 +210,15 @@ public class Searcher {
             return 0;
         }
 
+        // Because a quiescence search can theoretically follow a long chain of moves, return the static evaluation if the
+        // search exceeds the given max search depth
+        if (pliesFromRoot >= Constants.MAX_SEARCH_DEPTH) {
+            return Evaluator.evaluate(board, experimentalVersion);
+        }
+
         // Initializes a stand-pat value. Stand-pat is the evaluation of the board after the opponent has made their move
         // and before the current player makes theirs. In other words the baseline score
-        int standPat = Evaluator.evaluate(board, experimentalVersion);
+        int standPat = 0;
 
         // If in check using stand-pat is not allowed. There are 2 reasons for that. Firstly, we are not sure that there
         // is a move that can match alpha, in many positions a check can mean a serious threat that cannot be resolved.
@@ -195,7 +226,10 @@ public class Searcher {
         // of the quiet moves can most likely increase alpha. But because instead of a limited square, a full search is
         // executed when in check, the above can't be valid
         boolean inCheck = Checks.calculateSquares(board, board.getTurn()) != 0L;
+        int bestEvaluation = -Constants.INFINITY_SCORE;
         if (!inCheck) {
+            standPat = Evaluator.evaluate(board, experimentalVersion);
+
             // If the baseline score is already so high, the opponent would never choose to go down this path, for that
             // reason the branch is just pruned
             if (standPat >= beta) {
@@ -233,12 +267,8 @@ public class Searcher {
             if (standPat > alpha) {
                 alpha = standPat;
             }
-        }
 
-        // Because a quiescence search can theoretically follow a long chain of moves, return the static evaluation if the
-        // search exceeds the given max search depth
-        if (pliesFromRoot >= Constants.MAX_SEARCH_DEPTH) {
-            return standPat;
+            bestEvaluation = standPat;
         }
 
         MoveList moveList = moveListPool[pliesFromRoot];
@@ -248,46 +278,49 @@ public class Searcher {
             return inCheck ? -Constants.CHECKMATE_SCORE + pliesFromRoot : 0;
         }
 
-        MoveOrderer.prepareMoveScores(board, moveList);
+        // Only captures and queen promotions are worth looking at a quiescence search
+        if (!inCheck) {
+            int tacticalMovesCount = 0;
+            for (int i = 0; i < moveList.count; i += 1) {
+                int move = moveList.moves[i];
+                int flag = Move.getFlag(move);
 
-        // If in check, the floor equals negative infinity because any legal move is better than being in check. Otherwise,
-        // the floor equals just the stand-pat score
-        int bestEvaluation = inCheck ? -Constants.INFINITY_SCORE : standPat;
+                if (flag == Move.FLAG_CAPTURE ||
+                    flag == Move.FLAG_EN_PASSANT_CAPTURE ||
+                    flag == Move.FLAG_QUEEN_PROMOTION ||
+                    flag == Move.FLAG_QUEEN_PROMOTION_CAPTURE)
+                {
+                    moveList.moves[tacticalMovesCount] = move;
+                    tacticalMovesCount += 1;
+                }
+            }
 
+            moveList.count = tacticalMovesCount;
+        }
+
+        int ttBestMove = tt.probeBestMove(board.getCurrentZobristKey());
+        MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
+
+        boolean canDeltaPrune = !inCheck && (board.getPhase() > Constants.LATE_ENDGAME_PHASE_THRESHOLD);
         for (int i = 0; i < moveList.count; i += 1) {
             MoveOrderer.selectNextMove(moveList, i);
             int move = moveList.moves[i];
-            int flag = Move.getFlag(move);
 
-            if (!inCheck) {
-                // Only queen promotions are worth looking at a quiescence search
-                boolean isCaptureOrPromotion = flag == Move.FLAG_CAPTURE ||
-                        flag == Move.FLAG_EN_PASSANT_CAPTURE ||
-                        flag == Move.FLAG_QUEEN_PROMOTION ||
-                        flag == Move.FLAG_QUEEN_PROMOTION_CAPTURE;
+            // Delta Pruning. Before a capture is made, test if the captured piece value plus a safety margin are enough
+            // to raise alpha. If they are not, the capture is unlikely to improve the position and it's pruned. Should
+            // be switched off in the late endgame, since otherwise the search would be blind to insufficient material
+            // issues and transitions into won endgames made at the expense of some material. Delta Pruning is technically
+            // a Fail-Low filter because it prunes captures if they are less than or equal to alpha. For that reason,
+            // the score uses the upper bound/maximum piece value
+            if (canDeltaPrune) {
+                int flag = Move.getFlag(move);
+                if (flag == Move.FLAG_CAPTURE || flag == Move.FLAG_EN_PASSANT_CAPTURE) {
+                    int capturedPieceType = (flag == Move.FLAG_EN_PASSANT_CAPTURE) ? Piece.PAWN : board.getPieceTypeAtSquare(Move.getEndingSquare(move));
+                    int score = standPat + Material.getMaxPieceValue(capturedPieceType) + Constants.SAFETY_MARGIN;
 
-                if (!isCaptureOrPromotion) {
-                    continue;
-                }
-
-                // Delta Pruning. Before a capture is made, test if the captured piece value plus a safety margin are enough
-                // to raise alpha. If they are not, the capture is unlikely to improve the position and it's pruned. Should
-                // be switched off in the late endgame, since otherwise the search would be blind to insufficient material
-                // issues and transitions into won endgames made at the expense of some material. Delta Pruning is technically
-                // a Fail-Low filter because it prunes captures if they are less than or equal to alpha. For that reason,
-                // the score uses the upper bound/maximum piece value
-                if (board.getPhase() > Constants.LATE_ENDGAME_PHASE_THRESHOLD) {
-                    if (flag == Move.FLAG_CAPTURE) {
-                        int capturedPieceValue = Material.getMaxPieceValue(board.getPieceTypeAtSquare(Move.getEndingSquare(move)));
-                        if (standPat + capturedPieceValue + Constants.SAFETY_MARGIN <= alpha) {
-                            continue;
-                        }
-                    }
-
-                    else if (flag == Move.FLAG_EN_PASSANT_CAPTURE) {
-                        if (standPat + Material.getMaxPieceValue(Piece.PAWN) + Constants.SAFETY_MARGIN <= alpha) {
-                            continue;
-                        }
+                    if (score <= alpha) {
+                        bestEvaluation = Math.max(bestEvaluation, score);
+                        continue;
                     }
                 }
             }
@@ -298,13 +331,15 @@ public class Searcher {
 
             if (evaluation > bestEvaluation) {
                 bestEvaluation = evaluation;
-            }
 
-            if (bestEvaluation >= beta) {
-                return bestEvaluation;
-            }
+                if (evaluation > alpha) {
+                    alpha = evaluation;
 
-            alpha = Math.max(alpha, bestEvaluation);
+                    if (alpha >= beta) {
+                        return bestEvaluation;
+                    }
+                }
+            }
         }
 
         return bestEvaluation;

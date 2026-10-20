@@ -1,5 +1,6 @@
 package com.chessbot.engine.search;
 
+import com.chessbot.application.ApplicationConfig;
 import com.chessbot.engine.core.Constants;
 import java.util.Arrays;
 
@@ -9,12 +10,11 @@ public final class TranspositionTable {
     public static final byte LOWER_BOUND = 2; // Fail-High node (score >= beta)
     public static final byte UPPER_BOUND = 3; // Fail-Low node (score <= alpha)
 
-    private static final int TT_SIZE = 1 << 20;
-    private final long[] keys = new long[TT_SIZE];
-    private final int[] moves = new int[TT_SIZE];
-    private final int[] evaluations = new int[TT_SIZE];
-    private final byte[] depths = new byte[TT_SIZE];
-    private final byte[] bounds = new byte[TT_SIZE];
+    private final long[] keys = new long[ApplicationConfig.TT_SIZE];
+    private final int[] moves = new int[ApplicationConfig.TT_SIZE];
+    private final int[] evaluations = new int[ApplicationConfig.TT_SIZE];
+    private final byte[] depths = new byte[ApplicationConfig.TT_SIZE];
+    private final byte[] bounds = new byte[ApplicationConfig.TT_SIZE];
 
 
     // If the keys are cleared, any future lookup will fail the check and the stale data will eventually be overwritten
@@ -25,17 +25,24 @@ public final class TranspositionTable {
 
     // Gets a random index up to the TT size based on the Zobrist key
     private int getIndex(long zobristKey) {
-        return (int) zobristKey & (TT_SIZE - 1);
+        return (int) zobristKey & (ApplicationConfig.TT_SIZE - 1);
     }
 
 
-    public void store(long zobristKey, int pliesFromRoot, int evaluation, int bestMove, byte depth, byte bound) {
+    public void store(long zobristKey, int pliesFromRoot, int evaluation, int bestMove, int depth, byte bound) {
         int index = getIndex(zobristKey);
 
-        // If a new best move wasn't found (fail-low node for example) and this is the same position, keep the previously
-        // stored best move
-        if (bestMove == 0 && keys[index] == zobristKey) {
-            bestMove = moves[index];
+        // If this position is a transposition
+        if (zobristKey == keys[index]) {
+            // If a new best move wasn't found (fail-low node for example), keep the previously stored best move
+            if (bestMove == 0) {
+                bestMove = moves[index];
+            }
+
+            // Prevents overwriting a deeper search with a shallower one
+            if (depths[index] > depth) {
+                return;
+            }
         }
 
         // Cancels the root distance in order to store an independent checkmate evaluation
@@ -50,13 +57,13 @@ public final class TranspositionTable {
         keys[index] = zobristKey;
         evaluations[index] = evaluation;
         moves[index] = bestMove;
-        depths[index] = depth;
+        depths[index] = (byte) depth;
         bounds[index] = bound;
     }
 
 
     // Core function of the TT. The goal is to see if a stored evaluation can be used in order to avoid searching the current
-    // position again
+    // transposition again
     public int probeScore(long zobristKey, int depth, int pliesFromRoot, int alpha, int beta) {
         int index = getIndex(zobristKey);
 
@@ -103,7 +110,7 @@ public final class TranspositionTable {
 
     // Even when a TT entry isn't searched deep enough to immediately cause a cut-off, its stored bestMove is almost always
     // the strongest move to try first. This function is used in move ordering
-    public int probeMove(long zobristKey) {
+    public int probeBestMove(long zobristKey) {
         int index = getIndex(zobristKey);
         return (zobristKey == keys[index]) ? moves[index] : 0;
     }

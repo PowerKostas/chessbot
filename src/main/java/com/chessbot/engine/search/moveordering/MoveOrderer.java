@@ -1,6 +1,7 @@
 package com.chessbot.engine.search.moveordering;
 
 import com.chessbot.engine.core.Board;
+import com.chessbot.engine.core.Constants;
 import com.chessbot.engine.movegen.MoveList;
 
 public final class MoveOrderer {
@@ -8,12 +9,20 @@ public final class MoveOrderer {
 
 
     // Goes through every legal move and adds all the different move ordering heuristic scores to the last 16 bits of the
-    // Move int
-    public static void prepareMoveScores(Board board, MoveList moveList) {
+    // Move int. If there is a stored best move for this transposition, use the corresponding score instead
+    public static void prepareMoveScores(Board board, MoveList moveList, int ttBestMove) {
         for (int i = 0; i < moveList.count; i += 1) {
             int move = moveList.moves[i];
-            int score = MvvLva.scoreMove(board, move);
-            score += Promotions.scoreMove(move);
+            int score;
+
+            if (ttBestMove != 0 && move == ttBestMove) {
+                score = Constants.TT_BEST_MOVE_SCORE;
+            }
+
+            else {
+                score = MvvLva.scoreMove(board, move);
+                score += Promotions.scoreMove(move);
+            }
 
             moveList.moves[i] = move | (score << 16);
         }

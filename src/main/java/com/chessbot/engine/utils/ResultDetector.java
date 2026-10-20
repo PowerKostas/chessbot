@@ -46,7 +46,7 @@ public final class ResultDetector {
         int halfMoveClock = board.getHalfMoveClock();
         int plyIndex = board.getPlyIndex();
         long[] zobristKeyHistory = board.getZobristKeyHistory();
-        long currentZobristKey = board.getCurrentZobristKey();
+        long zobristKey = board.getCurrentZobristKey();
 
         // The current position counts as 1 repetition
         int repetitions = 1;
@@ -56,7 +56,7 @@ public final class ResultDetector {
         // for repeated positions. Step by 2 because a repetition can only happen on the same player's turn
         int limit = Math.max(0, plyIndex - halfMoveClock); // Math.max() prevents searching negative indices when a mid-game FEN is loaded
         for (int i = plyIndex - 4; i >= limit; i -= 2) {
-            if (zobristKeyHistory[i] == currentZobristKey) {
+            if (zobristKey == zobristKeyHistory[i]) {
                 repetitions += 1;
 
                 if (repetitions == 3) {
@@ -74,11 +74,11 @@ public final class ResultDetector {
         int halfMoveClock = board.getHalfMoveClock();
         int plyIndex = board.getPlyIndex();
         long[] zobristKeyHistory = board.getZobristKeyHistory();
-        long currentZobristKey = board.getCurrentZobristKey();
+        long zobristKey = board.getCurrentZobristKey();
 
         int limit = Math.max(0, plyIndex - halfMoveClock);
         for (int i = plyIndex - 4; i >= limit; i -= 2) {
-            if (zobristKeyHistory[i] == currentZobristKey) {
+            if (zobristKey == zobristKeyHistory[i] ) {
                 return true;
             }
         }

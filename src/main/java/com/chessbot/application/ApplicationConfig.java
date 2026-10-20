@@ -3,6 +3,7 @@ package com.chessbot.application;
 import com.chessbot.engine.ai.Chessbot;
 import com.chessbot.engine.ai.NewVersionBot;
 import com.chessbot.engine.ai.PreviousVersionBot;
+import com.chessbot.engine.ai.RandomBot;
 
 public final class ApplicationConfig {
     private ApplicationConfig() {}
@@ -12,8 +13,9 @@ public final class ApplicationConfig {
     public static final int BLACK_PLAYER_TYPE = PlayerType.HUMAN;
 
     // Configures the versions of the engine when it's a human vs engine game and when it's an engine vs engine game
-    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v7 - PSTs");
-    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v8 - Easy Endgames");
+    public static final Chessbot RANDOM_BOT = new RandomBot();
+    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v8 - Easy Endgames");
+    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v9 - Transposition Table");
 
     public static final Chessbot HUMAN_OPPONENT_BOT = NEW_VERSION_BOT;
     public static final Chessbot ENGINE_MATCH_WHITE_BOT = NEW_VERSION_BOT;
@@ -21,6 +23,10 @@ public final class ApplicationConfig {
 
     // The search depth that the different engine versions target. The search can exceed this number
     public static final int AI_TARGET_SEARCH_DEPTH = 30;
+
+    // Transposition table size. Bigger size equals faster speeds but also bigger memory requirements. Put 1 << 20 for instant
+    // games, 1 << 22 for blitz, 1 << 24 for rapid, 1 << 25 for classical and 1 << 26 for maximum analysis
+    public static final int TT_SIZE = 1 << 26;
 
     // SPRT parameters
     public static final double ELO_0 = 0;

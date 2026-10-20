@@ -9,4 +9,7 @@ public interface Chessbot {
 
     // Returns the chosen engine move
     int chooseMove(Board board);
+
+    // Coordinates every bot related job before starting a new game
+    default void prepareNewGame() {}
 }
