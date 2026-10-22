@@ -102,7 +102,7 @@ public class Searcher {
         //nodesSearched += 1;
 
         long zobristKey = board.getCurrentZobristKey();
-        int ttBestMove = tt.probeBestMove(zobristKey);
+        int ttBestMove = TranspositionTable.unpackBestMove(tt.probeEntryData(zobristKey));
         MoveList moveList = moveListPool[0];
         MoveGenerator.generate(board, moveList);
         MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
@@ -131,7 +131,7 @@ public class Searcher {
 
         // System.out.printf("Nodes Searched: %d%n", nodesSearched);
 
-        tt.store(zobristKey, 0, bestEvaluation, Move.getMoveWithoutScore(bestMove), depth, TranspositionTable.EXACT_BOUND);
+        tt.store(zobristKey, 0, Move.getMoveWithoutScore(bestMove), depth, TranspositionTable.EXACT_BOUND, bestEvaluation);
 
         return bestMove;
     }
@@ -150,11 +150,15 @@ public class Searcher {
         }
 
         long zobristKey = board.getCurrentZobristKey();
-        int ttBestMove = tt.probeBestMove(zobristKey);
-        int ttScore = tt.probeScore(zobristKey, depth, pliesFromRoot, alpha, beta);
+        long ttEntryData = tt.probeEntryData(zobristKey);
+        int ttBestMove = TranspositionTable.unpackBestMove(ttEntryData);
 
-        if (ttScore != TranspositionTable.NO_SCORE) {
-            return ttScore;
+        // If there is a stored evaluation in the TT, return that
+        if (ttEntryData != TranspositionTable.NO_TT_ENTRY) {
+            int ttEvaluation = TranspositionTable.resolveEvaluation(ttEntryData, pliesFromRoot, depth, alpha, beta);
+            if (ttEvaluation != TranspositionTable.UNUSABLE_EVALUATION) {
+                return ttEvaluation;
+            }
         }
 
         MoveList moveList = moveListPool[pliesFromRoot];
@@ -165,7 +169,7 @@ public class Searcher {
         // in 1. If this move results in stalemate, return an evaluation of 0
         if (moveList.count == 0) {
             boolean inCheck = Checks.calculateSquares(board, board.getTurn()) != 0L;
-            return inCheck ? -Constants.CHECKMATE_SCORE + pliesFromRoot : 0;
+            return inCheck ? -Constants.CHECKMATE_EVALUATION + pliesFromRoot : 0;
         }
 
         MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
@@ -189,14 +193,14 @@ public class Searcher {
                     bound = TranspositionTable.EXACT_BOUND;
 
                     if (alpha >= beta) {
-                        tt.store(zobristKey, pliesFromRoot, bestEvaluation, bestMove, depth, TranspositionTable.LOWER_BOUND);
+                        tt.store(zobristKey, pliesFromRoot, bestMove, depth, TranspositionTable.LOWER_BOUND, bestEvaluation);
                         return bestEvaluation;
                     }
                 }
             }
         }
 
-        tt.store(zobristKey, pliesFromRoot, bestEvaluation, bestMove, depth, bound);
+        tt.store(zobristKey, pliesFromRoot, bestMove, depth, bound, bestEvaluation);
 
         return bestEvaluation;
     }
@@ -275,7 +279,7 @@ public class Searcher {
         MoveGenerator.generate(board, moveList);
 
         if (moveList.count == 0) {
-            return inCheck ? -Constants.CHECKMATE_SCORE + pliesFromRoot : 0;
+            return inCheck ? -Constants.CHECKMATE_EVALUATION + pliesFromRoot : 0;
         }
 
         // Only captures and queen promotions are worth looking at a quiescence search
@@ -295,10 +299,15 @@ public class Searcher {
                 }
             }
 
+            if (tacticalMovesCount == 0) {
+                return bestEvaluation;
+            }
+
             moveList.count = tacticalMovesCount;
         }
 
-        int ttBestMove = tt.probeBestMove(board.getCurrentZobristKey());
+        long zobristKey = board.getCurrentZobristKey();
+        int ttBestMove = TranspositionTable.unpackBestMove(tt.probeEntryData(zobristKey));
         MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
 
         boolean canDeltaPrune = !inCheck && (board.getPhase() > Constants.LATE_ENDGAME_PHASE_THRESHOLD);

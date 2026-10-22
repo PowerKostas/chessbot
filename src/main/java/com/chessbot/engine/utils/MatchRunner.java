@@ -8,8 +8,6 @@ import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.engine.movegen.MoveList;
 import com.chessbot.engine.movegen.utils.Checks;
 
-import java.util.Random;
-
 // Runs a certain amount of games between 2 versions of the engine in order to check if a change in the evaluation/search
 // function had positive or negative impact. SPRT is utilized for this
 public class MatchRunner {
@@ -21,11 +19,8 @@ public class MatchRunner {
 
         System.out.printf("Starting SPRT Match | %s vs %s%n%n", previousVersionBot.name(), newVersionBot.name());
 
+        // Runs a match until SPRT has enough information to decide if the change was positive/negative
         long startTime = System.nanoTime();
-
-        Random random = new Random(12345);
-        int[] opening = null;
-
         int game = 0;
         while (sprt.getStatus().equals("CONTINUE")) {
             Board board = new Board();
@@ -38,15 +33,6 @@ public class MatchRunner {
             Chessbot whiteBot = isEvenGame ? newVersionBot : previousVersionBot;
             Chessbot blackBot = isEvenGame ? previousVersionBot : newVersionBot;
 
-            // A new random opening is generated every 2 games. The odd game replays the same opening with colors swapped
-            if (isEvenGame) {
-                opening = generateRandomOpening(random, moveList);
-            }
-
-            for (int move : opening) {
-                board.makeMove(move);
-            }
-
             // Runs a game
             double testBotScore;
             while (true) {
@@ -54,6 +40,8 @@ public class MatchRunner {
                 boolean inCheck = Checks.calculateSquares(board, board.getTurn()) != 0L;
 
                 if (ResultDetector.isCheckmate(moveList, inCheck)) {
+                    // Because the turn changes after every move, if there is checkmate, and it's black's turn, it means
+                    // that white is the one that delivered the checkmate
                     boolean whiteWon = (board.getTurn() == Piece.BLACK);
                     testBotScore = (whiteWon == isEvenGame) ? 1.0 : 0.0;
                     break;
@@ -81,40 +69,5 @@ public class MatchRunner {
 
         long endTime = System.nanoTime();
         System.out.printf("%nMatch Finished | Result: %s | Time Taken: %.2f seconds", sprt.getStatus(), (endTime - startTime) / 1_000_000_000.0);
-    }
-
-
-
-    // Plays random legal moves from the starting position. Retries if the game ends during the opening (e.g. fool's mate
-// is possible in 4 plies), so the returned opening always leads to a position with legal moves
-    private static int[] generateRandomOpening(Random random, MoveList moveList) {
-        while (true) {
-            Board board = new Board();
-            board.loadInitialPosition(ApplicationConfig.MATCH_RUNNER_FEN);
-            int[] opening = new int[5];
-
-            boolean valid = true;
-            for (int i = 0; i < opening.length; i += 1) {
-                MoveGenerator.generate(board, moveList);
-                if (moveList.count == 0) {
-                    valid = false;
-                    break;
-                }
-
-                int move = moveList.moves[random.nextInt(moveList.count)];
-                opening[i] = move;
-                board.makeMove(move);
-            }
-
-            if (!valid) {
-                continue;
-            }
-
-            // The final position must still have legal moves
-            MoveGenerator.generate(board, moveList);
-            if (moveList.count > 0) {
-                return opening;
-            }
-        }
     }
 }

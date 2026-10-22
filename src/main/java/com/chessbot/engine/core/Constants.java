@@ -11,12 +11,12 @@ public final class Constants {
     // I went with about double of that
     public static final int MAX_GAME_MOVES = 1024;
 
-    // Safe evaluation values that allow the search function operations to work without overflows
+    // Safe values that allow the search function operations to work without overflows
     public static final int INFINITY_SCORE = 10000000;
-    public static final int CHECKMATE_SCORE = 1000000;
+    public static final int CHECKMATE_EVALUATION = 1000000;
 
-    // Any score above this threshold is a checkmate score
-    public static final int CHECKMATE_SCORE_THRESHOLD = CHECKMATE_SCORE - MAX_SEARCH_DEPTH;
+    // Any evaluation above this threshold is a checkmate evaluation
+    public static final int CHECKMATE_EVALUATION_THRESHOLD = CHECKMATE_EVALUATION - MAX_SEARCH_DEPTH;
 
     // Move ordering score for the best move of the transposition table, must be higher than MVV-LVA + Promotions + ...
     public static final int TT_BEST_MOVE_SCORE = 1000;

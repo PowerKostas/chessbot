@@ -167,6 +167,9 @@ public class UIGameManager {
 
 
     private void restartGame() {
+        whiteBot.prepareNewGame();
+        blackBot.prepareNewGame();
+
         // Swaps colors within player types and within bots
         int tempPlayerType = whitePlayerType;
         whitePlayerType = blackPlayerType;
