@@ -10,7 +10,7 @@ public final class ApplicationConfig {
 
 
     public static final int WHITE_PLAYER_TYPE = PlayerType.HUMAN;
-    public static final int BLACK_PLAYER_TYPE = PlayerType.ENGINE;
+    public static final int BLACK_PLAYER_TYPE = PlayerType.HUMAN;
 
     // Configures the versions of the engine when it's a human vs engine game and when it's an engine vs engine game
     public static final Chessbot RANDOM_BOT = new RandomBot();

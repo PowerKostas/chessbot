@@ -81,19 +81,25 @@ public final class FenParser {
             return;
         }
 
-        // Fourth part of the FEN string indicates the square that an en passant move is available, if that part equals
-        // "-" or the string doesn't include that information, no square is available for en passant
+        // Fourth part of the FEN string indicates the target square that an en passant move is available on, if that part
+        // equals "-" or the string doesn't include that information, no square is available for en passant. The code works
+        // in a similar way to Board.makeMove() -> case Move.FLAG_DOUBLE_PAWN_PUSH
         if (parts.length > 3 && !parts[3].equals("-")) {
             int epCol = parts[3].charAt(0) - 'a';
             int epRow = parts[3].charAt(1) - '1';
-            board.setEnPassantSquareBitboard(1L << ((epRow << 3) + epCol));
-        }
+            int epSquare = (epRow << 3) + epCol;
+            int pushedPawnSquare = epSquare ^ 8;
 
-        else {
-            board.setEnPassantSquareBitboard(0L);
+            long adjacentSquaresMask = 0L;
+            if ((pushedPawnSquare & 7) != 0) adjacentSquaresMask |= 1L << (pushedPawnSquare - 1);
+            if ((pushedPawnSquare & 7) != 7) adjacentSquaresMask |= 1L << (pushedPawnSquare + 1);
 
-            if (parts.length == 3) {
-                return;
+            if ((adjacentSquaresMask & board.getBitboard(board.getTurn(), Piece.PAWN)) != 0L) {
+                board.setEnPassantSquareBitboard(1L << epSquare);
+            }
+
+            else {
+                board.setEnPassantSquareBitboard(0L);
             }
         }
 

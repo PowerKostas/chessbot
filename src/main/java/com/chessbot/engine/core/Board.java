@@ -138,7 +138,7 @@ public class Board {
     public int getPhase() { return phase; }
 
 
-    // Uses the precomputed random longs to calculate the Zobrist hash key that represents the initial position
+    // Uses the precomputed longs to calculate the Zobrist hash key that represents the initial position
     public void calculateInitialZobristKey() {
         currentZobristKey = 0L;
 
@@ -151,7 +151,7 @@ public class Board {
             }
         }
 
-        if (turn == Piece.BLACK) {
+        if (turn == Piece.WHITE) {
             currentZobristKey ^= Zobrist.TURN;
         }
 
@@ -260,7 +260,7 @@ public class Board {
         // The mathematical formula for updating a Zobrist key is: New hash = Old hash ^ (Old hash with the old state removed)
         // ^ (Old hash with the new state added). For that reason, before the move is made, the old irreversible data has
         // to be XORed out from the key
-        currentZobristKey ^= Zobrist.TURN; // Turns on/off the TURN random long
+        currentZobristKey ^= Zobrist.TURN; // Turns on/off the TURN long
 
         if (enPassantSquareBitboard != 0L) {
             int epFile = Long.numberOfTrailingZeros(enPassantSquareBitboard) & 7;
@@ -286,10 +286,10 @@ public class Board {
         // Resets the en passant bitboard after each move
         enPassantSquareBitboard = 0L;
 
-        // Handles all cases of the move flag. For each one, update the Zobrist key by XORing out the random longs that
-        // represent pieces on the starting and potential capture squares and XORing in the random long that represents
-        // the piece on the ending square. The middlegame/endgame score and phase is updated in captures/promotions because
-        // the material difference between the 2 players changed
+        // Handles all cases of the move flag. For each one, update the Zobrist key by XORing out the longs that represent
+        // pieces on the starting and potential capture squares and XORing in the long that represents the piece on the
+        // ending square. The middlegame/endgame score and phase is updated in captures/promotions because the material
+        // difference between the 2 players changed
         switch (moveFlag) {
             // If there is no special move flag, just move the piece
             case Move.FLAG_QUIET:
@@ -298,8 +298,7 @@ public class Board {
                 currentZobristKey ^= Zobrist.PIECES[pieceColor * 6 + pieceType][endingSquare];
                 break;
 
-            // If it's a double pawn push, move the pawn and make the square down of the pawn an en passant target, don't
-            // worry about the bitwise operation
+            // If it's a double pawn push, move the pawn and make the square down of the pawn an en passant target
             case Move.FLAG_DOUBLE_PAWN_PUSH:
                 movePiece(startingSquare, endingSquare, pieceColor, Piece.PAWN);
 
@@ -312,7 +311,7 @@ public class Board {
                 // Only sets the enPassantSquareBitboard if an enemy pawn is adjacent to the ending square. This is done
                 // for Zobrist hashing in order to avoid 2 identical positions being unique just because in one of them
                 // a pawn pushed 2 squares in the last move. If there are no adjacent enemy pawns, the enPassantSquareBitboard
-                // shouldn't get a value
+                // shouldn't get a value. Don't worry about the bitwise operation
                 if ((adjacentSquaresMask & bitboards[enemyColor * 6 + Piece.PAWN]) != 0) {
                     enPassantSquareBitboard = 1L << (endingSquare ^ 8);
                 }
