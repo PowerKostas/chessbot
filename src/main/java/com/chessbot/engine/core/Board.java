@@ -37,10 +37,10 @@ public class Board {
     public static final int BLACK_QUEENSIDE = 8;
 
     // Helper mask to update castling rights when pieces move from/to critical squares. All non-critical squares get an initial
-    // value of 15 which equals the initial value of castlingRights. The reason for that is: If the player still has castling
-    // rights and a move in a non-critical square happens, the operation becomes castlingRights = castlingRights & CASTLING_MASK
-    // = 1111 & 1111 = 1111, so the variable remains untouched. If a move in a critical square happens, the appropriate
-    // bits of castlingRights are turned off
+    // value of 15 which equals the initial value of castlingRights. The reason for that is that if the player still has
+    // castling rights and a move in a non-critical square happens, the operation becomes castlingRights = castlingRights
+    // & CASTLING_MASK = 1111 & 1111 = 1111, so the variable remains untouched. If a move in a critical square happens,
+    // the appropriate bits of castlingRights are turned off
     private static final int[] CASTLING_MASKS = new int[64];
     static {
         Arrays.fill(CASTLING_MASKS, 15);
@@ -257,8 +257,8 @@ public class Board {
         zobristKeyHistory[plyIndex] = currentZobristKey;
         plyIndex += 1;
 
-        // The mathematical formula for updating a Zobrist key is: New hash = Old hash ^ (Old hash with the old state removed)
-        // ^ (Old hash with the new state added). For that reason, before the move is made, the old irreversible data has
+        // The mathematical formula for updating a Zobrist key is: new hash = old hash ^ (old hash with the old state removed)
+        // ^ (old hash with the new state added). For that reason, before the move is made, the old irreversible data has
         // to be XORed out from the key
         currentZobristKey ^= Zobrist.TURN; // Turns on/off the TURN long
 

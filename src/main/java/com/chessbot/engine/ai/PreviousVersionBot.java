@@ -4,10 +4,12 @@ import com.chessbot.application.ApplicationConfig;
 import com.chessbot.engine.core.Board;
 import com.chessbot.engine.search.Searcher;
 import com.chessbot.engine.search.TranspositionTable;
+import com.chessbot.engine.utils.OpeningBook;
 
 public final class PreviousVersionBot implements Chessbot {
     private final String name;
     private final TranspositionTable tt = new TranspositionTable();
+    private final OpeningBook openingBook = new OpeningBook(ApplicationConfig.OPENING_BOOK_FILE);
 
     public PreviousVersionBot(String name) { this.name = name; }
 
@@ -17,6 +19,11 @@ public final class PreviousVersionBot implements Chessbot {
 
     @Override
     public int chooseMove(Board board) {
+        int bookMove = openingBook.getMove(board);
+        if (bookMove != -1) {
+            return bookMove;
+        }
+
         Searcher searcher = new Searcher(board, tt, false);
         return searcher.searchRoot(ApplicationConfig.AI_TARGET_SEARCH_DEPTH);
     }
