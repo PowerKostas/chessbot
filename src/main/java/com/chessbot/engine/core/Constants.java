@@ -18,8 +18,8 @@ public final class Constants {
     // Any evaluation above this threshold is a checkmate evaluation
     public static final int CHECKMATE_EVALUATION_THRESHOLD = CHECKMATE_EVALUATION - MAX_SEARCH_DEPTH;
 
-    // Move ordering score for the best move of the transposition table, must be higher than MVV-LVA + Promotions + ...
-    public static final int TT_BEST_MOVE_SCORE = 1000;
+    // Move ordering score, must be higher than MVV-LVA + Promotions + ...
+    public static final int PREVIOUS_BEST_MOVE_SCORE = 1000;
 
     // Search function parameters, tuned with SPSA
     public static final int[] PROMOTION_SCORES = {-45, -50, -50, 35};

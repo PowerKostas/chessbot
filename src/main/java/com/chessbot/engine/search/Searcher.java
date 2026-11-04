@@ -90,6 +90,11 @@ public class Searcher {
        otherwise all legal moves have to be searched in order to find check evasions. QS terminates when a quiet position
        is reached (no captures, promotions or check evasions left), when a beta-cutoff occurs or when the maximum search
        depth is reached
+
+    5. Iterative Deepening: Instead of searching directly to the target depth, search depth 1 and depth 2 ... and target
+       depth. Searching multiple times seems bad but it performs better. The main reasons are improved move ordering (the
+       best move found at depth n-1 is almost always the best move at depth n) and Transposition Table warming. Additionally
+       effective time restrictions can now be implemented
     */
 
     // Entry function for the Searcher class. Called once per turn, responsible for searching the root and returning the
@@ -97,41 +102,43 @@ public class Searcher {
     // moves in this position, moveList.moves[0] would return a null, if it's the first move of the game, or a random illegal
     // move, anywhere else. But this isn't a problem because the end of the game is already handled by whichever class originally
     // called this function
-    public int searchRoot(int depth) {
+    public int searchRoot(int targetDepth) {
         //nodesSearched = 0;
         //nodesSearched += 1;
 
         long zobristKey = board.getCurrentZobristKey();
-        int ttBestMove = TranspositionTable.unpackBestMove(tt.probeEntryData(zobristKey));
         MoveList moveList = moveListPool[0];
         MoveGenerator.generate(board, moveList);
-        MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
-
-        int alpha = -Constants.INFINITY_SCORE;
-        int beta = Constants.INFINITY_SCORE;
-        int bestEvaluation = -Constants.INFINITY_SCORE;
         int bestMove = moveList.moves[0];
-        for (int i = 0; i < moveList.count; i += 1) {
-            MoveOrderer.selectNextMove(moveList, i);
 
-            // Prints the root moves, useful for debugging move ordering
-            // System.out.printf("%s%s%n%n", CoordinatesConverter.indexToString(Move.getStartingSquare(moveList.moves[i])), CoordinatesConverter.indexToString(Move.getEndingSquare(moveList.moves[i])));
+        for (int currentDepth = 1; currentDepth <= targetDepth; currentDepth += 1) {
+            MoveOrderer.prepareMoveScores(board, moveList, Move.getMoveWithoutScore(bestMove));
 
-            int move = moveList.moves[i];
-            int undo = board.makeMove(move);
-            int evaluation = -search(depth - 1, 1, -beta, -alpha);
-            board.unmakeMove(move, undo);
+            int alpha = -Constants.INFINITY_SCORE;
+            int beta = Constants.INFINITY_SCORE;
+            int bestEvaluation = -Constants.INFINITY_SCORE;
+            for (int i = 0; i < moveList.count; i += 1) {
+                MoveOrderer.selectNextMove(moveList, i);
 
-            if (evaluation > bestEvaluation) {
-                alpha = evaluation;
-                bestEvaluation = evaluation;
-                bestMove = move;
+                // Prints the root moves, useful for debugging move ordering
+                // System.out.printf("%s%s%n%n", CoordinatesConverter.indexToString(Move.getStartingSquare(moveList.moves[i])), CoordinatesConverter.indexToString(Move.getEndingSquare(moveList.moves[i])));
+
+                int move = moveList.moves[i];
+                int undo = board.makeMove(move);
+                int evaluation = -search(targetDepth - 1, 1, -beta, -alpha);
+                board.unmakeMove(move, undo);
+
+                if (evaluation > bestEvaluation) {
+                    alpha = evaluation;
+                    bestEvaluation = evaluation;
+                    bestMove = move;
+                }
             }
+
+            tt.store(zobristKey, 0, Move.getMoveWithoutScore(bestMove), targetDepth, TranspositionTable.EXACT_BOUND, bestEvaluation);
         }
 
         // System.out.printf("Nodes Searched: %d%n", nodesSearched);
-
-        tt.store(zobristKey, 0, Move.getMoveWithoutScore(bestMove), depth, TranspositionTable.EXACT_BOUND, bestEvaluation);
 
         return bestMove;
     }
@@ -215,7 +222,7 @@ public class Searcher {
         }
 
         // Because a quiescence search can theoretically follow a long chain of moves, return the static evaluation if the
-        // search exceeds the given max search depth
+        // search exceeds the given max depth
         if (pliesFromRoot >= Constants.MAX_SEARCH_DEPTH) {
             return Evaluator.evaluate(board, experimentalVersion);
         }
