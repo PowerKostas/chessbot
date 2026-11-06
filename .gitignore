@@ -3,7 +3,6 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
-To Do.txt
 src/main/resources/com/chessbot/datasets/
 
 ### IntelliJ IDEA ###

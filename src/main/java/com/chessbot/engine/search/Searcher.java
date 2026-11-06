@@ -10,6 +10,7 @@ import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.engine.movegen.MoveList;
 import com.chessbot.engine.movegen.utils.Checks;
 import com.chessbot.engine.search.moveordering.MoveOrderer;
+import com.chessbot.engine.utils.CoordinatesConverter;
 import com.chessbot.engine.utils.ResultDetector;
 
 // Searcher is a standard class instead of a utility one in order to be able to create multiple instances if needed
@@ -43,13 +44,13 @@ public class Searcher {
     /*
     SEARCH ARCHITECTURE:
 
-    1. Negamax: The core tree search algorithm. It's based on the Minimax algorithm which determines a score after a certain
-       number of moves. It assumes best play according to the evaluation function. The difference of Negamax is that it
-       translates everything into the current player's perspective instead of having to handle 2 players. It traverses the
-       possible moves depth-first, assigning a score to each leaf node based on the evaluation function. Each parent node
-       takes the maximum of the negated values returned by its children. This allows it to pick the move that results in
-       the worst possible position for the current opponent. In the example diagram, every node is a position's evaluation
-       score from the perspective of the player to the right and every line is a move that caused the position
+    1. Negamax: The core tree search algorithm. It's based on the Minimax algorithm which determines an evaluation after
+       a certain number of moves. It assumes best play according to the evaluation function. The difference of Negamax is
+       that it translates everything into the current player's perspective instead of having to handle 2 players. It traverses
+       the possible moves depth-first, assigning a value to each leaf node based on the evaluation function. Each parent
+       node takes the maximum of the negated values returned by its children. This allows it to pick the move that results
+       in the worst possible position for the current opponent. In the example diagram, every node is a position's evaluation
+       from the perspective of the player to the right and every line is a move that caused the position
 
                    2               | Black
            /       |       \
@@ -59,23 +60,24 @@ public class Searcher {
 
     2. Alpha-Beta Pruning: In a Negamax context, alpha represents the best evaluation the current player has already guaranteed
        elsewhere in the search. Beta represents the best evaluation the current opponent has already guaranteed elsewhere
-       in the search. In other words, for every child score of the current player, alpha is the floor and beta is the ceiling.
-       If a score is below the floor, it's ignored, if it's at or above the ceiling, the branch is pruned because the opponent
-       would never choose to go down this path. Alpha and beta values are swapped and negated at every depth to accurately
-       portray the shifting perspectives. In the Negamax example diagram, when the 0 node is reached, alpha = 6 and beta
-       = inf for white. When the -8 node is reached, alpha = -inf and beta = 6 for white, that's why the remaining 7 and
-       -9 nodes will be pruned. A fail-soft implementation is used. If a move scores 300 but beta is 100, the search will
-       return 300 to the parent node. The returned score should mean one of three things:
+       in the search. In other words, for every child evaluation of the current player, alpha is the floor and beta is the
+       ceiling. If an evaluation is below the floor, it's ignored, if it's at or above the ceiling, the branch is pruned
+       because the opponent would never choose to go down this path. Alpha and beta values are swapped and negated at every
+       depth to accurately portray the shifting perspectives. In the Negamax example diagram, when the 0 node is reached,
+       alpha = 6 and beta = inf for white. When the -8 node is reached, alpha = -inf and beta = 6 for white, that's why
+       the remaining 7 and -9 nodes will be pruned. A fail-soft implementation is used. If a move scores 300 but beta is
+       100, the search will return 300 to the parent node. The returned evaluation should mean one of three things:
 
-       1. In a Fail-Low node (score <= alpha): An upper bound value should be returned because the position is worth at
-       most this much. No move that the current player tried was better than alpha, so the true value can't be higher than
-       the score
+       1. In a Fail-Low node (evaluation <= alpha): An upper bound value should be returned because the position is worth
+       at most this much. No move that the current player tried was better than alpha, so the true value can't be higher
+       than the evaluation
 
-       2. In a Fail-High node (score >= beta): A lower bound value should be returned because the position is worth at least
-       this much. A move was good enough to cause a beta-cutoff and the remaining moves were never looked at, so the true
-       value could be even higher
+       2. In a Fail-High node (evaluation >= beta): A lower bound value should be returned because the position is worth
+       at least this much. A move was good enough to cause a beta-cutoff and the remaining moves were never looked at, so
+       the true value could be even higher
 
-       3. In between alpha and beta scenarios: The score is exact
+       3. In a PV-Node (Principal Variation = The sequence of moves that the program considers best and therefore expects
+       to be played, it can be superseded) (alpha < evaluation < beta): The evaluation is exact
 
        This extra data will be useful later on
 
@@ -95,6 +97,13 @@ public class Searcher {
        depth. Searching multiple times seems bad but it performs better. The main reasons are improved move ordering (the
        best move found at depth n-1 is almost always the best move at depth n) and Transposition Table warming. Additionally
        effective time restrictions can now be implemented
+
+    6. Principal Variation Search: With good move ordering the first move searched is usually the best one, so it's searched
+       with a full window (-beta, -alpha) to get its exact evaluation. All other moves only need to be confirmed as not
+       better than the best move found so far, so they are searched with a null window (-alpha - 1, -alpha [where beta is
+       as close to alpha as possible]) to get their bounds. If a search with a null window unexpectedly fails high, its
+       exact evaluation is not known. If it's a PV-Node, the move is re-searched with a full window, otherwise, a re-search
+       is not needed because the evaluation is already high enough to cause a beta-cutoff
     */
 
     // Entry function for the Searcher class. Called once per turn, responsible for searching the root and returning the
@@ -125,7 +134,20 @@ public class Searcher {
 
                 int move = moveList.moves[i];
                 int undo = board.makeMove(move);
-                int evaluation = -search(targetDepth - 1, 1, -beta, -alpha);
+
+                int evaluation;
+                if (i == 0) {
+                    evaluation = -search(currentDepth - 1, 1, -beta, -alpha);
+                }
+
+                else {
+                    evaluation = -search(currentDepth - 1, 1, -alpha - 1, -alpha);
+
+                    if (evaluation > alpha) {
+                        evaluation = -search(currentDepth - 1, 1, -beta, -alpha);
+                    }
+                }
+
                 board.unmakeMove(move, undo);
 
                 if (evaluation > bestEvaluation) {
@@ -135,7 +157,10 @@ public class Searcher {
                 }
             }
 
-            tt.store(zobristKey, 0, Move.getMoveWithoutScore(bestMove), targetDepth, TranspositionTable.EXACT_BOUND, bestEvaluation);
+            tt.store(zobristKey, 0, Move.getMoveWithoutScore(bestMove), currentDepth, TranspositionTable.EXACT_BOUND, bestEvaluation);
+
+            // String pvString = buildPrincipalVariationString(currentDepth);
+            // System.out.printf("Current Depth: %d | Evaluation: %d | Principal Variation: %s%n%n", currentDepth, bestEvaluation, pvString);
         }
 
         // System.out.printf("Nodes Searched: %d%n", nodesSearched);
@@ -160,11 +185,14 @@ public class Searcher {
         long ttEntryData = tt.probeEntryData(zobristKey);
         int ttBestMove = TranspositionTable.unpackBestMove(ttEntryData);
 
-        // If there is a stored evaluation in the TT, return that
-        if (ttEntryData != TranspositionTable.NO_TT_ENTRY) {
-            int ttEvaluation = TranspositionTable.resolveEvaluation(ttEntryData, pliesFromRoot, depth, alpha, beta);
-            if (ttEvaluation != TranspositionTable.UNUSABLE_EVALUATION) {
-                return ttEvaluation;
+        // If it's a null window (which means this is a non-PV node) and there is a stored evaluation in the TT, return
+        // it. PV-Nodes need to be searched with a full window, that's why they are excluded here
+        if ((beta - alpha) == 1) {
+            if (ttEntryData != TranspositionTable.NO_TT_ENTRY) {
+                int ttEvaluation = TranspositionTable.resolveEvaluation(ttEntryData, pliesFromRoot, depth, alpha, beta);
+                if (ttEvaluation != TranspositionTable.UNUSABLE_EVALUATION) {
+                    return ttEvaluation;
+                }
             }
         }
 
@@ -188,7 +216,20 @@ public class Searcher {
             MoveOrderer.selectNextMove(moveList, i);
             int move = moveList.moves[i];
             int undo = board.makeMove(move);
-            int evaluation = -search(depth - 1, pliesFromRoot + 1, -beta, -alpha);
+
+            int evaluation;
+            if (i == 0) {
+                evaluation = -search(depth - 1, pliesFromRoot + 1, -beta, -alpha);
+            }
+
+            else {
+                evaluation = -search(depth - 1, pliesFromRoot + 1, -alpha - 1, -alpha);
+
+                if (evaluation > alpha && evaluation < beta) {
+                    evaluation = -search(depth - 1, pliesFromRoot + 1, -beta, -alpha);
+                }
+            }
+
             board.unmakeMove(move, undo);
 
             if (evaluation > bestEvaluation) {
@@ -228,7 +269,7 @@ public class Searcher {
         }
 
         // Initializes a stand-pat value. Stand-pat is the evaluation of the board after the opponent has made their move
-        // and before the current player makes theirs. In other words the baseline score
+        // and before the current player makes theirs. In other words the baseline evaluation
         int standPat = 0;
 
         // If in check using stand-pat is not allowed. There are 2 reasons for that. Firstly, we are not sure that there
@@ -241,7 +282,7 @@ public class Searcher {
         if (!inCheck) {
             standPat = Evaluator.evaluate(board, experimentalVersion);
 
-            // If the baseline score is already so high, the opponent would never choose to go down this path, for that
+            // If the baseline evaluation is already so high, the opponent would never choose to go down this path, for that
             // reason the branch is just pruned
             if (standPat >= beta) {
                 return standPat;
@@ -327,15 +368,15 @@ public class Searcher {
             // be switched off in the late endgame, since otherwise the search would be blind to insufficient material
             // issues and transitions into won endgames made at the expense of some material. Delta Pruning is technically
             // a Fail-Low filter because it prunes captures if they are less than or equal to alpha. For that reason,
-            // the score uses the upper bound/maximum piece value
+            // the evaluation uses the upper bound/maximum piece value
             if (canDeltaPrune) {
                 int flag = Move.getFlag(move);
                 if (flag == Move.FLAG_CAPTURE || flag == Move.FLAG_EN_PASSANT_CAPTURE) {
                     int capturedPieceType = (flag == Move.FLAG_EN_PASSANT_CAPTURE) ? Piece.PAWN : board.getPieceTypeAtSquare(Move.getEndingSquare(move));
-                    int score = standPat + Material.getMaxPieceValue(capturedPieceType) + Constants.SAFETY_MARGIN;
+                    int evaluation = standPat + Material.getMaxPieceValue(capturedPieceType) + Constants.SAFETY_MARGIN;
 
-                    if (score <= alpha) {
-                        bestEvaluation = Math.max(bestEvaluation, score);
+                    if (evaluation <= alpha) {
+                        bestEvaluation = Math.max(bestEvaluation, evaluation);
                         continue;
                     }
                 }
@@ -359,5 +400,70 @@ public class Searcher {
         }
 
         return bestEvaluation;
+    }
+
+
+    private String buildPrincipalVariationString(int targetDepth) {
+        // Gets the best move from the Transposition Table, plays it on the board and then gets the next one
+        int[] pvMoves = new int[targetDepth];
+        int[] undos = new int[targetDepth];
+        int pvLength = 0;
+
+        for (int i = 0; i < targetDepth; i += 1) {
+            long zobristKey = board.getCurrentZobristKey();
+            long ttEntryData = tt.probeEntryData(zobristKey);
+            int bestMove = TranspositionTable.unpackBestMove(ttEntryData);
+
+            // The bestMove variable can equal 0 on checkmates, stalemates, draws, hash collisions or Fail-Low entries
+            if (bestMove == 0) {
+                break;
+            }
+
+            pvMoves[pvLength] = bestMove;
+            undos[pvLength] = board.makeMove(bestMove);
+            pvLength += 1;
+        }
+
+        // Unmakes all the played moves
+        for (int i = pvLength - 1; i >= 0; i -= 1) {
+            board.unmakeMove(pvMoves[i], undos[i]);
+        }
+
+        // Builds the full Principal Variation String
+        StringBuilder pvString = new StringBuilder();
+        for (int i = 0; i < pvLength; i += 1) {
+            int move = pvMoves[i];
+            int startingSquare = Move.getStartingSquare(move);
+            int endingSquare = Move.getEndingSquare(move);
+
+            pvString.append(CoordinatesConverter.indexToString(startingSquare));
+            pvString.append(CoordinatesConverter.indexToString(endingSquare));
+
+            // If the move is a promotion, append the promoted piece letter
+            int flag = Move.getFlag(move);
+            if (flag >= Move.FLAG_KNIGHT_PROMOTION) {
+                int promotedPiece = (flag & 3) + 1;
+
+                if (promotedPiece == Piece.KNIGHT) {
+                    pvString.append("n");
+                }
+
+                else if (promotedPiece == Piece.BISHOP) {
+                    pvString.append("b");
+                }
+
+                else if (promotedPiece == Piece.ROOK) {
+                    pvString.append("r");
+                }
+
+                else {
+                    pvString.append("q");
+                }
+            }
+
+            pvString.append(" ");
+        }
+
+        return pvString.toString().trim();
     }
 }

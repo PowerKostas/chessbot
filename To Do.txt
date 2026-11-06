@@ -1,0 +1,33 @@
+Search Function:
+
+- Timer
+
+- Add to Move Ordering: Killer Moves (Coding Adventure: Making a Better Chess Bot, Killers, Reductions and Repetitions), Relative History Heuristic, Dedicated Piece-Square Tables, Static Exchange Evaluation, Quiet Checks and Losing Captures
+
+- Aspiration Windows
+
+- Selectivity: Null Move Pruning, Late Move Reductions (Coding Adventure: Making a Better Chess Bot, Killers, Reductions and Repetitions), Singular Extensions, Futility Pruning, Reverse Futility Pruning, Razoring
+
+- Giving Checks in Quiescence Search
+
+
+Evaluation Function:
+
+- Mobility
+
+- Pawn Structure: Passed, Isolated, Doubled, Connected (Coding Adventure: Making a Better Chess Bot, Passed Pawns (and more))
+
+- Evaluation of Pieces: Bishop Pair, Bad Bishop, Knight Outposts, Rook on Open File, Rook on Seventh, Rooks defending each other, Minor Attacking Major, Trapped Pieces
+
+- King Safety: Pawn Shield, Pawn Storm, Attack Units, Scaling
+
+- Draw Evaluation
+
+
+Other:
+
+- SPSA
+
+- Lazy SMP
+
+- UCI (Coding Adventure: Making a Better Chess Bot, Creating a Lichess Bot)

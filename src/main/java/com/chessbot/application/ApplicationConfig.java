@@ -14,19 +14,19 @@ public final class ApplicationConfig {
 
     // Configures the versions of the engine when it's a human vs engine game and when it's an engine vs engine game
     public static final Chessbot RANDOM_BOT = new RandomBot();
-    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v10.2 - book");
-    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v10.3 - Change in MoveOrderer");
+    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v13.2 - PVS with new IF");
+    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v13.3 - PVS with TT change");
 
     public static final Chessbot HUMAN_OPPONENT_BOT = NEW_VERSION_BOT;
     public static final Chessbot ENGINE_MATCH_WHITE_BOT = NEW_VERSION_BOT;
     public static final Chessbot ENGINE_MATCH_BLACK_BOT = PREVIOUS_VERSION_BOT;
 
     // The search depth that the different engine versions target. The search can exceed this number
-    public static final int AI_TARGET_SEARCH_DEPTH = 4;
+    public static final int AI_TARGET_SEARCH_DEPTH = 6;
 
     // Transposition table size. Bigger size equals faster speeds but also bigger memory requirements. Put 1 << 20 for instant
     // games, 1 << 22 for bullet, 1 << 24 for blitz, 1 << 25 for rapid and 1 << 26 for maximum analysis
-    public static final int TT_SIZE = 1 << 20;
+    public static final int TT_SIZE = 1 << 22;
 
     // Jeroen.bin = Standard, Daring.bin = Risky
     public static final String OPENING_BOOK_FILE = "Jeroen.bin";

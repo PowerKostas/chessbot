@@ -72,7 +72,7 @@ public final class TranspositionTable {
         if (zobristKey == transpositionTable[entryZobristKeyIndex]) {
             long oldEntryData = transpositionTable[entryZobristKeyIndex + 1];
 
-            // If a new best move wasn't found (fail-low node for example), keep the previously stored best move
+            // If a new best move wasn't found (Fail-Low node for example), keep the previously stored best move
             if (bestMove == 0) {
                 bestMove = unpackBestMove(oldEntryData);
             }
