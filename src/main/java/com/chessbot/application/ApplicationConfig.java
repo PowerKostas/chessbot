@@ -14,8 +14,8 @@ public final class ApplicationConfig {
 
     // Configures the versions of the engine when it's a human vs engine game and when it's an engine vs engine game
     public static final Chessbot RANDOM_BOT = new RandomBot();
-    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v13.2 - PVS with new IF");
-    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v13.3 - PVS with TT change");
+    public static final Chessbot PREVIOUS_VERSION_BOT = new PreviousVersionBot("v14.2 - Safety Margin = 500");
+    public static final Chessbot NEW_VERSION_BOT = new NewVersionBot("v15.1 - Killer Moves");
 
     public static final Chessbot HUMAN_OPPONENT_BOT = NEW_VERSION_BOT;
     public static final Chessbot ENGINE_MATCH_WHITE_BOT = NEW_VERSION_BOT;

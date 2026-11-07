@@ -2,7 +2,7 @@ Search Function:
 
 - Timer
 
-- Add to Move Ordering: Killer Moves (Coding Adventure: Making a Better Chess Bot, Killers, Reductions and Repetitions), Relative History Heuristic, Dedicated Piece-Square Tables, Static Exchange Evaluation, Quiet Checks and Losing Captures
+- Add to Move Ordering: History Gravity with Maluses, Static Exchange Evaluation, Quiet Checks and Losing Captures
 
 - Aspiration Windows
 

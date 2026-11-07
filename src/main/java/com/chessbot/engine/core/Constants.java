@@ -23,8 +23,10 @@ public final class Constants {
 
     // Search function parameters, tuned with SPSA
     public static final int[] PROMOTION_SCORES = {-45, -50, -50, 35};
-    public static final int SAFETY_MARGIN = 200;
-    public static final int LATE_ENDGAME_PHASE_THRESHOLD = 70;
+    public static final int FIRST_KILLER_MOVE_SCORE = 2;
+    public static final int SECOND_KILLER_MOVE_SCORE = 1;
+    public static final int SAFETY_MARGIN = 400;
+    public static final int LATE_ENDGAME_PHASE_THRESHOLD = 0;
 
     // These are evaluation function parameters, but because they are used to win quickly before the search depth runs out,
     // they are also tuned with SPSA

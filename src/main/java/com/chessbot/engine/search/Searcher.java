@@ -9,6 +9,7 @@ import com.chessbot.engine.evaluation.Material;
 import com.chessbot.engine.movegen.MoveGenerator;
 import com.chessbot.engine.movegen.MoveList;
 import com.chessbot.engine.movegen.utils.Checks;
+import com.chessbot.engine.search.moveordering.KillerMoves;
 import com.chessbot.engine.search.moveordering.MoveOrderer;
 import com.chessbot.engine.utils.CoordinatesConverter;
 import com.chessbot.engine.utils.ResultDetector;
@@ -21,6 +22,8 @@ public class Searcher {
     private final MoveList[] moveListPool = new MoveList[Constants.MAX_SEARCH_DEPTH];
 
     private final TranspositionTable tt;
+
+    private final KillerMoves killerMoves = new KillerMoves();
 
     // Boolean to apply experimental features only to specific bot versions
     private final boolean experimentalVersion;
@@ -100,10 +103,10 @@ public class Searcher {
 
     6. Principal Variation Search: With good move ordering the first move searched is usually the best one, so it's searched
        with a full window (-beta, -alpha) to get its exact evaluation. All other moves only need to be confirmed as not
-       better than the best move found so far, so they are searched with a null window (-alpha - 1, -alpha [where beta is
-       as close to alpha as possible]) to get their bounds. If a search with a null window unexpectedly fails high, its
-       exact evaluation is not known. If it's a PV-Node, the move is re-searched with a full window, otherwise, a re-search
-       is not needed because the evaluation is already high enough to cause a beta-cutoff
+       better than the best move found so far, so they are searched with a null window (-alpha - 1, -alpha [beta is as close
+       to alpha as possible]) to get their bounds. If a search with a null window unexpectedly fails high, its exact evaluation
+       is not known. If it's a PV-Node, the move is re-searched with a full window, otherwise, a re-search is not needed
+       because the evaluation is already high enough to cause a beta-cutoff
     */
 
     // Entry function for the Searcher class. Called once per turn, responsible for searching the root and returning the
@@ -121,7 +124,7 @@ public class Searcher {
         int bestMove = moveList.moves[0];
 
         for (int currentDepth = 1; currentDepth <= targetDepth; currentDepth += 1) {
-            MoveOrderer.prepareMoveScores(board, moveList, Move.getMoveWithoutScore(bestMove));
+            MoveOrderer.prepareMoveScores(board, moveList, Move.getMoveWithoutScore(bestMove), null, 0);
 
             int alpha = -Constants.INFINITY_SCORE;
             int beta = Constants.INFINITY_SCORE;
@@ -207,7 +210,7 @@ public class Searcher {
             return inCheck ? -Constants.CHECKMATE_EVALUATION + pliesFromRoot : 0;
         }
 
-        MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
+        MoveOrderer.prepareMoveScores(board, moveList, ttBestMove, killerMoves, pliesFromRoot);
 
         int bestEvaluation = -Constants.INFINITY_SCORE;
         int bestMove = 0;
@@ -241,6 +244,12 @@ public class Searcher {
                     bound = TranspositionTable.EXACT_BOUND;
 
                     if (alpha >= beta) {
+                        // Only quiet moves are stored as Killer Moves because captures and promotions are covered by other
+                        // heuristics
+                        if (Move.getFlag(move) < Move.FLAG_CAPTURE) {
+                            killerMoves.store(bestMove, pliesFromRoot);
+                        }
+
                         tt.store(zobristKey, pliesFromRoot, bestMove, depth, TranspositionTable.LOWER_BOUND, bestEvaluation);
                         return bestEvaluation;
                     }
@@ -356,7 +365,7 @@ public class Searcher {
 
         long zobristKey = board.getCurrentZobristKey();
         int ttBestMove = TranspositionTable.unpackBestMove(tt.probeEntryData(zobristKey));
-        MoveOrderer.prepareMoveScores(board, moveList, ttBestMove);
+        MoveOrderer.prepareMoveScores(board, moveList, ttBestMove, null, 0);
 
         boolean canDeltaPrune = !inCheck && (board.getPhase() > Constants.LATE_ENDGAME_PHASE_THRESHOLD);
         for (int i = 0; i < moveList.count; i += 1) {
@@ -432,36 +441,7 @@ public class Searcher {
         // Builds the full Principal Variation String
         StringBuilder pvString = new StringBuilder();
         for (int i = 0; i < pvLength; i += 1) {
-            int move = pvMoves[i];
-            int startingSquare = Move.getStartingSquare(move);
-            int endingSquare = Move.getEndingSquare(move);
-
-            pvString.append(CoordinatesConverter.indexToString(startingSquare));
-            pvString.append(CoordinatesConverter.indexToString(endingSquare));
-
-            // If the move is a promotion, append the promoted piece letter
-            int flag = Move.getFlag(move);
-            if (flag >= Move.FLAG_KNIGHT_PROMOTION) {
-                int promotedPiece = (flag & 3) + 1;
-
-                if (promotedPiece == Piece.KNIGHT) {
-                    pvString.append("n");
-                }
-
-                else if (promotedPiece == Piece.BISHOP) {
-                    pvString.append("b");
-                }
-
-                else if (promotedPiece == Piece.ROOK) {
-                    pvString.append("r");
-                }
-
-                else {
-                    pvString.append("q");
-                }
-            }
-
-            pvString.append(" ");
+            pvString.append(CoordinatesConverter.moveToString(pvMoves[i])).append(" ");
         }
 
         return pvString.toString().trim();

@@ -5,7 +5,7 @@ import com.chessbot.engine.core.Move;
 
 public final class Promotions {
     /**
-     * The score that a knight, bishop, rook or queen promotion gets. MVV-LVA scores range from 4 to 40. The philosophy is:
+     * The score that a knight, bishop, rook or queen promotion gets. MVV-LVA scores range from 3 to 40. The philosophy is:
      * Underpromoting to a knight/bishop/rook is almost always a bad move. Even if the MVV-LVA scores are added to these
      * scores, an underpromotion will still get a negative value, and consequently it will be searched after all the quiet
      * moves. It's a bit more common for a knight underpromotion to be a good move compared to a bishop/rook underpromotion,
